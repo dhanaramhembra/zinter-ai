@@ -1,4 +1,19 @@
 import { create } from 'zustand';
+import {
+  FileText,
+  Languages,
+  GraduationCap,
+  Flower2,
+  Scale,
+  Table,
+  type LucideIcon,
+} from 'lucide-react';
+
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  reactedByUser: boolean;
+}
 
 export interface Message {
   id: string;
@@ -11,6 +26,8 @@ export interface Message {
   responseTime?: number | null;
   /** Base64-encoded image attached by user (for display in user bubble) */
   attachedImage?: string | null;
+  /** Emoji reactions on the message (client-side only) */
+  reactions?: MessageReaction[];
 }
 
 export interface Conversation {
@@ -29,6 +46,24 @@ export interface Persona {
   description: string;
   systemPrompt: string;
 }
+
+export interface QuickTemplate {
+  id: string;
+  text: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+export const QUICK_TEMPLATES: QuickTemplate[] = [
+  { id: 'summarize', text: 'Summarize the following text: ', label: 'Summarize text', icon: FileText },
+  { id: 'translate', text: 'Translate to English: ', label: 'Translate', icon: Languages },
+  { id: 'explain-code', text: 'Explain this code step by step: ', label: 'Explain code', icon: GraduationCap },
+  { id: 'haiku', text: 'Write a haiku about ', label: 'Write haiku', icon: Flower2 },
+  { id: 'pros-cons', text: 'List the pros and cons of ', label: 'Pros & cons', icon: Scale },
+  { id: 'compare', text: 'Create a table comparing ', label: 'Compare', icon: Table },
+];
+
+export const REACTION_EMOJIS = ['👍', '❤️', '😮', '🔥', '👎', '💡'];
 
 export type ChatBackground = 'default' | 'dots' | 'gradient' | 'minimal' | 'warm';
 
@@ -110,6 +145,7 @@ interface ChatState {
   selectedPersona: PersonaId;
   selectedBackground: ChatBackground;
   showTimestamps: boolean;
+  isUserTyping: boolean;
   setConversations: (conversations: Conversation[]) => void;
   setActiveConversationId: (id: string | null) => void;
   addConversation: (conversation: Conversation) => void;
@@ -122,6 +158,8 @@ interface ChatState {
   setSelectedPersona: (persona: PersonaId) => void;
   setSelectedBackground: (background: ChatBackground) => void;
   setShowTimestamps: (show: boolean) => void;
+  setUserTyping: (typing: boolean) => void;
+  toggleReaction: (conversationId: string, messageId: string, emoji: string) => void;
   getActiveConversation: () => Conversation | null;
   clearAll: () => void;
 }
@@ -133,6 +171,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   selectedPersona: 'pro' as PersonaId,
   selectedBackground: 'default' as ChatBackground,
   showTimestamps: true,
+  isUserTyping: false,
 
   setConversations: (conversations) => set({ conversations }),
 
@@ -195,6 +234,52 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setShowTimestamps: (show) => set({ showTimestamps: show }),
 
+  setUserTyping: (typing) => set({ isUserTyping: typing }),
+
+  toggleReaction: (conversationId, messageId, emoji) =>
+    set((state) => ({
+      conversations: state.conversations.map((c) => {
+        if (c.id !== conversationId) return c;
+        return {
+          ...c,
+          messages: c.messages.map((m) => {
+            if (m.id !== messageId) return m;
+            const existing = m.reactions || [];
+            const idx = existing.findIndex((r) => r.emoji === emoji);
+            if (idx !== -1) {
+              const reaction = existing[idx];
+              if (reaction.reactedByUser) {
+                // Remove user's reaction
+                if (reaction.count <= 1) {
+                  return { ...m, reactions: existing.filter((r) => r.emoji !== emoji) };
+                }
+                return {
+                  ...m,
+                  reactions: existing.map((r, i) =>
+                    i === idx ? { ...r, count: r.count - 1, reactedByUser: false } : r
+                  ),
+                };
+              } else {
+                // Add user's reaction to existing
+                return {
+                  ...m,
+                  reactions: existing.map((r, i) =>
+                    i === idx ? { ...r, count: r.count + 1, reactedByUser: true } : r
+                  ),
+                };
+              }
+            } else {
+              // New reaction
+              return {
+                ...m,
+                reactions: [...existing, { emoji, count: 1, reactedByUser: true }],
+              };
+            }
+          }),
+        };
+      }),
+    })),
+
   getActiveConversation: () => {
     const state = get();
     return (
@@ -203,5 +288,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearAll: () =>
-    set({ conversations: [], activeConversationId: null, isGenerating: false, selectedPersona: 'pro' as PersonaId, selectedBackground: 'default' as ChatBackground, showTimestamps: true }),
+    set({ conversations: [], activeConversationId: null, isGenerating: false, selectedPersona: 'pro' as PersonaId, selectedBackground: 'default' as ChatBackground, showTimestamps: true, isUserTyping: false }),
 }));

@@ -18,7 +18,9 @@ import {
   X,
   Sparkles,
   Upload,
+  BookmarkIcon,
 } from 'lucide-react';
+import { QUICK_TEMPLATES } from '@/store/chat-store';
 import { useChatStore } from '@/store/chat-store';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,6 +38,10 @@ interface ChatInputProps {
   initialMessage?: string | null;
   /** Whether to enable image mode when initialMessage is set */
   initialImageMode?: boolean;
+  /** Callback when typing status changes (debounced) */
+  onTypingStatusChange?: (isTyping: boolean) => void;
+  /** Callback to insert template text into the input */
+  onInsertTemplate?: (text: string) => void;
 }
 
 export default function ChatInput({
@@ -44,6 +50,8 @@ export default function ChatInput({
   disabled,
   initialMessage,
   initialImageMode,
+  onTypingStatusChange,
+  onInsertTemplate,
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -51,11 +59,14 @@ export default function ChatInput({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [attachedImage, setAttachedImage] = useState<AttachedImage | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const lastAppliedInitialRef = useRef<string | null>(null);
   const dragCounterRef = useRef(0);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const templatesRef = useRef<HTMLDivElement>(null);
   const { isGenerating } = useChatStore();
 
   // Feature 3: Word count and character count
@@ -94,6 +105,39 @@ export default function ChatInput({
       textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
     }
   }, [input]);
+
+  // Debounced typing status callback
+  useEffect(() => {
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current);
+    }
+    if (input.length > 0) {
+      onTypingStatusChange?.(true);
+      typingTimerRef.current = setTimeout(() => {
+        onTypingStatusChange?.(false);
+      }, 500);
+    } else {
+      onTypingStatusChange?.(false);
+    }
+    return () => {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+    };
+  }, [input, onTypingStatusChange]);
+
+  // Close templates dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (templatesRef.current && !templatesRef.current.contains(e.target as Node)) {
+        setTemplatesOpen(false);
+      }
+    };
+    if (templatesOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [templatesOpen]);
 
   // --- Drag & Drop handlers ---
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -159,6 +203,7 @@ export default function ChatInput({
     setInput('');
     setImageMode(false);
     setAttachedImage(null);
+    setTemplatesOpen(false);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -391,6 +436,71 @@ export default function ChatInput({
 
         {/* Action buttons with connected styling */}
         <div className="flex items-center gap-0.5 pb-0.5">
+          {/* Templates button */}
+          <div className="relative" ref={templatesRef}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={templatesOpen ? 'default' : 'ghost'}
+                    size="icon"
+                    className={cn(
+                      'rounded-xl h-11 w-11 shrink-0 transition-all duration-200',
+                      'hover:scale-105 active:scale-95 hover:shadow-sm',
+                      templatesOpen && 'bg-primary text-primary-foreground shadow-md shadow-emerald-500/20'
+                    )}
+                    onClick={() => setTemplatesOpen(!templatesOpen)}
+                    disabled={disabled || isGenerating}
+                  >
+                    <BookmarkIcon className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Templates
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <AnimatePresence>
+              {templatesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 bottom-full mb-1.5 w-56 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5 z-50"
+                >
+                  <p className="text-xs font-medium text-muted-foreground px-2.5 py-1.5">
+                    Quick Templates
+                  </p>
+                  {QUICK_TEMPLATES.map((template) => {
+                    const IconComp = template.icon;
+                    return (
+                      <button
+                        key={template.id}
+                        onClick={() => {
+                          if (onInsertTemplate) {
+                            onInsertTemplate(template.text);
+                          }
+                          setTemplatesOpen(false);
+                          requestAnimationFrame(() => textareaRef.current?.focus());
+                        }}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all duration-150 hover:bg-emerald-500/5 hover:translate-x-0.5 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 bg-muted text-muted-foreground">
+                          <IconComp className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-snug">{template.label}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{template.text}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

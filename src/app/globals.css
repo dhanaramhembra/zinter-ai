@@ -1569,8 +1569,222 @@ a:focus-visible,
 
 .focus-glow-ring:focus-within {
   box-shadow:
-    0 0 0 3px oklch(0.55 0.18 163 / 10%),
-    0 0 20px oklch(0.55 0.18 163 / 8%);
+    0 0 0 3px oklch(0.55 0.18 163 / 12%),
+    0 0 20px oklch(0.55 0.18 163 / 10%);
+}
+
+/* ─── Round 6: New animations ─── */
+
+/* Sparkle tilt oscillation */
+@keyframes sparkle-tilt {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(12deg); }
+  75% { transform: rotate(-12deg); }
+}
+
+.animate-sparkle-tilt {
+  animation: sparkle-tilt 4s ease-in-out infinite;
+}
+
+/* Progress bar shine sweep */
+@keyframes shine-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.progress-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(0.9 0.05 163 / 40%),
+    transparent
+  );
+  animation: shine-sweep 2.5s ease-in-out infinite;
+}
+
+/* Code block hover lift */
+.code-block-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.code-block-hover:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px oklch(0 0 0 / 15%),
+    0 0 0 1px oklch(0.55 0.18 163 / 10%);
+}
+
+.dark .code-block-hover:hover {
+  box-shadow:
+    0 4px 12px oklch(0 0 0 / 40%),
+    0 0 0 1px oklch(0.55 0.18 163 / 15%);
+}
+
+/* Send button pulse when active */
+@keyframes send-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-send-pulse {
+  animation: send-pulse 2s ease-in-out infinite;
+}
+
+/* Avatar breathing animation */
+@keyframes avatar-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-avatar-breathe {
+  animation: avatar-breathe 3s ease-in-out infinite;
+}
+
+/* Gradient separator */
+.gradient-separator {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.55 0.18 163 / 25%) 30%,
+    oklch(0.65 0.15 175 / 25%) 70%,
+    transparent 100%
+  );
+}
+
+/* Input animated gradient border */
+.input-gradient-border {
+  position: relative;
+}
+
+.input-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) - 2px);
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    oklch(0.55 0.18 163 / 40%),
+    oklch(0.65 0.15 175 / 30%),
+    oklch(0.55 0.18 163 / 20%)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.input-gradient-border.has-content::before {
+  opacity: 1;
+}
+
+/* Profile card hover glow */
+.profile-card-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.profile-card-glow:hover {
+  box-shadow:
+    0 0 0 1px oklch(0.55 0.18 163 / 20%),
+    0 0 12px oklch(0.55 0.18 163 / 10%);
+}
+
+.dark .profile-card-glow:hover {
+  box-shadow:
+    0 0 0 1px oklch(0.65 0.20 163 / 20%),
+    0 0 12px oklch(0.65 0.20 163 / 10%);
+}
+
+/* Search gradient background */
+.search-gradient-bg {
+  background: linear-gradient(
+    180deg,
+    oklch(0.55 0.18 163 / 3%) 0%,
+    oklch(0.65 0.15 175 / 2%) 50%,
+    transparent 100%
+  );
+}
+
+.dark .search-gradient-bg {
+  background: linear-gradient(
+    180deg,
+    oklch(0.55 0.18 163 / 6%) 0%,
+    oklch(0.65 0.15 175 / 4%) 50%,
+    transparent 100%
+  );
+}
+
+/* Theme toggle scale animation */
+@keyframes theme-toggle-scale {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.animate-theme-toggle {
+  animation: theme-toggle-scale 0.3s ease-out;
+}
+
+/* Version badge */
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: 9999px;
+  background: oklch(0.55 0.18 163 / 10%);
+  color: oklch(0.55 0.18 163);
+  border: 1px solid oklch(0.55 0.18 163 / 15%);
+}
+
+.dark .version-badge {
+  background: oklch(0.65 0.20 163 / 10%);
+  color: oklch(0.65 0.20 163);
+  border-color: oklch(0.65 0.20 163 / 15%);
+}
+
+/* User bubble dark mode inner glow */
+.dark .user-bubble-dark-glow {
+  box-shadow:
+    inset 0 1px 0 oklch(0.9 0.05 163 / 15%),
+    0 2px 8px oklch(0.55 0.18 163 / 15%);
+}
+
+/* Gentle bobbing animation */
+@keyframes gentle-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-gentle-bob {
+  animation: gentle-bob 3s ease-in-out infinite;
+}
+
+/* Loading screen watermark */
+.loading-watermark {
+  opacity: 0.06;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.625rem;
+  user-select: none;
 }
 
 .dark .focus-glow-ring:focus-within {

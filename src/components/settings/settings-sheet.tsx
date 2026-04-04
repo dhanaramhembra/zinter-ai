@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
 import { useTheme } from 'next-themes';
@@ -42,6 +42,10 @@ import {
   BarChart3,
   Wallpaper,
   Clock,
+  MessageCircle,
+  Calendar,
+  TrendingUp,
+  BookOpen,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -84,6 +88,44 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
   // Clear all
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  // Statistics
+  const stats = useMemo(() => {
+    const totalConversations = conversations.length;
+    const totalMessages = conversations.reduce((acc, c) => acc + c.messages.length, 0);
+    const totalWords = conversations.reduce((acc, c) => {
+      return acc + c.messages.reduce((msgAcc, msg) => {
+        return msgAcc + msg.content.split(/\s+/).filter(Boolean).length;
+      }, 0);
+    }, 0);
+    const avgMessagesPerConv = totalConversations > 0 ? (totalMessages / totalConversations).toFixed(1) : '0';
+
+    // Most active day - count messages by day of week
+    const dayCounts: Record<string, number> = {};
+    for (const conv of conversations) {
+      for (const msg of conv.messages) {
+        const date = new Date(msg.createdAt);
+        const dayKey = date.toLocaleDateString([], { weekday: 'long' });
+        dayCounts[dayKey] = (dayCounts[dayKey] || 0) + 1;
+      }
+    }
+    let mostActiveDay = 'N/A';
+    let maxCount = 0;
+    for (const [day, count] of Object.entries(dayCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostActiveDay = day;
+      }
+    }
+
+    return {
+      totalConversations,
+      totalMessages,
+      totalWords,
+      avgMessagesPerConv,
+      mostActiveDay,
+    };
+  }, [conversations]);
 
   // Sync name when user changes
   useEffect(() => {
@@ -525,19 +567,42 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                 </div>
               </SettingsSection>
 
-              {/* Version Info / Stats Section */}
-              <SettingsSection icon={BarChart3} title="App Stats" description="Your usage statistics">
+              {/* Version Info / Statistics Section */}
+              <SettingsSection icon={BarChart3} title="Statistics" description="Your usage statistics and activity">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-border/60 p-3 bg-muted/20 shadow-sm text-center">
-                    <p className="text-lg font-bold gradient-text">{conversations.length}</p>
-                    <p className="text-[11px] text-muted-foreground">Conversations</p>
-                  </div>
-                  <div className="rounded-lg border border-border/60 p-3 bg-muted/20 shadow-sm text-center">
-                    <p className="text-lg font-bold gradient-text">
-                      {conversations.reduce((acc, c) => acc + c.messages.length, 0)}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">Total Messages</p>
-                  </div>
+                  <StatCard
+                    icon={MessageCircle}
+                    label="Conversations"
+                    value={stats.totalConversations.toString()}
+                    accent="emerald"
+                  />
+                  <StatCard
+                    icon={MessageSquare}
+                    label="Total Messages"
+                    value={stats.totalMessages.toString()}
+                    accent="teal"
+                  />
+                  <StatCard
+                    icon={Calendar}
+                    label="Most Active Day"
+                    value={stats.mostActiveDay}
+                    small
+                    accent="emerald"
+                  />
+                  <StatCard
+                    icon={TrendingUp}
+                    label="Avg Messages / Conv"
+                    value={stats.avgMessagesPerConv}
+                    small
+                    accent="teal"
+                  />
+                  <StatCard
+                    icon={BookOpen}
+                    label="Total Words Written"
+                    value={stats.totalWords.toLocaleString()}
+                    accent="emerald"
+                    className="col-span-2"
+                  />
                 </div>
               </SettingsSection>
 
@@ -604,6 +669,49 @@ function SettingsSection({
         </div>
       </div>
       {children}
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  accent = 'emerald',
+  small,
+  className,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  accent?: 'emerald' | 'teal';
+  small?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn(
+      'rounded-lg border border-border/60 p-3 bg-muted/20 shadow-sm',
+      className
+    )}>
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className={cn(
+          'flex items-center justify-center w-6 h-6 rounded-md',
+          accent === 'emerald' ? 'bg-emerald-500/10' : 'bg-teal-500/10'
+        )}>
+          <Icon className={cn(
+            'w-3.5 h-3.5',
+            accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'
+          )} />
+        </div>
+        <p className="text-[11px] text-muted-foreground">{label}</p>
+      </div>
+      <p className={cn(
+        'font-bold',
+        small ? 'text-sm' : 'text-lg',
+        accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'
+      )}>
+        {value}
+      </p>
     </div>
   );
 }

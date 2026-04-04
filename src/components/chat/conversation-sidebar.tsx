@@ -26,6 +26,9 @@ import {
   Settings,
   Pin,
   Copy,
+  CheckSquare,
+  Loader2,
+  Check,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -145,6 +148,12 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     }
   }, [validPinnedCount, pinnedIds, convIds]);
 
+  // Select mode state
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const filteredConversations = conversations.filter((c) =>
     c.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -193,6 +202,58 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
       console.error('Failed to delete conversation:', error);
     }
   }, [deleteTarget, deleteConversation]);
+
+  // Toggle selection for a single conversation
+  const handleToggleSelect = useCallback((convId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(convId)) {
+        next.delete(convId);
+      } else {
+        next.add(convId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Toggle select all visible conversations
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredConversations.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredConversations.map((c) => c.id)));
+    }
+  }, [selectedIds.size, filteredConversations]);
+
+  // Exit select mode
+  const handleExitSelectMode = useCallback(() => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  // Bulk delete selected conversations
+  const handleBulkDelete = useCallback(async () => {
+    setIsBulkDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/chat/${id}/messages`, { method: 'DELETE' })
+        )
+      );
+      for (const id of selectedIds) {
+        deleteConversation(id);
+      }
+      toast.success(`${selectedIds.size} conversation${selectedIds.size !== 1 ? 's' : ''} deleted`);
+      setIsSelectMode(false);
+      setSelectedIds(new Set());
+      setShowBulkDeleteDialog(false);
+    } catch (error) {
+      console.error('Failed to delete conversations:', error);
+      toast.error('Failed to delete some conversations');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  }, [selectedIds, deleteConversation]);
 
   const handleDuplicate = useCallback(
     async (convId: string) => {
@@ -304,6 +365,30 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Select mode button */}
+          {hasAnyConversations && (
+            <Button
+              variant={isSelectMode ? 'default' : 'ghost'}
+              size="sm"
+              className={cn(
+                'w-full mt-2 gap-2 rounded-lg h-9 text-xs font-medium transition-all duration-200',
+                isSelectMode
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              )}
+              onClick={() => {
+                if (isSelectMode) {
+                  handleExitSelectMode();
+                } else {
+                  setIsSelectMode(true);
+                }
+              }}
+            >
+              <CheckSquare className={cn('w-3.5 h-3.5', isSelectMode && 'text-emerald-500')} />
+              {isSelectMode ? 'Exit Select Mode' : 'Select Multiple'}
+            </Button>
+          )}
           </div>
         </div>
 
@@ -365,9 +450,16 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                           conversation={conv}
                           isActive={conv.id === activeConversationId}
                           isPinned={true}
+                          isSelectMode={isSelectMode}
+                          isSelected={selectedIds.has(conv.id)}
+                          onSelect={() => handleToggleSelect(conv.id)}
                           onClick={() => {
-                            setActiveConversationId(conv.id);
-                            onClose();
+                            if (isSelectMode) {
+                              handleToggleSelect(conv.id);
+                            } else {
+                              setActiveConversationId(conv.id);
+                              onClose();
+                            }
                           }}
                           onDelete={() => setDeleteTarget(conv.id)}
                           onRename={(newTitle) => {
@@ -395,9 +487,16 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                             conversation={conv}
                             isActive={conv.id === activeConversationId}
                             isPinned={false}
+                            isSelectMode={isSelectMode}
+                            isSelected={selectedIds.has(conv.id)}
+                            onSelect={() => handleToggleSelect(conv.id)}
                             onClick={() => {
-                              setActiveConversationId(conv.id);
-                              onClose();
+                              if (isSelectMode) {
+                                handleToggleSelect(conv.id);
+                              } else {
+                                setActiveConversationId(conv.id);
+                                onClose();
+                              }
                             }}
                             onDelete={() => setDeleteTarget(conv.id)}
                             onRename={(newTitle) => {
@@ -417,6 +516,53 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           {/* Bottom gradient fade */}
           <div className="gradient-fade-bottom pointer-events-none" style={{ height: '2px' }} />
         </ScrollArea>
+
+        {/* Floating select mode action bar */}
+        <AnimatePresence>
+          {isSelectMode && selectedIds.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="absolute bottom-0 left-0 right-0 z-20 p-3"
+            >
+              <div className="rounded-xl border border-emerald-500/30 bg-background/95 backdrop-blur-xl shadow-lg shadow-emerald-500/10 p-3 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={handleSelectAll}
+                >
+                  <CheckSquare className={cn('w-3.5 h-3.5', selectedIds.size === filteredConversations.length && 'text-emerald-500')} />
+                  {selectedIds.size === filteredConversations.length ? 'Deselect All' : 'Select All'}
+                </Button>
+                <div className="flex-1 text-center">
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    {selectedIds.size} selected
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                  onClick={handleExitSelectMode}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Footer */}
         <div className="p-3 border-t border-border/40 bg-gradient-to-t from-muted/30 to-transparent space-y-2 gradient-border-top">
@@ -512,6 +658,33 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </DialogContent>
       </Dialog>
 
+      {/* Bulk delete confirmation dialog */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Selected Conversations</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedIds.size} selected conversation{selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)} disabled={isBulkDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+              {isBulkDeleting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete All Selected'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Settings sheet */}
       <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
@@ -522,6 +695,9 @@ function ConversationItem({
   conversation,
   isActive,
   isPinned,
+  isSelectMode,
+  isSelected,
+  onSelect,
   onClick,
   onDelete,
   onRename,
@@ -531,6 +707,9 @@ function ConversationItem({
   conversation: Conversation;
   isActive: boolean;
   isPinned: boolean;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
   onClick: () => void;
   onDelete: () => void;
   onRename: (newTitle: string) => void;
@@ -602,17 +781,34 @@ function ConversationItem({
     >
       <button
         onClick={onClick}
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={!isSelectMode ? handleDoubleClick : undefined}
         className={cn(
           'w-full text-left p-3 rounded-lg text-sm transition-all duration-200',
           'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/8 active:scale-[0.99] hover-lift',
           isPinned && !isActive && 'bg-muted/30',
           isActive
             ? 'bg-accent text-accent-foreground border-l-[3px] border-l-emerald-500 shadow-sm shadow-emerald-500/10'
-            : 'border-l-[3px] border-l-transparent'
+            : 'border-l-[3px] border-l-transparent',
+          isSelectMode && isSelected && 'bg-emerald-500/10 border-l-emerald-500',
+          isSelectMode && 'cursor-pointer'
         )}
       >
         <div className="flex items-start gap-3">
+          {/* Select mode checkbox */}
+          {isSelectMode && (
+            <div className="flex items-center justify-center mt-0.5 shrink-0">
+              <div
+                className={cn(
+                  'w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-150',
+                  isSelected
+                    ? 'bg-emerald-500 border-emerald-500'
+                    : 'border-muted-foreground/40 hover:border-emerald-500/60'
+                )}
+              >
+                {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+              </div>
+            </div>
+          )}
           <MessageSquare
             className={cn(
               'w-4 h-4 mt-0.5 shrink-0 transition-colors',
@@ -647,7 +843,7 @@ function ConversationItem({
         </div>
       </button>
 
-      {!isEditing && (
+      {!isEditing && !isSelectMode && (
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-150">
           {/* Feature 5: Pin/unpin button */}
           <Button

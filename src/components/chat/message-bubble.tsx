@@ -1,6 +1,6 @@
 'use client';
 
-import { Message } from '@/store/chat-store';
+import { Message, REACTION_EMOJIS } from '@/store/chat-store';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
   Pencil,
   X,
   Star,
+  SmilePlus,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,6 +50,8 @@ interface MessageBubbleProps {
   showResponseTime?: boolean;
   /** Whether to show timestamp text */
   showTimestamp?: boolean;
+  /** Toggle reaction callback */
+  onToggleReaction?: (messageId: string, emoji: string) => void;
 }
 
 /** Highlight matching text in a string with <mark> tags */
@@ -205,9 +208,11 @@ export default function MessageBubble({
   const [imageHovered, setImageHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
+  const reactionPickerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
   const handleCopy = useCallback(async (e?: React.MouseEvent) => {
@@ -317,6 +322,29 @@ export default function MessageBubble({
       messageRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [isCurrentSearchMatch]);
+
+  // Close reaction picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (reactionPickerRef.current && !reactionPickerRef.current.contains(e.target as Node)) {
+        setReactionPickerOpen(false);
+      }
+    };
+    if (reactionPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [reactionPickerOpen]);
+
+  const handleReactionClick = useCallback(
+    (emoji: string) => {
+      onToggleReaction?.(message.id, emoji);
+      setReactionPickerOpen(false);
+    },
+    [message.id, onToggleReaction]
+  );
+
+  const reactions = message.reactions || [];
 
   const handleSaveEdit = useCallback(() => {
     if (!editContent.trim() || editContent.trim() === message.content) {
@@ -639,7 +667,37 @@ export default function MessageBubble({
           )}
         </div>
 
-        {/* Actions - only show on last message in group */}
+        {/* Reactions - show below message bubble */}
+        {!isGenerating && reactions.length > 0 && (
+          <div className={cn('flex items-center gap-1 mt-1 flex-wrap', isUser && 'justify-end')}>
+            {reactions.map((reaction) => (
+              <motion.button
+                key={reaction.emoji}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => handleReactionClick(reaction.emoji)}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all duration-150',
+                  'hover:scale-105 active:scale-95 cursor-pointer',
+                  reaction.reactedByUser
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-foreground'
+                    : 'bg-muted/50 border-border/40 text-muted-foreground hover:border-border/60'
+                )}
+              >
+                <span>{reaction.emoji}</span>
+                {reaction.count > 1 && (
+                  <span className={cn(
+                    'text-[10px] font-medium',
+                    reaction.reactedByUser ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
+                  )}>
+                    {reaction.count}
+                  </span>
+                )}
+              </motion.button>
+            ))}
+          </div>
+        )}
+
+        {/* Actions + Reaction picker - only show on last message in group */}
         {!isGenerating && isLastInGroup && (
           <AnimatePresence mode="wait">
             {!isEditing && (
@@ -652,7 +710,7 @@ export default function MessageBubble({
                 )}
               >
                 {isUser ? (
-                  /* User message actions: Copy + Edit */
+                  /* User message actions: Copy + Edit + Reaction */
                   <>
                     <Button
                       variant="ghost"
@@ -673,6 +731,45 @@ export default function MessageBubble({
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
+                    )}
+                    {onToggleReaction && (
+                      <div className="relative" ref={reactionPickerRef}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                          onClick={() => setReactionPickerOpen(!reactionPickerOpen)}
+                          title="Add reaction"
+                        >
+                          <SmilePlus className="w-3.5 h-3.5" />
+                        </Button>
+                        <AnimatePresence>
+                          {reactionPickerOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 4, scale: 0.9 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 4, scale: 0.9 }}
+                              transition={{ duration: 0.15 }}
+                              className={cn(
+                                'absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5',
+                                'flex items-center gap-0.5'
+                              )}
+                            >
+                              {REACTION_EMOJIS.map((emoji) => (
+                                <motion.button
+                                  key={emoji}
+                                  whileHover={{ scale: 1.2 }}
+                                  whileTap={{ scale: 0.85 }}
+                                  onClick={() => handleReactionClick(emoji)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
+                                >
+                                  {emoji}
+                                </motion.button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     )}
                   </>
                 ) : (
@@ -727,6 +824,42 @@ export default function MessageBubble({
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                       </Button>
+                    )}
+                    {onToggleReaction && (
+                      <div className="relative" ref={reactionPickerRef}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                          onClick={() => setReactionPickerOpen(!reactionPickerOpen)}
+                          title="Add reaction"
+                        >
+                          <SmilePlus className="w-3.5 h-3.5" />
+                        </Button>
+                        <AnimatePresence>
+                          {reactionPickerOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 4, scale: 0.9 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 4, scale: 0.9 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5 flex items-center gap-0.5"
+                            >
+                              {REACTION_EMOJIS.map((emoji) => (
+                                <motion.button
+                                  key={emoji}
+                                  whileHover={{ scale: 1.2 }}
+                                  whileTap={{ scale: 0.85 }}
+                                  onClick={() => handleReactionClick(emoji)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
+                                >
+                                  {emoji}
+                                </motion.button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     )}
                   </>
                 )}

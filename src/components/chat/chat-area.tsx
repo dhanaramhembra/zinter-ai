@@ -24,6 +24,7 @@ import {
   X,
   ChevronUp,
   Heart,
+  Share2,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -161,6 +162,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     setSelectedBackground,
     showTimestamps,
     setShowTimestamps,
+    isUserTyping,
+    setUserTyping,
+    toggleReaction,
   } = useChatStore();
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null);
   const [pendingImageMode, setPendingImageMode] = useState(false);
@@ -179,6 +183,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   // Feature 2: Favorites state
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // Typing status for header indicator
+  const [typingStatus, setTypingStatus] = useState(false);
+
+
 
   // Feature 4: Response time tracking
   const requestStartTimeRef = useRef<number | null>(null);
@@ -860,6 +869,45 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     [activeConversationId, conversations, updateMessage, removeMessage, addMessage, setGenerating, isGenerating, currentPersona.systemPrompt]
   );
 
+  // Share conversation as formatted text
+  const handleShareConversation = useCallback(() => {
+    if (!activeConversation || messages.length === 0) {
+      toast.error('No messages to share');
+      return;
+    }
+
+    const date = new Date().toLocaleDateString([], {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    let text = '🌟 NexusAI Conversation 🌟\n\n';
+    text += `Title: ${activeConversation.title}\n`;
+    text += `Date: ${date}\n`;
+    text += `Persona: ${currentPersona.name}\n`;
+    text += '\n━━━━━━━━━━━━━━━━━━━━━\n\n';
+
+    for (const msg of messages) {
+      const time = new Date(msg.createdAt).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const sender = msg.role === 'user' ? '👤 User' : '🤖 NexusAI';
+      text += `${sender} (${time}):\n`;
+      text += `${msg.content}\n\n`;
+    }
+
+    text += '━━━━━━━━━━━━━━━━━━━━━\n\n';
+    text += 'Generated with NexusAI';
+
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Conversation copied to clipboard!');
+    }).catch(() => {
+      toast.error('Failed to copy to clipboard');
+    });
+  }, [activeConversation, messages, currentPersona.name]);
+
   // Feature 3: Export conversation as Markdown
   const handleExportMarkdown = useCallback(() => {
     if (!activeConversation || messages.length === 0) {
@@ -921,6 +969,25 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     return messages.filter((m) => favorites.includes(m.id)).length;
   }, [messages, favorites]);
 
+  // Handle typing status change from ChatInput
+  const handleTypingStatusChange = useCallback((isTyping: boolean) => {
+    setTypingStatus(isTyping);
+    setUserTyping(isTyping);
+  }, [setUserTyping]);
+
+  // Handle template insertion
+  const [templateText, setTemplateText] = useState<string | null>(null);
+
+  const handleInsertTemplate = useCallback((text: string) => {
+    setTemplateText(text);
+  }, []);
+
+  // Handle reaction toggle
+  const handleToggleReaction = useCallback((messageId: string, emoji: string) => {
+    if (!activeConversationId) return;
+    toggleReaction(activeConversationId, messageId, emoji);
+  }, [activeConversationId, toggleReaction]);
+
   // Chat statistics
   const chatStats = useMemo(() => {
     if (messages.length === 0) return null;
@@ -933,10 +1000,14 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const formattedStats = useMemo(() => {
     if (!chatStats) return '';
     const parts: string[] = [];
-    parts.push(`${messages.length} message${messages.length !== 1 ? 's' : ''}`);
-    parts.push(`${formatNumber(chatStats.wordCount)} words`);
+    if (typingStatus) {
+      parts.push('Typing...');
+    } else {
+      parts.push(`${messages.length} message${messages.length !== 1 ? 's' : ''}`);
+      parts.push(`${formatNumber(chatStats.wordCount)} words`);
+    }
     return parts.join(' · ');
-  }, [chatStats, messages.length]);
+  }, [chatStats, messages.length, typingStatus]);
 
   // Scroll to bottom handler
   const scrollToBottom = useCallback(() => {
@@ -1136,6 +1207,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           disabled={false}
           initialMessage={pendingSuggestion}
           initialImageMode={pendingImageMode}
+          onTypingStatusChange={handleTypingStatusChange}
+          onInsertTemplate={handleInsertTemplate}
         />
       </div>
     );
@@ -1161,7 +1234,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm truncate">{activeConversation.title}</h2>
           {hasMessages && formattedStats && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className={cn(
+              'text-[11px] text-muted-foreground flex items-center gap-1.5',
+              typingStatus && 'text-emerald-500'
+            )}>
+              {typingStatus && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+              )}
               {formattedStats}
             </p>
           )}
@@ -1186,6 +1268,18 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           disabled={!hasMessages}
         >
           <Download className="w-4 h-4" />
+        </Button>
+
+        {/* Share button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
+          onClick={handleShareConversation}
+          title="Share conversation"
+          disabled={!hasMessages}
+        >
+          <Share2 className="w-4 h-4" />
         </Button>
 
         {/* Feature 2: Favorites filter button */}
@@ -1470,6 +1564,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                       onToggleFavorite={message.role === 'assistant' ? handleToggleFavorite : undefined}
                       showResponseTime={showResponseTime}
                       showTimestamp={showTimestamps}
+                      onToggleReaction={handleToggleReaction}
                     />
                   </div>
                 );
@@ -1547,6 +1642,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         onImageGenerate={generateImage}
         initialMessage={pendingSuggestion}
         initialImageMode={pendingImageMode}
+        onTypingStatusChange={handleTypingStatusChange}
+        onInsertTemplate={handleInsertTemplate}
       />
     </div>
   );
