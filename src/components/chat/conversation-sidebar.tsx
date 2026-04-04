@@ -31,6 +31,11 @@ import {
   Loader2,
   Check,
   WifiOff,
+  BarChart3,
+  MessageCircle,
+  Hash,
+  TrendingUp,
+  Calendar,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -131,6 +136,9 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [stats, setStats] = useState<{ totalConversations: number; totalMessages: number; avgMessagesPerConv: number; mostActiveDay: string } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [online, setOnline] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +154,24 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Fetch stats when dialog opens
+  useEffect(() => {
+    if (statsOpen) {
+      setStatsLoading(true);
+      fetch('/api/chat/stats')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.totalConversations !== undefined) {
+            setStats(data);
+          }
+        })
+        .catch(() => {
+          // silently fail
+        })
+        .finally(() => setStatsLoading(false));
+    }
+  }, [statsOpen]);
 
   // Feature 5: Pinned conversations state - lazy init from localStorage
   const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
@@ -631,6 +657,15 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
+              onClick={() => setStatsOpen(true)}
+              title="Statistics"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
               onClick={() => setSettingsOpen(true)}
               title="Settings"
             >
@@ -724,6 +759,61 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Statistics dialog */}
+      <Dialog open={statsOpen} onOpenChange={setStatsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-white" />
+              </div>
+              Conversation Statistics
+            </DialogTitle>
+            <DialogDescription>Your chat activity at a glance</DialogDescription>
+          </DialogHeader>
+          {statsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+            </div>
+          ) : stats ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{stats.totalConversations}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Conversations</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{stats.totalMessages}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Messages</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Hash className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{stats.avgMessagesPerConv}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Avg. Messages/Conv</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-violet-500/5 to-pink-500/5 p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <p className="text-sm font-bold text-foreground leading-tight mt-1">{stats.mostActiveDay}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Most Active Day</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">No statistics available</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

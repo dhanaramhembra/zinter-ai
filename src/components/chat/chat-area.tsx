@@ -1251,39 +1251,57 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       transition={{ duration: 0.3 }}
       className="flex gap-3 px-4 py-2"
     >
-      <Avatar className="w-8 h-8 shrink-0 mt-0.5">
-        <AvatarFallback className={cn(
-          'text-xs font-medium bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20',
-          isStreaming && 'animate-pulse'
+      <div className="relative shrink-0 mt-0.5">
+        {/* Animated ring around avatar during thinking */}
+        <motion.div
+          className="absolute -inset-1 rounded-full opacity-60"
+          style={{
+            background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #10b981)',
+            WebkitMask: 'radial-gradient(transparent 62%, black 64%)',
+            mask: 'radial-gradient(transparent 62%, black 64%)',
+          }}
+          animate={{ rotate: 360 }}
+          transition={isStreaming ? { duration: 2, repeat: Infinity, ease: 'linear' } : { duration: 4, repeat: Infinity, ease: 'linear' }}
+        />
+        <Avatar className="w-8 h-8 relative z-10">
+          <AvatarFallback className={cn(
+            'text-xs font-medium bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 transition-all duration-300',
+            isStreaming ? 'scale-105 shadow-lg shadow-emerald-500/40' : 'animate-pulse'
+          )}>
+            <Sparkles className="w-4 h-4" />
+          </AvatarFallback>
+        </Avatar>
+      </div>
+      <div className="flex items-center gap-2 py-2">
+        {/* Animated waveform bars */}
+        <div className="flex items-end gap-[3px] h-5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <motion.div
+              key={i}
+              className={cn(
+                'w-[3px] rounded-full',
+                isStreaming
+                  ? 'bg-gradient-to-t from-emerald-500 to-teal-400'
+                  : 'bg-emerald-500'
+              )}
+              animate={isStreaming
+                ? { height: ['8px', '18px', '6px', '14px', '8px'] }
+                : { height: ['4px', '14px', '4px'], opacity: [0.4, 1, 0.4] }
+              }
+              transition={isStreaming
+                ? { duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: i * 0.1 }
+                : { duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 }
+              }
+            />
+          ))}
+        </div>
+        <span className={cn(
+          'text-sm font-medium',
+          isStreaming ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
         )}>
-          <Sparkles className="w-4 h-4" />
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground py-2">
-        <span>{isStreaming ? 'NexusAI is responding' : 'NexusAI is thinking'}</span>
-        {!isStreaming && (
-          <span className="inline-flex gap-0.5 ml-0.5">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
-              style={{ animationDelay: '0ms' }}
-            />
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
-              style={{ animationDelay: '150ms' }}
-            />
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
-              style={{ animationDelay: '300ms' }}
-            />
-          </span>
-        )}
-        {isStreaming && (
-          <span className="inline-flex gap-0.5 ml-0.5">
-            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '0ms' }} />
-            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '200ms' }} />
-            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '400ms' }} />
-          </span>
-        )}
+          {isStreaming ? 'NexusAI is responding' : 'NexusAI is thinking'}
+          <span className="animate-cursor-blink ml-0.5">|</span>
+        </span>
       </div>
     </motion.div>
   );
@@ -1438,6 +1456,19 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 <span>
                   Press <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px]">N</kbd> to start a new chat
                 </span>
+              </motion.div>
+
+              {/* Powered by badge */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+                className="mt-6"
+              >
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border/40 text-xs text-muted-foreground/60">
+                  <Sparkles className="w-3 h-3 text-emerald-500" />
+                  <span>Powered by NexusAI</span>
+                </div>
               </motion.div>
             </div>
           </div>

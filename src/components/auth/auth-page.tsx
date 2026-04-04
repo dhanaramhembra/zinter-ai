@@ -30,6 +30,12 @@ function getPasswordStrength(password: string): { label: string; score: number; 
 }
 
 function FloatingDots() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const dots = useMemo(() => {
     const items = [];
     for (let i = 0; i < 24; i++) {
@@ -57,6 +63,8 @@ function FloatingDots() {
     }
     return items;
   }, []);
+
+  if (!mounted) return null;
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -382,7 +390,6 @@ export default function AuthPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <AnimatePresence mode="wait">
                 <TabsContent value="login" className="mt-0">
                   <form onSubmit={handleLogin}>
                     <CardHeader className="pb-4">
@@ -645,8 +652,7 @@ export default function AuthPage() {
                     </CardFooter>
                   </form>
                 </TabsContent>
-              </AnimatePresence>
-            </Tabs>
+              </Tabs>
           </Card>
         </motion.div>
 

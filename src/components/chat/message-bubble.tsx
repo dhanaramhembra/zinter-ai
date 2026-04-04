@@ -1,6 +1,7 @@
 'use client';
 
 import { Message, REACTION_EMOJIS } from '@/store/chat-store';
+import { EXTENDED_REACTION_EMOJIS } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import {
   X,
   Star,
   SmilePlus,
+  Plus,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -215,6 +217,8 @@ export default function MessageBubble({
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const reactionPickerRef = useRef<HTMLDivElement>(null);
+  const [showCustomEmoji, setShowCustomEmoji] = useState(false);
+  const [reactionAnimation, setReactionAnimation] = useState<{ emoji: string; x: number; y: number } | null>(null);
   const { user } = useAuthStore();
 
   const handleCopy = useCallback(async (e?: React.MouseEvent) => {
@@ -339,11 +343,27 @@ export default function MessageBubble({
   }, [reactionPickerOpen]);
 
   const handleReactionClick = useCallback(
-    (emoji: string) => {
+    (emoji: string, e?: React.MouseEvent) => {
+      // Check if this is adding to an existing reaction (increment)
+      const existing = reactions.find((r) => r.emoji === emoji);
+      const isIncrement = existing && !existing.reactedByUser;
+
       onToggleReaction?.(message.id, emoji);
       setReactionPickerOpen(false);
+      setShowCustomEmoji(false);
+
+      // Show +1 animation when adding to an existing reaction
+      if (isIncrement && e) {
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        setReactionAnimation({
+          emoji,
+          x: rect.left + rect.width / 2,
+          y: rect.top,
+        });
+        setTimeout(() => setReactionAnimation(null), 800);
+      }
     },
-    [message.id, onToggleReaction]
+    [message.id, onToggleReaction, reactions]
   );
 
   const reactions = message.reactions || [];
@@ -677,7 +697,7 @@ export default function MessageBubble({
               <motion.button
                 key={reaction.emoji}
                 whileTap={{ scale: 0.9 }}
-                onClick={() => handleReactionClick(reaction.emoji)}
+                onClick={(e) => handleReactionClick(reaction.emoji, e)}
                 className={cn(
                   'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all duration-150',
                   'hover:scale-105 active:scale-95 cursor-pointer',
@@ -698,6 +718,19 @@ export default function MessageBubble({
               </motion.button>
             ))}
           </div>
+        )}
+
+        {/* +1 reaction animation */}
+        {reactionAnimation && (
+          <motion.div
+            initial={{ opacity: 1, y: 0, scale: 0.8 }}
+            animate={{ opacity: 0, y: -40, scale: 1.2 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className="fixed z-[999] pointer-events-none text-sm font-bold text-emerald-500"
+            style={{ left: reactionAnimation.x - 8, top: reactionAnimation.y }}
+          >
+            +1
+          </motion.div>
         )}
 
         {/* Actions + Reaction picker - only show on last message in group */}
@@ -755,20 +788,57 @@ export default function MessageBubble({
                               transition={{ duration: 0.15 }}
                               className={cn(
                                 'absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5',
-                                'flex items-center gap-0.5'
                               )}
                             >
-                              {REACTION_EMOJIS.map((emoji) => (
-                                <motion.button
-                                  key={emoji}
-                                  whileHover={{ scale: 1.2 }}
-                                  whileTap={{ scale: 0.85 }}
-                                  onClick={() => handleReactionClick(emoji)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
-                                >
-                                  {emoji}
-                                </motion.button>
-                              ))}
+                              <div className="flex items-center gap-0.5">
+                                {REACTION_EMOJIS.map((emoji) => (
+                                  <motion.button
+                                    key={emoji}
+                                    whileHover={{ scale: 1.2 }}
+                                    whileTap={{ scale: 0.85 }}
+                                    onClick={(e) => handleReactionClick(emoji, e)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
+                                  >
+                                    {emoji}
+                                  </motion.button>
+                                ))}
+                              </div>
+                              {/* Custom emoji grid toggle */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowCustomEmoji(!showCustomEmoji);
+                                }}
+                                className="w-full mt-1 flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-xs text-muted-foreground border-t border-border/40 pt-1.5"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add custom
+                              </button>
+                              <AnimatePresence>
+                                {showCustomEmoji && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="grid grid-cols-5 gap-0.5 pt-1.5 border-t border-border/40">
+                                      {EXTENDED_REACTION_EMOJIS.map((emoji) => (
+                                        <motion.button
+                                          key={emoji}
+                                          whileHover={{ scale: 1.15 }}
+                                          whileTap={{ scale: 0.85 }}
+                                          onClick={(e) => handleReactionClick(emoji, e)}
+                                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
+                                        >
+                                          {emoji}
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -846,19 +916,57 @@ export default function MessageBubble({
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 4, scale: 0.9 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5 flex items-center gap-0.5"
+                              className="absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5"
                             >
-                              {REACTION_EMOJIS.map((emoji) => (
-                                <motion.button
-                                  key={emoji}
-                                  whileHover={{ scale: 1.2 }}
-                                  whileTap={{ scale: 0.85 }}
-                                  onClick={() => handleReactionClick(emoji)}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
-                                >
-                                  {emoji}
-                                </motion.button>
-                              ))}
+                              <div className="flex items-center gap-0.5">
+                                {REACTION_EMOJIS.map((emoji) => (
+                                  <motion.button
+                                    key={emoji}
+                                    whileHover={{ scale: 1.2 }}
+                                    whileTap={{ scale: 0.85 }}
+                                    onClick={(e) => handleReactionClick(emoji, e)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
+                                  >
+                                    {emoji}
+                                  </motion.button>
+                                ))}
+                              </div>
+                              {/* Custom emoji grid toggle */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowCustomEmoji(!showCustomEmoji);
+                                }}
+                                className="w-full mt-1 flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-xs text-muted-foreground border-t border-border/40 pt-1.5"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add custom
+                              </button>
+                              <AnimatePresence>
+                                {showCustomEmoji && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="grid grid-cols-5 gap-0.5 pt-1.5 border-t border-border/40">
+                                      {EXTENDED_REACTION_EMOJIS.map((emoji) => (
+                                        <motion.button
+                                          key={emoji}
+                                          whileHover={{ scale: 1.15 }}
+                                          whileTap={{ scale: 0.85 }}
+                                          onClick={(e) => handleReactionClick(emoji, e)}
+                                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-colors cursor-pointer text-base"
+                                        >
+                                          {emoji}
+                                        </motion.button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </motion.div>
                           )}
                         </AnimatePresence>
