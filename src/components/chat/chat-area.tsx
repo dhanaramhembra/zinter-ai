@@ -1079,7 +1079,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     </motion.div>
   );
 
-  // Suggestion card component
+  // Suggestion card component with enhanced hover effects
   const SuggestionCard = ({
     suggestion,
     index,
@@ -1098,7 +1098,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         onClick={onClick}
         className={cn(
           'animated-border flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
-          'hover:bg-card hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
+          'hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
           'transition-all duration-200 text-left group cursor-pointer',
           'active:scale-[0.98]'
         )}
@@ -1107,14 +1107,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           className={cn(
             'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200',
             suggestion.bgColor,
-            'group-hover:scale-110 group-hover:shadow-sm'
+            'group-hover:scale-110 group-hover:shadow-sm',
+            'relative overflow-hidden'
           )}
         >
-          <IconComp className={cn('w-4.5 h-4.5', suggestion.color)} />
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/20 to-transparent shimmer" />
+          <IconComp className={cn('w-4.5 h-4.5 relative z-10', suggestion.color)} />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium leading-snug">{suggestion.title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+          <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
             {suggestion.description}
           </p>
         </div>
@@ -1230,10 +1232,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      {/* Header with gradient accent line */}
+      {/* Header with glassmorphism and gradient accent line */}
       <div className="relative">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/70 via-teal-400/50 to-transparent" />
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/60 bg-card/50 backdrop-blur-sm">
+        <div className="gradient-border-top chat-header flex items-center gap-2 px-4 py-3 border-b border-border/60">
           <Button
           variant="ghost"
           size="icon"
@@ -1361,7 +1363,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5 z-50"
+                className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-emerald-500/30 bg-popover/95 backdrop-blur-sm p-1.5 shadow-lg shadow-emerald-500/10 z-50"
               >
                 <p className="text-xs font-medium text-muted-foreground px-2.5 py-1.5">
                   Select AI Persona
@@ -1397,7 +1399,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
                         {persona.description}
                       </p>
                     </div>
@@ -1436,11 +1438,17 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search in conversation..."
-                  className="h-8 text-sm border-transparent bg-muted/40 focus-visible:bg-background focus-visible:border-emerald-500/40"
+                  className={cn(
+                    'h-8 text-sm border-transparent bg-muted/40 focus-visible:bg-background',
+                    'focus-visible:border-emerald-500/40',
+                    'focus-visible:ring-2 focus-visible:ring-emerald-500/20',
+                    'focus-visible:shadow-[0_0_12px_oklch(0.55_0.18_163/15%)]',
+                    'transition-all duration-200'
+                  )}
                 />
                 {searchQuery.trim() && searchMatches.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
-                    {currentMatchIndex + 1} of {searchMatches.length} messages
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap shrink-0 tabular-nums">
+                    {currentMatchIndex + 1}/{searchMatches.length} results
                   </span>
                 )}
                 {searchQuery.trim() && searchMatches.length === 0 && (
@@ -1452,7 +1460,12 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6"
+                    className={cn(
+                      'h-6 w-6 transition-all duration-150',
+                      searchMatches.length > 1
+                        ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10'
+                        : 'text-muted-foreground'
+                    )}
                     onClick={handleSearchPrev}
                     disabled={searchMatches.length <= 1}
                     title="Previous match (Shift+Enter)"
@@ -1462,7 +1475,12 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6"
+                    className={cn(
+                      'h-6 w-6 transition-all duration-150',
+                      searchMatches.length > 1
+                        ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10'
+                        : 'text-muted-foreground'
+                    )}
                     onClick={handleSearchNext}
                     disabled={searchMatches.length <= 1}
                     title="Next match (Enter)"
@@ -1498,16 +1516,21 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 transition={{ duration: 0.3 }}
                 className="mb-8"
               >
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20 mb-4">
-                  <Sparkles className="w-7 h-7 text-emerald-500" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20 mb-5 animated-border">
+                  <Sparkles className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h3 className="text-lg font-semibold mb-1">How can I help you today?</h3>
-                <p className="text-sm text-muted-foreground">
+                <div className="relative inline-block">
+                  <h3 className="text-lg font-semibold mb-1 relative z-10 gradient-text">
+                    How can I help you today?
+                  </h3>
+                  <div className="absolute inset-0 -z-10 blur-md bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent rounded-lg" />
+                </div>
+                <p className="text-sm text-muted-foreground/70 mt-1">
                   Ask anything or try one of these suggestions
                 </p>
               </motion.div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
                 {SUGGESTIONS.map((suggestion, index) => (
                   <SuggestionCard
                     key={suggestion.id}
@@ -1615,12 +1638,13 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             <button
               onClick={scrollToBottom}
               className={cn(
-                'relative w-12 h-12 sm:w-10 sm:h-10 rounded-full',
+                'scroll-to-bottom-btn relative w-12 h-12 sm:w-10 sm:h-10 rounded-full',
                 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white',
                 'shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40',
                 'hover:scale-110 active:scale-95',
                 'transition-shadow duration-200 cursor-pointer',
-                'flex items-center justify-center'
+                'flex items-center justify-center',
+                messagesBelowViewport > 0 && 'animate-pulse-ring'
               )}
               title="Scroll to bottom"
             >
@@ -1628,7 +1652,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               {/* Badge showing count of messages below viewport */}
               {messagesBelowViewport > 0 && (
                 <span className={cn(
-                  'absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px]',
+                  'notification-badge absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px]',
                   'rounded-full bg-gradient-to-r from-emerald-400 to-teal-500',
                   'text-white text-[10px] font-bold',
                   'flex items-center justify-center px-1',

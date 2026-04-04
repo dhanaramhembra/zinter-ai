@@ -150,8 +150,6 @@ export default function ChatInput({
     } catch {
       // ignore
     }
-    // Only run when conversationId changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   // Clear draft on successful send

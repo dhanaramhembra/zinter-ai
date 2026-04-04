@@ -4,9 +4,9 @@
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
 ## Current Project Status
-- **Phase**: v6 - Scroll UX, Duplicate Conversations, Background Themes, Visual Polish
+- **Phase**: v7 - Network Status, Keyboard Shortcuts Dialog, Auth Enhancements, Chat Polish
 - **Status**: Stable, all lint passes, dev server compiles cleanly, no runtime errors
-- **Last Review**: Cron Review Round 5
+- **Last Review**: Cron Review Round 6
 
 ## Completed Features
 
@@ -122,6 +122,21 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - **NEW: btn-primary-gradient button utility
 - **NEW: sidebar-scroll custom scrollbar utility
 - **NEW**: Slide-up and fade-in animation utilities
+- **NEW**: Sonner toast theme customization (emerald borders/shadows)
+- **NEW**: Online/offline status indicator with animated dot
+- **NEW**: Network status banner for offline state
+- **NEW**: Keyboard shortcuts help dialog (Ctrl+/ toggle)
+- **NEW**: Conversation message count stats chip in sidebar
+- **NEW**: Social login buttons (Google, GitHub) on auth page
+- **NEW**: "Forgot password?" link on login tab
+- **NEW**: Terms of Service checkbox on signup tab
+- **NEW**: Enhanced password strength glow effect
+- **NEW**: Chat header glassmorphism with gradient accent
+- **NEW**: Enhanced persona dropdown with border glow
+- **NEW**: Improved search bar with emerald focus ring and results counter
+- **NEW**: Kbd keyboard shortcut styling utility
+- **NEW**: Sparkle animation for AI messages
+- **NEW**: Notification badge pop animation
 
 ## Technical Architecture
 
@@ -192,6 +207,87 @@ src/
 - **Streaming responses**: AI chat still uses non-streaming fetch; streaming would improve perceived latency
 - **Accessibility**: Full ARIA audit still pending for screen reader support
 - **Rate limiting**: No API rate limiting on auth or AI endpoints
+- **Social login buttons**: Currently visual only ("Coming soon!" toast); no OAuth integration
+- **Forgot password**: Currently visual only ("Coming soon!" toast); no reset flow
+- **Terms checkbox**: Visual only, not enforced during signup
+
+---
+## Cron Review Round 6 - Overall Assessment
+
+### Verification Results
+- **Lint**: ✅ Zero errors (verified after all changes)
+- **Dev server**: ✅ Compiles cleanly, serves 200 OK
+- **Code quality**: Proper TypeScript typing, no unused imports
+
+### Bug Fixes (3)
+1. **message-bubble.tsx parsing error**: Fixed unclosed comment `{/* Image lightbox */` (missing `*/}`) on line 875 that caused ESLint parsing error.
+2. **settings-sheet.tsx JSX mismatch**: Fixed `<div>` opened on line 541 being closed with `</motion.div>` on line 571. Changed to `</div>` to match the opening tag.
+3. **chat-input.tsx unused directive**: Removed unused `eslint-disable-next-line react-hooks/exhaustive-deps` comment that had no corresponding lint problem.
+
+### New Features Added (3 features)
+1. **Online/Offline Status Indicator**: Added real-time network status detection using `navigator.onLine` + event listeners. User avatar in sidebar shows animated green dot (online) or static gray dot (offline). Network status banner appears at top of sidebar when offline with WifiOff icon.
+2. **Conversation Message Count Stats**: Each conversation item in the sidebar now shows a small "X messages" chip below the timestamp, using the `conv-stats-chip` CSS class. Only visible when there are messages.
+3. **Keyboard Shortcuts Help Dialog**: New `KeyboardShortcutsDialog` component accessible via `Ctrl+/` shortcut. Shows a styled dialog with all 5 keyboard shortcuts (Ctrl+N, Ctrl+F, Enter, Shift+Enter, Escape) using polished `kbd` elements. Integrated into layout.tsx via `KeyboardShortcutsWrapper` client component.
+
+### Styling Improvements (25+ changes across 5 files)
+
+**globals.css (10 new utilities):**
+1. Sonner toast theme customization (emerald borders/shadows for success/error)
+2. Online/offline status indicator pulse animation
+3. Network status banner styling (offline/online variants with backdrop blur)
+4. Chat header glassmorphism utility
+5. Message action buttons hover enhancement with emerald tint
+6. Kbd keyboard shortcut styling (monospace, depth shadow, dark mode)
+7. Sparkle rotate animation for AI message icons
+8. Conversation stats chip pill styling
+9. Smooth body theme transition
+10. Enhanced dialog overlay with backdrop blur
+
+**auth-page.tsx (6 enhancements):**
+1. Social login divider ("or continue with" with gradient lines)
+2. Google and GitHub social login buttons (visual only, toast feedback)
+3. Enhanced loading state with breathing glow border and spinner button
+4. "Forgot password?" link with emerald hover effect
+5. Improved password strength indicator with glow transitions
+6. Terms of Service checkbox with emerald links
+
+**conversation-sidebar.tsx (2 enhancements):**
+1. Online/offline status dot on user avatar with pulse animation
+2. Network status banner at sidebar top when offline
+
+**chat-area.tsx (6 enhancements):**
+1. Chat header with glassmorphism (chat-header class) + gradient accent line
+2. Enhanced persona dropdown with emerald border glow when open
+3. Improved search bar with emerald focus glow and X/Y results counter
+4. Enhanced suggestion cards with hover gradient and shimmer effect on icons
+5. Improved scroll-to-bottom FAB with notification badge pop animation and pulse ring
+6. Polished empty conversation state with animated border and gradient text
+
+### New Files Created
+- `src/components/keyboard-shortcuts-dialog.tsx` - Keyboard shortcuts help dialog
+- `src/components/keyboard-shortcuts-wrapper.tsx` - Global Ctrl+/ shortcut handler
+
+### Files Modified
+- `src/app/globals.css` (10 new CSS utility classes)
+- `src/components/auth/auth-page.tsx` (6 visual enhancements)
+- `src/components/chat/conversation-sidebar.tsx` (online/offline + stats)
+- `src/components/chat/chat-area.tsx` (6 styling improvements)
+- `src/components/chat/message-bubble.tsx` (comment fix)
+- `src/components/settings/settings-sheet.tsx` (JSX fix)
+- `src/components/chat/chat-input.tsx` (eslint directive removal)
+- `src/app/layout.tsx` (KeyboardShortcutsWrapper integration)
+
+### Priority Recommendations for Next Phase
+1. Implement streaming responses for AI chat (SSE or WebSocket)
+2. Full accessibility audit (ARIA labels, screen reader, keyboard navigation)
+3. Add API rate limiting middleware
+4. DB-backed session management (replace in-memory)
+5. OAuth social login integration (Google, GitHub)
+6. Password reset flow implementation
+7. Mobile PWA support (service worker, offline mode)
+8. User avatar upload/selection
+9. Conversation import (from Markdown files)
+10. Real-time collaboration features (WebSocket)
 
 ---
 ## Cron Review Round 5 - Overall Assessment
@@ -896,3 +992,61 @@ Stage Summary:
 - ESLint passes with zero errors
 - Dev server compiles cleanly with no errors
 - All 3 features fully implemented and integrated
+
+---
+## Task ID: 6-a - full-stack-developer
+### Work Task
+Add new CSS utility classes and animations to globals.css
+
+### Work Log:
+- Added Sonner toast theme customization (enhanced border/shadow for success/error types)
+- Added online/offline status indicator animations (pulse animation for online, static for offline)
+- Added network status banner styling (online/offline variants with backdrop blur)
+- Added chat header glassmorphism (semi-transparent bg with backdrop blur)
+- Added message action button enhancement styles (hover scale, color transitions, dark mode)
+- Added polished kbd keyboard shortcut styling (inline-flex, monospace font, dark mode)
+- Added sparkle animation for AI messages (subtle rotate + scale oscillation)
+- Added conversation stats chip styling (pill shape, emerald tint, dark mode)
+- Added smooth body theme transition (background-color and color 0.3s ease)
+- Added improved dialog overlay with blur (backdrop-filter blur + custom background)
+
+### Stage Summary:
+- globals.css updated with 10 new CSS utility classes and animations
+- Lint passes cleanly
+
+---
+Task ID: 6-c
+Agent: full-stack-developer
+Task: Add online/offline status indicator, conversation statistics, and keyboard shortcuts dialog
+
+Work Log:
+- Added online/offline detection to sidebar with status dot on user avatar
+- Added network status banner in sidebar for offline state (amber themed with WifiOff icon)
+- Added conversation message count stats chip in sidebar ConversationItem
+- Created keyboard shortcuts help dialog component (src/components/keyboard-shortcuts-dialog.tsx)
+- Created keyboard shortcuts wrapper client component (src/components/keyboard-shortcuts-wrapper.tsx)
+- Integrated keyboard shortcuts dialog into layout.tsx with global Ctrl+/ shortcut
+
+Stage Summary:
+- 3 new features added: network status indicator, conversation stats chip, keyboard shortcuts dialog
+- New files: src/components/keyboard-shortcuts-dialog.tsx, src/components/keyboard-shortcuts-wrapper.tsx
+- Modified: src/components/chat/conversation-sidebar.tsx, src/app/layout.tsx
+- Lint passes cleanly
+---
+Task ID: 6-d
+Agent: full-stack-developer
+Task: Polish chat-area.tsx styling with enhanced header, search, suggestions, and scroll button
+
+Work Log:
+- Applied chat-header glassmorphism class and gradient-border-top to the conversation header bar, replacing inline backdrop-blur-sm with the dedicated CSS utility for consistent glass effect
+- Enhanced persona dropdown with emerald border glow (border-emerald-500/30), backdrop-blur-sm on the dropdown panel, stronger shadow (shadow-emerald-500/10), and reduced persona description text to 11px with muted-foreground/70 opacity
+- Improved search bar Input with emerald focus ring (focus-visible:ring-2 ring-emerald-500/20), subtle emerald glow shadow on focus, and smooth transition. Updated results counter to emerald colored font with "X/Y results" format and tabular-nums. Made navigation up/down buttons use emerald text and hover colors when matches exist
+- Enhanced suggestion cards with emerald-500/5 hover background, shimmer effect overlay on icon during hover (opacity transition from 0 to 1), relative z-10 on icon to layer above shimmer, and reduced description opacity to muted-foreground/70
+- Improved scroll-to-bottom FAB by adding scroll-to-bottom-btn CSS class for enhanced shadows, notification-badge class on the count badge for pop-in animation, and animate-pulse-ring class for pulsing emerald glow when messages are below viewport
+- Polished empty conversation state: enlarged Sparkles icon container (14→16 w/h), added animated-border class for gradient border animation on hover, wrapped "How can I help you today?" in gradient-text class with a blurred gradient backdrop div behind it, constrained suggestion grid to max-w-lg mx-auto for better spacing, updated subtitle to muted-foreground/70
+
+Stage Summary:
+- chat-area.tsx polished with 6 targeted styling improvements
+- All changes use existing CSS utility classes (chat-header, gradient-border-top, animated-border, scroll-to-bottom-btn, notification-badge, animate-pulse-ring, gradient-text, shimmer)
+- Lint passes cleanly with zero errors
+- Dev server compiles and serves 200 OK

@@ -29,6 +29,7 @@ import {
   CheckSquare,
   Loader2,
   Check,
+  WifiOff,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -128,7 +129,21 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [online, setOnline] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Online/offline detection
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Feature 5: Pinned conversations state - lazy init from localStorage
   const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
@@ -320,6 +335,24 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           'lg:translate-x-0'
         )}
       >
+        {/* Network status banner - shown when offline */}
+        <AnimatePresence>
+          {!online && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="network-banner offline"
+            >
+              <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/15 dark:bg-amber-500/10 border-b border-amber-500/20">
+                <WifiOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="text-xs font-medium text-amber-700 dark:text-amber-300">You are offline</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Animated gradient separator (right edge) */}
         <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-px pointer-events-none z-10 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent animate-pulse" />
@@ -571,10 +604,15 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted/70 transition-colors duration-200 cursor-default shadow-sm border border-border/20"
               whileHover={{ x: 2 }}
             >
-              <div className="relative">
+              <div className={cn('relative', online ? 'status-online' : 'status-offline')}>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
+                {/* Online/offline status dot */}
+                <div className={cn(
+                  'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background transition-colors duration-300',
+                  online ? 'bg-emerald-500' : 'bg-amber-500'
+                )} />
                 {/* Pulsing ring */}
                 <div className="absolute -inset-0.5 rounded-full animate-pulse-ring" />
               </div>
@@ -837,8 +875,13 @@ function ConversationItem({
             )}
             <p className="text-xs text-muted-foreground/70 mt-1 truncate">{previewText}</p>
             <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-              {formatTime(conversation.updatedAt)} · {conversation.messages.length} msg{conversation.messages.length !== 1 ? 's' : ''}
+              {formatTime(conversation.updatedAt)}
             </p>
+            {conversation.messages.length > 0 && (
+              <span className="conv-stats-chip inline-flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-1">
+                {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
         </div>
       </button>

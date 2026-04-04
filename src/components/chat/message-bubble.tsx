@@ -872,7 +872,7 @@ export default function MessageBubble({
         )}
       </div>
 
-      {/* Image lightbox */
+      {/* Image lightbox */}
       {message.imageUrl && (
         <ImageLightbox
           imageUrl={message.imageUrl}

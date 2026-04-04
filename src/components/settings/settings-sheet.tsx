@@ -568,7 +568,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                             {customSystemPrompt.length}/500
                           </p>
                         </div>
-                      </motion.div>
+                      </div>
                     </motion.div>
                   )}
                 </div>

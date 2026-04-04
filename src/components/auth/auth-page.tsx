@@ -12,9 +12,10 @@ import { Loader2, Mail, Lock, User, Sparkles, Moon, Sun, X, Zap } from 'lucide-r
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
-function getPasswordStrength(password: string): { label: string; score: number; color: string } {
-  if (!password) return { label: '', score: 0, color: '' };
+function getPasswordStrength(password: string): { label: string; score: number; color: string; glowColor: string } {
+  if (!password) return { label: '', score: 0, color: '', glowColor: '' };
   let score = 0;
   if (password.length >= 6) score++;
   if (password.length >= 10) score++;
@@ -22,10 +23,10 @@ function getPasswordStrength(password: string): { label: string; score: number; 
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { label: 'Weak', score: 1, color: 'bg-red-500' };
-  if (score <= 2) return { label: 'Fair', score: 2, color: 'bg-orange-500' };
-  if (score <= 3) return { label: 'Good', score: 3, color: 'bg-yellow-500' };
-  return { label: 'Strong', score: 4, color: 'bg-emerald-500' };
+  if (score <= 1) return { label: 'Weak', score: 1, color: 'bg-red-500', glowColor: 'shadow-red-500/50' };
+  if (score <= 2) return { label: 'Fair', score: 2, color: 'bg-orange-500', glowColor: 'shadow-orange-500/50' };
+  if (score <= 3) return { label: 'Good', score: 3, color: 'bg-yellow-500', glowColor: 'shadow-yellow-500/50' };
+  return { label: 'Strong', score: 4, color: 'bg-emerald-500', glowColor: 'shadow-emerald-500/50' };
 }
 
 function FloatingDots() {
@@ -108,6 +109,59 @@ function ErrorMessage({ message, onClose }: { message: string; onClose: () => vo
   );
 }
 
+function SocialLoginDivider() {
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+      <span className="text-xs text-muted-foreground/70 whitespace-nowrap">or continue with</span>
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+    </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="9" r="9" fill="#4285F4" />
+      <text x="9" y="13.5" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold" fontFamily="Arial, sans-serif">G</text>
+    </svg>
+  );
+}
+
+function GitHubIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="9" cy="9" r="9" fill="#24292f" />
+      <text x="9" y="12.5" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold" fontFamily="Arial, sans-serif">GH</text>
+    </svg>
+  );
+}
+
+function SocialLoginButtons() {
+  return (
+    <div className="flex gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        className="flex-1 h-10 gap-2 border-border/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        onClick={() => toast('Coming soon!', { description: 'Google sign-in will be available soon.' })}
+      >
+        <GoogleIcon />
+        <span className="text-sm">Google</span>
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className="flex-1 h-10 gap-2 border-border/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        onClick={() => toast('Coming soon!', { description: 'GitHub sign-in will be available soon.' })}
+      >
+        <GitHubIcon />
+        <span className="text-sm">GitHub</span>
+      </Button>
+    </div>
+  );
+}
+
 export default function AuthPage() {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -116,6 +170,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [rememberMe, setRememberMe] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { setUser } = useAuthStore();
   const { theme, setTheme } = useTheme();
 
@@ -296,7 +351,10 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5 hover:shadow-emerald-500/15 transition-shadow duration-500"
+          className={cn(
+            'relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5 hover:shadow-emerald-500/15 transition-all duration-500',
+            isCheckingSession && 'animate-breathing-glow'
+          )}
         >
           <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-2xl rounded-[11px] noise-texture border border-white/10 dark:border-white/5">
             <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'login' | 'signup'); setError(''); }} className="w-full">
@@ -366,6 +424,16 @@ export default function AuthPage() {
                             required
                           />
                         </div>
+                        {/* Forgot Password link */}
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2"
+                            onClick={() => toast('Coming soon!', { description: 'Password reset will be available soon.' })}
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Checkbox
@@ -381,14 +449,20 @@ export default function AuthPage() {
                           Remember me
                         </Label>
                       </div>
+
+                      {/* Social Login Divider */}
+                      <SocialLoginDivider />
+
+                      {/* Social Login Buttons */}
+                      <SocialLoginButtons />
                     </CardContent>
                     <CardFooter>
                       <Button
                         type="submit"
                         className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300"
-                        disabled={isLoading}
+                        disabled={isLoading || isCheckingSession}
                       >
-                        {isLoading ? (
+                        {(isLoading || isCheckingSession) ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Signing in...
@@ -458,7 +532,7 @@ export default function AuthPage() {
                             minLength={6}
                           />
                         </div>
-                        {/* Password strength indicator */}
+                        {/* Enhanced Password strength indicator */}
                         <AnimatePresence>
                           {signupData.password.length > 0 && (
                             <motion.div
@@ -474,7 +548,7 @@ export default function AuthPage() {
                                     className={cn(
                                       'h-1.5 flex-1 rounded-full transition-all duration-300',
                                       passwordStrength.score >= level
-                                        ? passwordStrength.color
+                                        ? cn(passwordStrength.color, 'shadow-sm', passwordStrength.glowColor)
                                         : 'bg-muted'
                                     )}
                                   />
@@ -509,14 +583,57 @@ export default function AuthPage() {
                           />
                         </div>
                       </div>
+
+                      {/* Terms of Service Checkbox */}
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          id="terms"
+                          checked={termsAccepted}
+                          onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                          className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 mt-0.5"
+                        />
+                        <Label
+                          htmlFor="terms"
+                          className="text-xs text-muted-foreground cursor-pointer select-none leading-relaxed"
+                        >
+                          I agree to the{' '}
+                          <button
+                            type="button"
+                            className="text-emerald-500 hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              toast('Coming soon!', { description: 'Terms of Service will be available soon.' });
+                            }}
+                          >
+                            Terms of Service
+                          </button>
+                          {' '}and{' '}
+                          <button
+                            type="button"
+                            className="text-emerald-500 hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              toast('Coming soon!', { description: 'Privacy Policy will be available soon.' });
+                            }}
+                          >
+                            Privacy Policy
+                          </button>
+                        </Label>
+                      </div>
+
+                      {/* Social Login Divider */}
+                      <SocialLoginDivider />
+
+                      {/* Social Login Buttons */}
+                      <SocialLoginButtons />
                     </CardContent>
                     <CardFooter>
                       <Button
                         type="submit"
                         className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300"
-                        disabled={isLoading}
+                        disabled={isLoading || isCheckingSession}
                       >
-                        {isLoading ? (
+                        {(isLoading || isCheckingSession) ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Creating account...
