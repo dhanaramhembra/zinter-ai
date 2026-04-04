@@ -26,9 +26,19 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   onImageGenerate: (prompt: string) => void;
   disabled?: boolean;
+  /** Text to pre-fill the input (e.g. from a suggestion card click) */
+  initialMessage?: string | null;
+  /** Whether to enable image mode when initialMessage is set */
+  initialImageMode?: boolean;
 }
 
-export default function ChatInput({ onSend, onImageGenerate, disabled }: ChatInputProps) {
+export default function ChatInput({
+  onSend,
+  onImageGenerate,
+  disabled,
+  initialMessage,
+  initialImageMode,
+}: ChatInputProps) {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [imageMode, setImageMode] = useState(false);
@@ -36,8 +46,29 @@ export default function ChatInput({ onSend, onImageGenerate, disabled }: ChatInp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const lastAppliedInitialRef = useRef<string | null>(null);
   const { isGenerating } = useChatStore();
 
+  // Handle initial message from suggestion click
+  useEffect(() => {
+    if (initialMessage && initialMessage !== lastAppliedInitialRef.current) {
+      setInput(initialMessage);
+      lastAppliedInitialRef.current = initialMessage;
+      if (initialImageMode) {
+        setImageMode(true);
+      }
+      // Focus the textarea after a tick to ensure DOM is ready
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+    }
+    // Reset ref when initialMessage is cleared
+    if (!initialMessage) {
+      lastAppliedInitialRef.current = null;
+    }
+  }, [initialMessage, initialImageMode]);
+
+  // Auto-resize textarea as content changes
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';

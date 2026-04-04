@@ -95,6 +95,56 @@ export async function POST(
   }
 }
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ conversationId: string }> }
+) {
+  try {
+    const session = getSessionFromCookie();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { conversationId } = await params;
+    const body = await req.json();
+    const { title } = body;
+
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Title is required and must be a non-empty string' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedTitle = title.trim().slice(0, 100);
+
+    // Verify conversation belongs to user
+    const existing = await db.conversation.findFirst({
+      where: { id: conversationId, userId: session.userId },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Conversation not found' },
+        { status: 404 }
+      );
+    }
+
+    const conversation = await db.conversation.update({
+      where: { id: conversationId },
+      data: { title: trimmedTitle },
+    });
+
+    return NextResponse.json({ conversation });
+  } catch (error) {
+    console.error('Update conversation error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update conversation' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> }
