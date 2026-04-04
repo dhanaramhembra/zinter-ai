@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthStore } from '@/store/auth-store';
-import { Loader2, Mail, Lock, User, Sparkles, Moon, Sun, X } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Sparkles, Moon, Sun, X, Zap } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -31,12 +31,13 @@ function getPasswordStrength(password: string): { label: string; score: number; 
 function FloatingDots() {
   const dots = useMemo(() => {
     const items = [];
-    for (let i = 0; i < 20; i++) {
-      const size = Math.random() * 6 + 2;
+    for (let i = 0; i < 24; i++) {
+      const size = Math.random() * 5 + 2;
       const left = Math.random() * 100;
       const delay = Math.random() * 15;
-      const duration = Math.random() * 20 + 15;
-      const opacity = Math.random() * 0.15 + 0.05;
+      const duration = Math.random() * 20 + 18;
+      const opacity = Math.random() * 0.12 + 0.04;
+      const sway = Math.random() * 40 + 10;
       items.push(
         <div
           key={i}
@@ -48,7 +49,8 @@ function FloatingDots() {
             bottom: `-${size}px`,
             opacity,
             animation: `float-up ${duration}s ${delay}s infinite linear`,
-          }}
+            '--sway': `${sway}px`,
+          } as React.CSSProperties}
         />
       );
     }
@@ -60,17 +62,22 @@ function FloatingDots() {
       <style jsx>{`
         @keyframes float-up {
           0% {
-            transform: translateY(0) translateX(0);
+            transform: translateY(0) translateX(0) scale(0.8);
             opacity: 0;
           }
           5% {
             opacity: var(--dot-opacity, 0.1);
+            transform: scale(1);
+          }
+          50% {
+            transform: translateY(-50vh) translateX(calc(var(--sway, 20px) * 0.5));
           }
           95% {
             opacity: var(--dot-opacity, 0.1);
+            transform: translateY(-100vh) translateX(var(--sway, 20px));
           }
           100% {
-            transform: translateY(-100vh) translateX(30px);
+            transform: translateY(-100vh) translateX(var(--sway, 20px));
             opacity: 0;
           }
         }
@@ -209,7 +216,15 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-muted/50 relative overflow-hidden">
-      {/* Animated floating dots */}
+      {/* Animated mesh gradient background */}
+      <div className="mesh-gradient">
+        <div className="mesh-gradient-extra" />
+      </div>
+
+      {/* Noise texture overlay */}
+      <div className="noise-texture absolute inset-0 pointer-events-none" />
+
+      {/* Animated floating dots with parallax-like sway */}
       <FloatingDots />
 
       {/* Background decorative elements */}
@@ -219,14 +234,16 @@ export default function AuthPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/3 rounded-full blur-3xl" />
       </div>
 
-      {/* Theme toggle */}
+      {/* Theme toggle with smooth icon rotation */}
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 right-4 z-50 rounded-full"
+        className="fixed top-4 right-4 z-50 rounded-full hover:bg-muted/60"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        suppressHydrationWarning
       >
-        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform duration-500 dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform duration-500 dark:rotate-0 dark:scale-100" />
       </Button>
 
       <motion.div
@@ -235,14 +252,15 @@ export default function AuthPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo/Brand */}
+        {/* Logo/Brand with breathing glow */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
             className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4 shadow-lg',
+              'inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4',
+              !isCheckingSession && 'animate-breathing-glow',
               isCheckingSession && 'animate-pulse'
             )}
             style={isCheckingSession ? { boxShadow: '0 0 30px rgba(16, 185, 129, 0.4)' } : undefined}
@@ -255,15 +273,32 @@ export default function AuthPage() {
               } : undefined}
             />
           </motion.div>
-          <h1 className="text-3xl font-bold tracking-tight">NexusAI</h1>
-          <p className="text-muted-foreground mt-2">
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+            className="text-3xl font-bold tracking-tight gradient-text"
+          >
+            NexusAI
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.4 }}
+            className="text-muted-foreground mt-2"
+          >
             Chat with AI, generate images, and more
-          </p>
+          </motion.p>
         </div>
 
-        {/* Card with gradient border */}
-        <div className="relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5">
-          <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-xl rounded-[11px]">
+        {/* Card with gradient border and enhanced glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5 hover:shadow-emerald-500/10 transition-shadow duration-500"
+        >
+          <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-2xl rounded-[11px] noise-texture">
             <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'login' | 'signup'); setError(''); }} className="w-full">
               <TabsList className="grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0 h-auto relative">
                 {/* Sliding indicator */}
@@ -312,7 +347,7 @@ export default function AuthPage() {
                             placeholder="you@example.com"
                             value={loginData.email}
                             onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
                             required
                           />
                         </div>
@@ -327,7 +362,7 @@ export default function AuthPage() {
                             placeholder="Enter your password"
                             value={loginData.password}
                             onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
                             required
                           />
                         </div>
@@ -348,7 +383,11 @@ export default function AuthPage() {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button type="submit" className="w-full" disabled={isLoading}>
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98] transition-all duration-200"
+                        disabled={isLoading}
+                      >
                         {isLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -384,7 +423,7 @@ export default function AuthPage() {
                             placeholder="Your name"
                             value={signupData.name}
                             onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
                             required
                           />
                         </div>
@@ -399,7 +438,7 @@ export default function AuthPage() {
                             placeholder="you@example.com"
                             value={signupData.email}
                             onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
                             required
                           />
                         </div>
@@ -414,7 +453,7 @@ export default function AuthPage() {
                             placeholder="Min. 6 characters"
                             value={signupData.password}
                             onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
                             required
                             minLength={6}
                           />
@@ -464,7 +503,7 @@ export default function AuthPage() {
                             placeholder="Repeat your password"
                             value={signupData.confirmPassword}
                             onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
                             required
                             minLength={6}
                           />
@@ -472,7 +511,11 @@ export default function AuthPage() {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button type="submit" className="w-full" disabled={isLoading}>
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98] transition-all duration-200"
+                        disabled={isLoading}
+                      >
                         {isLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -488,11 +531,29 @@ export default function AuthPage() {
               </AnimatePresence>
             </Tabs>
           </Card>
-        </div>
+        </motion.div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        {/* "Powered by AI" badge */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.4 }}
+          className="flex justify-center mt-6"
+        >
+          <div className="badge-emerald flex items-center gap-1.5">
+            <Zap className="w-3 h-3" />
+            <span>Powered by AI</span>
+          </div>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.4 }}
+          className="text-center text-xs text-muted-foreground/60 mt-3"
+        >
           By continuing, you agree to our Terms of Service and Privacy Policy
-        </p>
+        </motion.p>
       </motion.div>
 
       {/* Glow pulse keyframes for checking session */}

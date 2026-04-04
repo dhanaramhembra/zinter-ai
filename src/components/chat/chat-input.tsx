@@ -156,8 +156,8 @@ export default function ChatInput({
   };
 
   return (
-    <div className="border-t border-border bg-card p-4">
-      {/* Image mode indicator */}
+    <div className="border-t border-border bg-card/80 backdrop-blur-xl p-4">
+      {/* Image mode indicator with gradient background */}
       <AnimatePresence>
         {imageMode && (
           <motion.div
@@ -166,7 +166,7 @@ export default function ChatInput({
             exit={{ opacity: 0, height: 0 }}
             className="mb-2"
           >
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 text-primary text-sm border border-primary/20">
               <ImageIcon className="w-4 h-4" />
               <span className="font-medium">Image Generation Mode</span>
               <span className="text-xs opacity-70">
@@ -230,7 +230,9 @@ export default function ChatInput({
                   : 'Type a message... (Shift+Enter for new line)'
             }
             className={cn(
-              'resize-none min-h-[44px] max-h-[200px] pr-12 rounded-xl',
+              'resize-none min-h-[44px] max-h-[200px] pr-12 rounded-xl shadow-sm',
+              'focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/40',
+              'focus-visible:shadow-[0_0_0_3px_oklch(0.55_0.18_163/8%)]',
               imageMode && 'border-primary/50 focus-visible:ring-primary/30'
             )}
             disabled={disabled || isGenerating}
@@ -247,8 +249,9 @@ export default function ChatInput({
                   variant={imageMode ? 'default' : 'ghost'}
                   size="icon"
                   className={cn(
-                    'rounded-xl h-11 w-11 shrink-0',
-                    imageMode && 'bg-primary text-primary-foreground'
+                    'rounded-xl h-11 w-11 shrink-0 transition-all duration-200',
+                    'hover:scale-105 active:scale-95',
+                    imageMode && 'bg-primary text-primary-foreground shadow-md shadow-emerald-500/20'
                   )}
                   onClick={() => setImageMode(!imageMode)}
                   disabled={disabled || isGenerating}
@@ -268,7 +271,7 @@ export default function ChatInput({
                 <Button
                   variant={isRecording ? 'destructive' : 'ghost'}
                   size="icon"
-                  className="rounded-xl h-11 w-11 shrink-0"
+                  className="rounded-xl h-11 w-11 shrink-0 hover:scale-105 active:scale-95 transition-all duration-200"
                   onClick={toggleRecording}
                   disabled={disabled || isTranscribing || isGenerating}
                 >
@@ -292,7 +295,13 @@ export default function ChatInput({
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
-                  className="rounded-xl h-11 w-11 shrink-0"
+                  className={cn(
+                    'rounded-xl h-11 w-11 shrink-0 transition-all duration-200',
+                    'hover:scale-105 active:scale-95',
+                    input.trim() && !disabled && !isGenerating && !isRecording && !isTranscribing
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/25'
+                      : ''
+                  )}
                   onClick={handleSend}
                   disabled={
                     !input.trim() || disabled || isGenerating || isRecording || isTranscribing

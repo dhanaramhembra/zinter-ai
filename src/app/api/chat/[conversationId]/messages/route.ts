@@ -107,16 +107,6 @@ export async function PATCH(
 
     const { conversationId } = await params;
     const body = await req.json();
-    const { title } = body;
-
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Title is required and must be a non-empty string' },
-        { status: 400 }
-      );
-    }
-
-    const trimmedTitle = title.trim().slice(0, 100);
 
     // Verify conversation belongs to user
     const existing = await db.conversation.findFirst({
@@ -130,6 +120,47 @@ export async function PATCH(
       );
     }
 
+    // Handle message content editing
+    if (body.messageId && body.content !== undefined) {
+      const { messageId, content } = body;
+
+      if (typeof content !== 'string' || content.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'Content is required and must be a non-empty string' },
+          { status: 400 }
+        );
+      }
+
+      const message = await db.message.findFirst({
+        where: { id: messageId, conversationId, conversation: { userId: session.userId } },
+      });
+
+      if (!message) {
+        return NextResponse.json(
+          { error: 'Message not found' },
+          { status: 404 }
+        );
+      }
+
+      const updatedMessage = await db.message.update({
+        where: { id: messageId },
+        data: { content: content.trim() },
+      });
+
+      return NextResponse.json({ message: updatedMessage });
+    }
+
+    // Handle conversation title rename
+    const { title } = body;
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Title is required and must be a non-empty string' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedTitle = title.trim().slice(0, 100);
+
     const conversation = await db.conversation.update({
       where: { id: conversationId },
       data: { title: trimmedTitle },
@@ -137,9 +168,9 @@ export async function PATCH(
 
     return NextResponse.json({ conversation });
   } catch (error) {
-    console.error('Update conversation error:', error);
+    console.error('Update conversation/message error:', error);
     return NextResponse.json(
-      { error: 'Failed to update conversation' },
+      { error: 'Failed to update' },
       { status: 500 }
     );
   }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useChatStore, Message } from '@/store/chat-store';
+import { useChatStore, Message, PERSONAS } from '@/store/chat-store';
 import MessageBubble from './message-bubble';
 import ChatInput from './chat-input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   MessageSquarePlus,
   Sparkles,
@@ -15,11 +16,34 @@ import {
   Mail,
   ImageIcon,
   Keyboard,
+  StopCircle,
+  Download,
+  ChevronDown,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+type FontSize = 'small' | 'medium' | 'large';
+
+const FONT_SIZE_CLASS: Record<FontSize, string> = {
+  small: 'text-xs',
+  medium: 'text-sm',
+  large: 'text-base',
+};
+
+function getStoredFontSize(): FontSize {
+  if (typeof window === 'undefined') return 'medium';
+  try {
+    const stored = localStorage.getItem('nexusai-font-size') as FontSize | null;
+    if (stored && ['small', 'medium', 'large'].includes(stored)) return stored;
+  } catch {
+    // ignore
+  }
+  return 'medium';
+}
 
 const SUGGESTIONS = [
   {
@@ -73,15 +97,59 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     addConversation,
     setActiveConversationId,
     addMessage,
+    removeMessage,
+    updateMessage,
     setGenerating,
     isGenerating,
+    selectedPersona,
+    setSelectedPersona,
   } = useChatStore();
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null);
   const [pendingImageMode, setPendingImageMode] = useState(false);
+  const [fontSize, setFontSize] = useState<FontSize>('medium');
+  const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const personaDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Load font size from localStorage
+  useEffect(() => {
+    setFontSize(getStoredFontSize());
+  }, []);
+
+  // Listen for font size changes from settings
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'nexusai-font-size') {
+        setFontSize(getStoredFontSize());
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(() => {
+      setFontSize(getStoredFontSize());
+    }, 1000);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Close persona dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (personaDropdownRef.current && !personaDropdownRef.current.contains(e.target as Node)) {
+        setPersonaDropdownOpen(false);
+      }
+    };
+    if (personaDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [personaDropdownOpen]);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConversation?.messages || [];
+  const currentPersona = PERSONAS.find((p) => p.id === selectedPersona) || PERSONAS[0];
 
   const createNewChat = useCallback(async (): Promise<string | null> => {
     try {
@@ -110,7 +178,6 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
   // Smooth scroll to bottom whenever messages change or generating state changes
   useEffect(() => {
-    // Use a small timeout to ensure DOM has updated after render
     const timer = setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 50);
@@ -143,9 +210,18 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     [activeConversationId, createNewChat]
   );
 
+  // Feature 1: Stop generation handler
+  const handleStopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setGenerating(false);
+    toast.success('Generation stopped');
+  }, [setGenerating]);
+
   const sendMessage = useCallback(
     async (content: string) => {
-      // Clear any pending suggestion state
       setPendingSuggestion(null);
       setPendingImageMode(false);
 
@@ -165,6 +241,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       addMessage(convId, userMessage);
       setGenerating(true);
 
+      // Create AbortController
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       // Save user message to database
       try {
         await fetch(`/api/chat/${convId}/messages`, {
@@ -183,7 +263,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           body: JSON.stringify({
             message: content,
             conversationId: convId,
+            systemPrompt: currentPersona.systemPrompt,
           }),
+          signal: controller.signal,
         });
 
         const data = await res.json();
@@ -198,24 +280,29 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
           addMessage(convId, assistantMessage);
         }
-      } catch (error) {
-        console.error('AI chat error:', error);
-        addMessage(convId, {
-          id: uuidv4(),
-          content: 'Sorry, something went wrong. Please try again.',
-          role: 'assistant',
-          createdAt: new Date().toISOString(),
-        });
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          // Generation was stopped by user - no error toast needed
+        } else {
+          console.error('AI chat error:', error);
+          toast.error('Failed to get AI response');
+          addMessage(convId, {
+            id: uuidv4(),
+            content: 'Sorry, something went wrong. Please try again.',
+            role: 'assistant',
+            createdAt: new Date().toISOString(),
+          });
+        }
       } finally {
         setGenerating(false);
+        abortControllerRef.current = null;
       }
     },
-    [activeConversationId, createNewChat, addMessage, setGenerating]
+    [activeConversationId, createNewChat, addMessage, setGenerating, currentPersona.systemPrompt]
   );
 
   const generateImage = useCallback(
     async (prompt: string) => {
-      // Clear any pending suggestion state
       setPendingSuggestion(null);
       setPendingImageMode(false);
 
@@ -225,7 +312,6 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         if (!convId) return;
       }
 
-      // Add user message with prompt
       const userMessage: Message = {
         id: uuidv4(),
         content: `Generate image: ${prompt}`,
@@ -235,6 +321,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
       addMessage(convId, userMessage);
       setGenerating(true);
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       // Save user message to database
       try {
@@ -252,6 +341,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt }),
+          signal: controller.signal,
         });
 
         const data = await res.json();
@@ -267,6 +357,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           };
 
           addMessage(convId, assistantMessage);
+          toast.success('Image generated successfully');
 
           // Save assistant message to database
           await fetch(`/api/chat/${convId}/messages`, {
@@ -282,20 +373,274 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         } else {
           throw new Error(data.error || 'Image generation failed');
         }
-      } catch (error) {
-        console.error('Image generation error:', error);
-        addMessage(convId, {
-          id: uuidv4(),
-          content: 'Sorry, I could not generate the image. Please try again.',
-          role: 'assistant',
-          createdAt: new Date().toISOString(),
-        });
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          // Generation was stopped by user
+        } else {
+          console.error('Image generation error:', error);
+          toast.error('Failed to generate image');
+          addMessage(convId, {
+            id: uuidv4(),
+            content: 'Sorry, I could not generate the image. Please try again.',
+            role: 'assistant',
+            createdAt: new Date().toISOString(),
+          });
+        }
       } finally {
         setGenerating(false);
+        abortControllerRef.current = null;
       }
     },
     [activeConversationId, createNewChat, addMessage, setGenerating]
   );
+
+  // Regenerate handler
+  const handleRegenerate = useCallback(
+    async (messageId: string) => {
+      if (!activeConversationId || isGenerating) return;
+
+      const conv = conversations.find((c) => c.id === activeConversationId);
+      if (!conv) return;
+
+      const msgIndex = conv.messages.findIndex((m) => m.id === messageId);
+      if (msgIndex === -1) return;
+
+      let userContent = '';
+      for (let i = msgIndex - 1; i >= 0; i--) {
+        if (conv.messages[i].role === 'user') {
+          userContent = conv.messages[i].content.replace(/^Generate image: /, '');
+          break;
+        }
+      }
+
+      if (!userContent) return;
+
+      removeMessage(activeConversationId, messageId);
+
+      toast.info('Regenerating response...');
+      setGenerating(true);
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const wasImageMessage = conv.messages[msgIndex]?.imageUrl;
+
+      try {
+        if (wasImageMessage) {
+          const res = await fetch('/api/ai/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: userContent }),
+            signal: controller.signal,
+          });
+
+          const data = await res.json();
+
+          if (data.success) {
+            const newMessage: Message = {
+              id: uuidv4(),
+              content: "Here's the image I generated based on your description:",
+              role: 'assistant',
+              imageUrl: data.imageUrl,
+              imagePrompt: data.prompt,
+              createdAt: new Date().toISOString(),
+            };
+            addMessage(activeConversationId, newMessage);
+            toast.success('Image generated successfully');
+          } else {
+            throw new Error(data.error || 'Image generation failed');
+          }
+        } else {
+          const res = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userContent,
+              conversationId: activeConversationId,
+              systemPrompt: currentPersona.systemPrompt,
+            }),
+            signal: controller.signal,
+          });
+
+          const data = await res.json();
+
+          if (data.message) {
+            const newMessage: Message = {
+              id: data.message.id || uuidv4(),
+              content: data.message.content,
+              role: 'assistant',
+              createdAt: data.message.createdAt || new Date().toISOString(),
+            };
+            addMessage(activeConversationId, newMessage);
+          }
+        }
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          // Generation was stopped by user
+        } else {
+          console.error('Regenerate error:', error);
+          toast.error('Failed to get AI response');
+          addMessage(activeConversationId, {
+            id: uuidv4(),
+            content: 'Sorry, something went wrong while regenerating. Please try again.',
+            role: 'assistant',
+            createdAt: new Date().toISOString(),
+          });
+        }
+      } finally {
+        setGenerating(false);
+        abortControllerRef.current = null;
+      }
+    },
+    [activeConversationId, conversations, isGenerating, removeMessage, addMessage, setGenerating, currentPersona.systemPrompt]
+  );
+
+  // Feature 2: Edit message handler - update content and regenerate
+  const handleEditMessage = useCallback(
+    async (messageId: string, newContent: string) => {
+      if (!activeConversationId) return;
+
+      // Update message in store
+      updateMessage(activeConversationId, messageId, { content: newContent });
+
+      // Update message in database
+      try {
+        await fetch(`/api/chat/${activeConversationId}/messages`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId, content: newContent }),
+        });
+      } catch (error) {
+        console.error('Failed to update message:', error);
+      }
+
+      // Remove all messages after this user message (assistant responses etc.)
+      const conv = conversations.find((c) => c.id === activeConversationId);
+      if (conv) {
+        const msgIndex = conv.messages.findIndex((m) => m.id === messageId);
+        if (msgIndex !== -1) {
+          for (let i = conv.messages.length - 1; i > msgIndex; i--) {
+            removeMessage(activeConversationId, conv.messages[i].id);
+          }
+        }
+      }
+
+      // Re-send to AI to get a new response
+      if (!isGenerating) {
+        setGenerating(true);
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        const cleanContent = newContent.replace(/^Generate image: /, '');
+        const isImageRequest = newContent.startsWith('Generate image:');
+
+        try {
+          if (isImageRequest) {
+            const res = await fetch('/api/ai/image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt: cleanContent }),
+              signal: controller.signal,
+            });
+            const data = await res.json();
+            if (data.success) {
+              const newMsg: Message = {
+                id: uuidv4(),
+                content: "Here's the image I generated based on your description:",
+                role: 'assistant',
+                imageUrl: data.imageUrl,
+                imagePrompt: data.prompt,
+                createdAt: new Date().toISOString(),
+              };
+              addMessage(activeConversationId, newMsg);
+              toast.success('Image generated successfully');
+            } else {
+              throw new Error(data.error || 'Image generation failed');
+            }
+          } else {
+            const res = await fetch('/api/ai/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                message: newContent,
+                conversationId: activeConversationId,
+                systemPrompt: currentPersona.systemPrompt,
+              }),
+              signal: controller.signal,
+            });
+            const data = await res.json();
+            if (data.message) {
+              const newMsg: Message = {
+                id: data.message.id || uuidv4(),
+                content: data.message.content,
+                role: 'assistant',
+                createdAt: data.message.createdAt || new Date().toISOString(),
+              };
+              addMessage(activeConversationId, newMsg);
+            }
+          }
+        } catch (error: unknown) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            // Generation was stopped by user
+          } else {
+            console.error('Edit-regenerate error:', error);
+            toast.error('Failed to get AI response');
+            addMessage(activeConversationId, {
+              id: uuidv4(),
+              content: 'Sorry, something went wrong. Please try again.',
+              role: 'assistant',
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } finally {
+          setGenerating(false);
+          abortControllerRef.current = null;
+        }
+      }
+    },
+    [activeConversationId, conversations, updateMessage, removeMessage, addMessage, setGenerating, isGenerating, currentPersona.systemPrompt]
+  );
+
+  // Feature 3: Export conversation as Markdown
+  const handleExportMarkdown = useCallback(() => {
+    if (!activeConversation || messages.length === 0) {
+      toast.error('No messages to export');
+      return;
+    }
+
+    let markdown = `# ${activeConversation.title}\n\n`;
+    markdown += `*Exported from NexusAI on ${new Date().toLocaleString()}*\n\n---\n\n`;
+
+    for (const msg of messages) {
+      const sender = msg.role === 'user' ? '**User**' : '**NexusAI**';
+      const time = new Date(msg.createdAt).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      markdown += `${sender} (${time})\n\n`;
+
+      if (msg.imageUrl) {
+        markdown += `${msg.content}\n\n`;
+        markdown += `![${msg.imagePrompt || 'Generated image'}](${msg.imageUrl})\n\n`;
+      } else {
+        markdown += `${msg.content}\n\n`;
+      }
+
+      markdown += '---\n\n';
+    }
+
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeConversation.title.replace(/[^a-zA-Z0-9]/g, '_')}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Conversation exported as Markdown');
+  }, [activeConversation, messages]);
 
   // Typing indicator component
   const TypingIndicator = () => (
@@ -315,19 +660,40 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         <span>NexusAI is typing</span>
         <span className="inline-flex gap-0.5 ml-0.5">
           <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_6px_oklch(0.55_0.18_163/60%)]"
             style={{ animationDelay: '0ms' }}
           />
           <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_6px_oklch(0.55_0.18_163/60%)]"
             style={{ animationDelay: '150ms' }}
           />
           <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_6px_oklch(0.55_0.18_163/60%)]"
             style={{ animationDelay: '300ms' }}
           />
         </span>
       </div>
+    </motion.div>
+  );
+
+  // Stop button component (Feature 1)
+  const StopButton = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      transition={{ duration: 0.25, delay: 0.15 }}
+      className="flex justify-center px-4 py-1"
+    >
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleStopGeneration}
+        className="gap-2 rounded-full border-border/60 bg-card/80 text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition-colors shadow-sm"
+      >
+        <StopCircle className="w-4 h-4" />
+        <span className="text-xs font-medium">Stop</span>
+      </Button>
     </motion.div>
   );
 
@@ -349,17 +715,17 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         transition={{ duration: 0.3, delay: 0.1 + index * 0.08 }}
         onClick={onClick}
         className={cn(
-          'flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
-          'hover:bg-card hover:border-border hover:shadow-sm',
+          'animated-border flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
+          'hover:bg-card hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
           'transition-all duration-200 text-left group cursor-pointer',
           'active:scale-[0.98]'
         )}
       >
         <div
           className={cn(
-            'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-colors',
+            'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200',
             suggestion.bgColor,
-            'group-hover:scale-110'
+            'group-hover:scale-110 group-hover:shadow-sm'
           )}
         >
           <IconComp className={cn('w-4.5 h-4.5', suggestion.color)} />
@@ -387,7 +753,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="flex items-center justify-center p-8 min-h-full">
+          <div className="flex items-center justify-center p-8 min-h-full dot-grid">
             <div className="text-center max-w-2xl w-full py-8">
               {/* Logo */}
               <motion.div
@@ -454,7 +820,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         <ChatInput
           onSend={sendMessage}
           onImageGenerate={generateImage}
-          disabled={!activeConversation}
+          disabled={false}
           initialMessage={pendingSuggestion}
           initialImageMode={pendingImageMode}
         />
@@ -467,9 +833,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border">
-        <Button
+      {/* Header with gradient accent line */}
+      <div className="relative">
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent" />
+        <div className="flex items-center gap-2 p-4 border-b border-border">
+          <Button
           variant="ghost"
           size="icon"
           className="lg:hidden shrink-0"
@@ -483,6 +851,93 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             {messages.length} message{messages.length !== 1 ? 's' : ''}
           </p>
         </div>
+
+        {/* Feature 4: Persona badge */}
+        <Badge
+          variant="secondary"
+          className="hidden sm:flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-medium rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 shrink-0"
+        >
+          <Sparkles className="w-3 h-3" />
+          {currentPersona.name}
+        </Badge>
+
+        {/* Feature 3: Export button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={handleExportMarkdown}
+          title="Export as Markdown"
+          disabled={!hasMessages}
+        >
+          <Download className="w-4 h-4" />
+        </Button>
+
+        {/* Feature 4: Persona selector dropdown */}
+        <div className="relative" ref={personaDropdownRef}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => setPersonaDropdownOpen(!personaDropdownOpen)}
+            title="Select persona"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+          <AnimatePresence>
+            {personaDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-border bg-popover p-1.5 shadow-lg z-50"
+              >
+                <p className="text-xs font-medium text-muted-foreground px-2.5 py-1.5">
+                  Select AI Persona
+                </p>
+                {PERSONAS.map((persona) => (
+                  <button
+                    key={persona.id}
+                    onClick={() => {
+                      setSelectedPersona(persona.id);
+                      setPersonaDropdownOpen(false);
+                      toast.success(`Switched to ${persona.name}`);
+                    }}
+                    className={cn(
+                      'w-full flex items-start gap-3 px-2.5 py-2 rounded-lg text-left transition-colors',
+                      'hover:bg-accent',
+                      selectedPersona === persona.id && 'bg-accent'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'flex items-center justify-center w-8 h-8 rounded-lg shrink-0 mt-0.5',
+                        selectedPersona === persona.id
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{persona.name}</p>
+                        {selectedPersona === persona.id && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {persona.description}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <Button
           variant="outline"
           size="sm"
@@ -492,12 +947,13 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <MessageSquarePlus className="w-4 h-4" />
           <span className="hidden sm:inline">New Chat</span>
         </Button>
+        </div>
       </div>
 
       {/* Messages area */}
       <ScrollArea className="flex-1">
         {!hasMessages ? (
-          /* Empty conversation state - centered suggestion area */
+          /* Empty conversation state */
           <div className="flex items-center justify-center min-h-full p-8">
             <div className="text-center max-w-2xl w-full py-12">
               <motion.div
@@ -533,17 +989,44 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             </div>
           </div>
         ) : (
-          /* Messages list */
-          <div className="max-w-4xl mx-auto py-4">
-            <div className="space-y-1">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
+          /* Messages list with subtle dot grid background */
+          <div className={cn('max-w-4xl mx-auto py-4 dot-grid rounded-lg', FONT_SIZE_CLASS[fontSize])}>
+            <div className="space-y-1 [&_p]:leading-relaxed">
+              {messages.map((message, idx) => {
+                const prev = idx > 0 ? messages[idx - 1] : null;
+                const next = idx < messages.length - 1 ? messages[idx + 1] : null;
+                const isFirstInGroup = !prev || prev.role !== message.role;
+                const isLastInGroup = !next || next.role !== message.role;
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    index={idx}
+                    isFirstInGroup={isFirstInGroup}
+                    isLastInGroup={isLastInGroup}
+                    onRegenerate={message.role === 'assistant' && isLastInGroup ? handleRegenerate : undefined}
+                    onEditMessage={
+                      message.role === 'user'
+                        ? handleEditMessage
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </div>
 
-            {/* Typing indicator - shown below the last message */}
+            {/* Typing indicator + Stop button */}
             <AnimatePresence>
-              {isGenerating && <TypingIndicator />}
+              {isGenerating && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <TypingIndicator />
+                  <StopButton />
+                </motion.div>
+              )}
             </AnimatePresence>
 
             {/* Scroll anchor */}

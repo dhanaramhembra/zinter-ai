@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { message, conversationId } = await req.json();
+    const { message, conversationId, systemPrompt } = await req.json();
 
     if (!message || !conversationId) {
       return NextResponse.json(
@@ -38,11 +38,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Build message history
+    const defaultSystemPrompt =
+      'You are a helpful, friendly, and knowledgeable AI assistant. You provide clear, accurate, and concise responses. You can help with coding, writing, analysis, creative tasks, and general questions. Use markdown formatting when appropriate for code blocks, lists, and emphasis.';
+
     const messages: Array<{ role: string; content: string }> = [
       {
         role: 'assistant',
-        content:
-          'You are a helpful, friendly, and knowledgeable AI assistant. You provide clear, accurate, and concise responses. You can help with coding, writing, analysis, creative tasks, and general questions. Use markdown formatting when appropriate for code blocks, lists, and emphasis.',
+        content: systemPrompt || defaultSystemPrompt,
       },
       ...conversation.messages.map((m) => ({
         role: m.role,

@@ -4,6 +4,7 @@ import { Message } from '@/store/chat-store';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Copy,
   Volume2,
@@ -14,13 +15,16 @@ import {
   Loader2,
   RefreshCw,
   Download,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuthStore } from '@/store/auth-store';
+import { toast } from 'sonner';
 
 interface MessageBubbleProps {
   message: Message;
@@ -29,6 +33,7 @@ interface MessageBubbleProps {
   isFirstInGroup?: boolean;
   isLastInGroup?: boolean;
   onRegenerate?: (messageId: string) => void;
+  onEditMessage?: (messageId: string, newContent: string) => void;
 }
 
 function CodeBlock({
@@ -53,6 +58,7 @@ function CodeBlock({
   const handleCopy = async () => {
     await navigator.clipboard.writeText(codeText);
     setCopied(true);
+    toast.success('Code copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -116,17 +122,22 @@ export default function MessageBubble({
   isFirstInGroup = true,
   isLastInGroup = true,
   onRegenerate,
+  onEditMessage,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [imageHovered, setImageHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuthStore();
 
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(message.content);
     setCopied(true);
+    toast.success('Message copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   }, [message.content]);
 
@@ -170,11 +181,12 @@ export default function MessageBubble({
       audio.play();
     } catch (error) {
       console.error('TTS error:', error);
+      toast.error('Failed to generate speech');
       setIsSpeaking(false);
     }
   }, [isSpeaking, message.content]);
 
-  // Fixed audio cleanup using ref - no dependency on audio state
+  // Fixed audio cleanup using ref
   useEffect(() => {
     return () => {
       const audio = audioRef.current;
@@ -187,6 +199,57 @@ export default function MessageBubble({
       }
     };
   }, []);
+
+  // Focus textarea when editing starts
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      setEditContent(message.content);
+      requestAnimationFrame(() => {
+        editTextareaRef.current?.focus();
+        editTextareaRef.current?.setSelectionRange(
+          editTextareaRef.current.value.length,
+          editTextareaRef.current.value.length
+        );
+      });
+    }
+  }, [isEditing, message.content]);
+
+  // Auto-resize edit textarea
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      editTextareaRef.current.style.height = 'auto';
+      editTextareaRef.current.style.height =
+        Math.min(editTextareaRef.current.scrollHeight, 200) + 'px';
+    }
+  }, [isEditing, editContent]);
+
+  const handleSaveEdit = useCallback(() => {
+    if (!editContent.trim() || editContent.trim() === message.content) {
+      setIsEditing(false);
+      return;
+    }
+    onEditMessage?.(message.id, editContent.trim());
+    setIsEditing(false);
+    toast.success('Message updated');
+  }, [editContent, message.id, message.content, onEditMessage]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditContent(message.content);
+    setIsEditing(false);
+  }, [message.content]);
+
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSaveEdit();
+      }
+      if (e.key === 'Escape') {
+        handleCancelEdit();
+      }
+    },
+    [handleSaveEdit, handleCancelEdit]
+  );
 
   const staggerDelay = Math.min(index * 0.05, 0.5);
 
@@ -254,10 +317,10 @@ export default function MessageBubble({
         {/* Message bubble */}
         <div
           className={cn(
-            'rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+            'rounded-2xl px-4 py-2.5 leading-relaxed',
             isUser
-              ? 'bg-primary text-primary-foreground rounded-tr-md'
-              : 'bg-muted rounded-tl-md',
+              ? 'bg-primary text-primary-foreground rounded-tr-md shadow-md shadow-emerald-500/15'
+              : 'bg-muted rounded-tl-md shadow-sm',
             isGenerating && 'animate-pulse'
           )}
         >
@@ -266,6 +329,46 @@ export default function MessageBubble({
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Thinking...</span>
             </div>
+          ) : isUser && isEditing ? (
+            /* Editing mode for user messages */
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="min-w-[200px]"
+            >
+              <Textarea
+                ref={editTextareaRef}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                className={cn(
+                  'resize-none min-h-[60px] max-h-[200px] text-sm',
+                  'bg-background/20 border-border/40 text-foreground',
+                  'placeholder:text-muted-foreground/60'
+                )}
+                rows={2}
+              />
+              <div className="flex items-center gap-2 mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  className="h-7 px-3 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  disabled={!editContent.trim() || editContent.trim() === message.content}
+                  className="h-7 px-3 text-xs gap-1"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Save
+                </Button>
+              </div>
+            </motion.div>
           ) : (
             <>
               {message.imageUrl && (
@@ -397,38 +500,78 @@ export default function MessageBubble({
         </div>
 
         {/* Actions - only show on last message in group */}
-        {!isUser && !isGenerating && isLastInGroup && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleCopy}
-              title="Copy message"
-            >
-              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleSpeak}
-              title={isSpeaking ? 'Stop speaking' : 'Listen'}
-            >
-              {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            </Button>
-            {onRegenerate && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => onRegenerate(message.id)}
-                title="Regenerate response"
+        {!isGenerating && isLastInGroup && (
+          <AnimatePresence mode="wait">
+            {!isEditing && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className={cn(
+                  'flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity',
+                  isUser && 'flex-row-reverse'
+                )}
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </Button>
+                {isUser ? (
+                  /* User message actions: Copy + Edit */
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                      onClick={handleCopy}
+                      title="Copy message"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    </Button>
+                    {onEditMessage && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                        onClick={() => setIsEditing(true)}
+                        title="Edit message"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  /* Assistant message actions: Copy + TTS + Regenerate */
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                      onClick={handleCopy}
+                      title="Copy message"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                      onClick={handleSpeak}
+                      title={isSpeaking ? 'Stop speaking' : 'Listen'}
+                    >
+                      {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    </Button>
+                    {onRegenerate && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                        onClick={() => onRegenerate(message.id)}
+                        title="Regenerate response"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         )}
       </div>
     </motion.div>

@@ -23,11 +23,14 @@ import {
   Sparkles,
   X,
   Plus,
+  Settings,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import SettingsSheet from '@/components/settings/settings-sheet';
 
 interface ConversationSidebarProps {
   isOpen: boolean;
@@ -100,6 +103,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const filteredConversations = conversations.filter((c) =>
@@ -113,6 +117,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     await fetch('/api/auth/logout', { method: 'POST' });
     logout();
     setLogoutDialogOpen(false);
+    toast.info('Signed out successfully');
   }, [logout]);
 
   const handleDelete = useCallback(async () => {
@@ -121,6 +126,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
       await fetch(`/api/chat/${deleteTarget}/messages`, { method: 'DELETE' });
       deleteConversation(deleteTarget);
       setDeleteTarget(null);
+      toast.success('Conversation deleted');
     } catch (error) {
       console.error('Failed to delete conversation:', error);
     }
@@ -139,6 +145,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           ...data.conversation,
           messages: [],
         });
+        toast.success('New conversation started');
       }
     } catch (error) {
       console.error('Failed to create conversation:', error);
@@ -154,7 +161,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
             onClick={onClose}
           />
         )}
@@ -168,10 +175,13 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
-          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[300px] bg-card border-r border-border flex flex-col',
+          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[300px] bg-card/90 backdrop-blur-xl border-r border-border flex flex-col',
           'lg:translate-x-0'
         )}
       >
+        {/* Gradient separator (right edge) */}
+        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-emerald-500/15 to-transparent pointer-events-none z-10" />
+
         {/* Header with gradient */}
         <div className="p-4 border-b border-border bg-gradient-to-br from-emerald-600/5 via-transparent to-teal-600/5">
           <div className="flex items-center justify-between mb-3">
@@ -179,7 +189,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
                 <Sparkles className="w-4.5 h-4.5" />
               </div>
-              <span className="font-bold text-lg tracking-tight">NexusAI</span>
+              <span className="font-bold text-lg tracking-tight gradient-text">NexusAI</span>
             </div>
             <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
               <X className="w-4 h-4" />
@@ -193,26 +203,27 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             </p>
           )}
 
-          {/* Search */}
+          {/* Search with animated border on focus */}
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 group-focus-within:text-emerald-500 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 group-focus-within:text-emerald-500 transition-colors duration-200" />
             <Input
               placeholder="Search conversations..."
-              className="pl-9 h-9 text-sm bg-muted/40 border-transparent focus-visible:border-emerald-500/50 focus-visible:bg-background transition-all placeholder:text-muted-foreground/50"
+              className="pl-9 h-9 text-sm bg-muted/40 border-transparent focus-visible:border-emerald-500/40 focus-visible:bg-background focus-visible:shadow-[0_0_0_3px_oklch(0.55_0.18_163/8%)] transition-all duration-200 placeholder:text-muted-foreground/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
 
-        {/* New Chat button */}
+        {/* New Chat button with shimmer on hover */}
         <div className="px-3 pt-3 pb-1">
           <Button
             onClick={createNewChat}
-            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 transition-all duration-200 h-10"
+            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/30 active:scale-[0.98] transition-all duration-200 h-10 relative overflow-hidden group"
           >
-            <Plus className="w-4 h-4" />
-            <span className="text-sm font-medium">New Chat</span>
+            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shimmer" />
+            <Plus className="w-4 h-4 relative z-10" />
+            <span className="text-sm font-medium relative z-10">New Chat</span>
           </Button>
         </div>
 
@@ -228,8 +239,8 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                   exit={{ opacity: 0, y: -8 }}
                   className="text-center py-16 px-4"
                 >
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center">
-                    <MessageSquare className="w-7 h-7 text-emerald-500/60" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center shadow-inner">
+                    <MessageSquare className="w-7 h-7 text-emerald-500/60 animate-float" />
                   </div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">
                     No conversations yet
@@ -275,14 +286,20 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               )}
             </AnimatePresence>
           </div>
+          {/* Bottom gradient fade */}
+          <div className="gradient-fade-bottom pointer-events-none" style={{ height: '2px' }} />
         </ScrollArea>
 
         {/* Footer */}
         <div className="p-3 border-t border-border space-y-2">
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                {user.name.charAt(0).toUpperCase()}
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                {/* Pulsing ring */}
+                <div className="absolute -inset-0.5 rounded-full animate-pulse-ring" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user.name}</p>
@@ -293,25 +310,32 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
-              size="sm"
-              className="flex-1 justify-start gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              suppressHydrationWarning
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
+              onClick={() => setSettingsOpen(true)}
+              title="Settings"
             >
-              <Sun className="w-3.5 h-3.5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute w-3.5 h-3.5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
-              <span className="text-xs" suppressHydrationWarning>
-                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-              </span>
+              <Settings className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
-              className="flex-1 justify-start gap-2 text-destructive/80 hover:text-destructive hover:bg-destructive/10 transition-colors"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              suppressHydrationWarning
+              title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            >
+              <Sun className="w-3.5 h-3.5 rotate-0 scale-100 transition-transform duration-500 dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute w-3.5 h-3.5 rotate-90 scale-0 transition-transform duration-500 dark:rotate-0 dark:scale-100" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive/80 hover:text-destructive hover:bg-destructive/10 hover:scale-105 active:scale-95 transition-all duration-150"
               onClick={() => setLogoutDialogOpen(true)}
+              title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="text-xs">Sign Out</span>
             </Button>
           </div>
         </div>
@@ -356,6 +380,9 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Settings sheet */}
+      <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }
@@ -400,6 +427,7 @@ function ConversationItem({
         });
         if (res.ok) {
           onRename(trimmed);
+          toast.success('Conversation renamed');
         }
       } catch (error) {
         console.error('Failed to rename conversation:', error);
@@ -438,9 +466,9 @@ function ConversationItem({
         onDoubleClick={handleDoubleClick}
         className={cn(
           'w-full text-left p-3 rounded-lg text-sm transition-all duration-200',
-          'hover:bg-accent/80',
+          'hover:bg-accent/80 hover:shadow-sm hover:scale-[1.01] active:scale-[0.99]',
           isActive
-            ? 'bg-accent text-accent-foreground border-l-[3px] border-l-emerald-500 shadow-sm'
+            ? 'bg-accent text-accent-foreground border-l-[3px] border-l-emerald-500 shadow-sm shadow-emerald-500/10'
             : 'border-l-[3px] border-l-transparent'
         )}
       >
@@ -478,7 +506,7 @@ function ConversationItem({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-destructive/10"
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-all duration-150 hover:bg-destructive/10 hover:scale-110"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
