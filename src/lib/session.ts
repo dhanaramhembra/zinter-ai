@@ -26,8 +26,8 @@ export async function createSession(user: { id: string; email: string; name: str
   return sessionId;
 }
 
-export function getSessionFromCookie(): SessionData | null {
-  const cookieStore = cookies();
+export async function getSessionFromCookie(): Promise<SessionData | null> {
+  const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE);
 
   if (!sessionCookie?.value) {

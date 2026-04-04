@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    const session = getSessionFromCookie();
+    const session = await getSessionFromCookie();
     if (!session) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
@@ -27,7 +27,7 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = getSessionFromCookie();
+    const session = await getSessionFromCookie();
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }

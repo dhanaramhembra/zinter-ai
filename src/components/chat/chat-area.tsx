@@ -69,6 +69,14 @@ function saveFavorites(favorites: string[]) {
   }
 }
 
+function formatNumber(num: number): string {
+  if (num >= 1000) {
+    const val = num / 1000;
+    return val % 1 === 0 ? `${val}K` : `${val.toFixed(1)}K`;
+  }
+  return num.toString();
+}
+
 const SUGGESTIONS = [
   {
     id: 'quantum',
@@ -149,6 +157,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   // Feature 4: Response time tracking
   const requestStartTimeRef = useRef<number | null>(null);
 
+  // Scroll-to-bottom button state
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const [messagesBelowViewport, setMessagesBelowViewport] = useState(0);
+  const scrollAreaContainerRef = useRef<HTMLDivElement>(null);
+
   // Load font size from localStorage
   useEffect(() => {
     setFontSize(getStoredFontSize());
@@ -184,6 +197,52 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [personaDropdownOpen]);
+
+  // Scroll listener for scroll-to-bottom button
+  useEffect(() => {
+    const container = scrollAreaContainerRef.current;
+    if (!container) return;
+
+    const viewport = container.querySelector('[data-slot="scroll-area-viewport"]') as HTMLDivElement | null;
+    if (!viewport) return;
+
+    let rafId: number | null = null;
+
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+
+        const distanceFromBottom = viewport.scrollHeight - (viewport.scrollTop + viewport.clientHeight);
+        const scrolledUp = distanceFromBottom > 200;
+        setIsScrolledUp(scrolledUp);
+
+        if (scrolledUp) {
+          const messagesContainer = container.querySelector('[data-messages-container]');
+          if (messagesContainer) {
+            const msgEls = messagesContainer.querySelectorAll('[data-message-idx]');
+            const viewportRect = viewport.getBoundingClientRect();
+            let count = 0;
+            msgEls.forEach((el) => {
+              const rect = (el as HTMLElement).getBoundingClientRect();
+              if (rect.top >= viewportRect.bottom) {
+                count++;
+              }
+            });
+            setMessagesBelowViewport(count);
+          }
+        } else {
+          setMessagesBelowViewport(0);
+        }
+      });
+    };
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      viewport.removeEventListener('scroll', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConversation?.messages || [];
@@ -339,7 +398,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   }, [setGenerating]);
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, imageBase64?: string) => {
       setPendingSuggestion(null);
       setPendingImageMode(false);
 
@@ -351,9 +410,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
       const userMessage: Message = {
         id: uuidv4(),
-        content,
+        content: content || 'Analyze this image',
         role: 'user',
         createdAt: new Date().toISOString(),
+        attachedImage: imageBase64 || null,
       };
 
       addMessage(convId, userMessage);
@@ -371,7 +431,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         await fetch(`/api/chat/${convId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content, role: 'user' }),
+          body: JSON.stringify({ content: userMessage.content, role: 'user' }),
         });
       } catch (error) {
         console.error('Failed to save message:', error);
@@ -382,9 +442,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: content,
+            message: content || 'Analyze this image',
             conversationId: convId,
             systemPrompt: currentPersona.systemPrompt,
+            imageBase64: imageBase64 || undefined,
           }),
           signal: controller.signal,
         });
@@ -816,6 +877,28 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     return messages.filter((m) => favorites.includes(m.id)).length;
   }, [messages, favorites]);
 
+  // Chat statistics
+  const chatStats = useMemo(() => {
+    if (messages.length === 0) return null;
+    const totalWords = messages.reduce((sum, msg) => {
+      return sum + msg.content.split(/\s+/).filter(Boolean).length;
+    }, 0);
+    return { wordCount: totalWords };
+  }, [messages]);
+
+  const formattedStats = useMemo(() => {
+    if (!chatStats) return '';
+    const parts: string[] = [];
+    parts.push(`${messages.length} message${messages.length !== 1 ? 's' : ''}`);
+    parts.push(`${formatNumber(chatStats.wordCount)} words`);
+    return parts.join(' · ');
+  }, [chatStats, messages.length]);
+
+  // Scroll to bottom handler
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
   // Typing indicator component with enhanced glow
   const TypingIndicator = () => (
     <motion.div
@@ -1033,9 +1116,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         </Button>
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm truncate">{activeConversation.title}</h2>
-          <p className="text-[11px] text-muted-foreground">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
-          </p>
+          {hasMessages && formattedStats && (
+            <p className="text-[11px] text-muted-foreground">
+              {formattedStats}
+            </p>
+          )}
         </div>
 
         {/* Feature 4: Persona badge */}
@@ -1252,7 +1337,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       </div>
 
       {/* Messages area */}
-      <ScrollArea className="flex-1">
+      <div ref={scrollAreaContainerRef} className="relative flex-1 min-h-0">
+      <ScrollArea className="h-full">
         {!hasMessages ? (
           /* Empty conversation state */
           <div className="flex items-center justify-center min-h-full p-8">
@@ -1304,7 +1390,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           </div>
         ) : (
           /* Messages list with subtle dot grid background */
-          <div className={cn('max-w-4xl mx-auto py-4 dot-grid rounded-lg', FONT_SIZE_CLASS[fontSize])}>
+          <div className={cn('max-w-4xl mx-auto py-4 dot-grid rounded-lg', FONT_SIZE_CLASS[fontSize])} data-messages-container>
             <div className="space-y-1 [&_p]:leading-relaxed">
               {displayMessages.map((message, idx) => {
                 const actualIndex = messages.indexOf(message);
@@ -1321,25 +1407,26 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 const showResponseTime = message.id === lastAssistantMessageId;
 
                 return (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    index={idx}
-                    isFirstInGroup={isFirstInGroup}
-                    isLastInGroup={isLastInGroup}
-                    onRegenerate={message.role === 'assistant' && isLastInGroup ? handleRegenerate : undefined}
-                    onEditMessage={
-                      message.role === 'user'
-                        ? handleEditMessage
-                        : undefined
-                    }
-                    searchHighlight={searchOpen ? searchQuery : null}
-                    isSearchMatch={isSearchMatch}
-                    isCurrentSearchMatch={isCurrentSearchMatch}
-                    isFavorited={favorites.includes(message.id)}
-                    onToggleFavorite={message.role === 'assistant' ? handleToggleFavorite : undefined}
-                    showResponseTime={showResponseTime}
-                  />
+                  <div key={message.id} data-message-idx={actualIndex}>
+                    <MessageBubble
+                      message={message}
+                      index={idx}
+                      isFirstInGroup={isFirstInGroup}
+                      isLastInGroup={isLastInGroup}
+                      onRegenerate={message.role === 'assistant' && isLastInGroup ? handleRegenerate : undefined}
+                      onEditMessage={
+                        message.role === 'user'
+                          ? handleEditMessage
+                          : undefined
+                      }
+                      searchHighlight={searchOpen ? searchQuery : null}
+                      isSearchMatch={isSearchMatch}
+                      isCurrentSearchMatch={isCurrentSearchMatch}
+                      isFavorited={favorites.includes(message.id)}
+                      onToggleFavorite={message.role === 'assistant' ? handleToggleFavorite : undefined}
+                      showResponseTime={showResponseTime}
+                    />
+                  </div>
                 );
               })}
             </div>
@@ -1363,6 +1450,28 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           </div>
         )}
       </ScrollArea>
+
+      {/* Scroll-to-bottom floating button */}
+      <AnimatePresence>
+        {isScrolledUp && hasMessages && !showFavoritesOnly && (
+          <motion.button
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onClick={scrollToBottom}
+            className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 active:scale-95 h-10 px-4 cursor-pointer"
+          >
+            <ChevronDown className="w-4 h-4" />
+            {messagesBelowViewport > 0 && (
+              <span className="absolute -top-2 -right-2 min-w-[20px] h-5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center px-1.5 shadow-sm border-2 border-background">
+                {messagesBelowViewport}
+              </span>
+            )}
+          </motion.button>
+        )}
+      </AnimatePresence>
+      </div>
 
       {/* Subtle separator between messages and input */}
       <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />

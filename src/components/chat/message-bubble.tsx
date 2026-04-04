@@ -207,12 +207,24 @@ export default function MessageBubble({
   const messageRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
-  const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(message.content);
-    setCopied(true);
-    toast.success('Message copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  }, [message.content]);
+  const handleCopy = useCallback(async (e?: React.MouseEvent) => {
+    const isShiftClick = e?.shiftKey;
+
+    if (isShiftClick && !isUser) {
+      // Copy as formatted markdown for assistant messages
+      const markdownContent = message.content;
+      await navigator.clipboard.writeText(markdownContent);
+      setCopied(true);
+      toast.success('Copied as Markdown');
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      // Default: copy raw text
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      toast.success('Message copied to clipboard');
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [message.content, isUser]);
 
   const handleSpeak = useCallback(async () => {
     if (isSpeaking && audioRef.current) {
@@ -508,9 +520,20 @@ export default function MessageBubble({
               )}
 
               {isUser ? (
-                <p className="whitespace-pre-wrap">
-                  {highlightedUserContent || message.content}
-                </p>
+                <>
+                  {message.attachedImage && (
+                    <div className="mb-2">
+                      <img
+                        src={message.attachedImage}
+                        alt="Attached image"
+                        className="max-w-[240px] max-h-[180px] object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  <p className="whitespace-pre-wrap">
+                    {highlightedUserContent || message.content}
+                  </p>
+                </>
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none">
                   <ReactMarkdown
@@ -618,8 +641,8 @@ export default function MessageBubble({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
-                      onClick={handleCopy}
-                      title="Copy message"
+                      onClick={(e) => handleCopy(e)}
+                      title="Copy message (Shift+Click for Markdown)"
                     >
                       {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     </Button>
@@ -642,8 +665,8 @@ export default function MessageBubble({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
-                      onClick={handleCopy}
-                      title="Copy message"
+                      onClick={(e) => handleCopy(e)}
+                      title="Copy message (Shift+Click for Markdown)"
                     >
                       {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     </Button>

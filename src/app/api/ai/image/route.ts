@@ -9,7 +9,7 @@ const OUTPUT_DIR = path.join(process.cwd(), 'public', 'generated-images');
 
 export async function POST(req: NextRequest) {
   try {
-    const session = getSessionFromCookie();
+    const session = await getSessionFromCookie();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

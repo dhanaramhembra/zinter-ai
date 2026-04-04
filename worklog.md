@@ -4,9 +4,9 @@
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
 ## Current Project Status
-- **Phase**: v4 - Premium Features & Visual Polish Complete
-- **Status**: Stable, all lint passes, dev server compiles cleanly
-- **Last Review**: Cron Review Round 3
+- **Phase**: v5 - Bug Fixes, Drag & Drop Upload, Advanced UI Polish
+- **Status**: Stable, all lint passes, dev server compiles cleanly, no runtime errors
+- **Last Review**: Cron Review Round 4
 
 ## Completed Features
 
@@ -143,7 +143,7 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - `POST /api/chat/[id]/messages` - Send message
 - `PATCH /api/chat/[id]/messages` - Update conversation title (rename) or message content (edit)
 - `DELETE /api/chat/[id]/messages` - Delete conversation
-- `POST /api/ai/chat` - AI chat completion (supports custom systemPrompt for personas; response time tracked)
+- `POST /api/ai/chat` - AI chat completion (supports custom systemPrompt, imageBase64 multimodal; response time tracked)
 - `POST /api/ai/image` - Generate image
 - `POST /api/ai/tts` - Text to speech
 - `POST /api/ai/asr` - Speech to text
@@ -694,3 +694,55 @@ Completed all 4 features across 5 files with zero lint errors and clean dev serv
 5. Add conversation search within messages (full-text search)
 6. Add file/image upload support in chat
 7. Mobile app optimization (PWA support, service worker)
+
+---
+## Task ID: 6-scroll-stats - full-stack-developer
+### Work Task
+Add scroll-to-bottom floating button and chat statistics to the NexusAI chat area component.
+
+### Work Summary
+Completed both features in `src/components/chat/chat-area.tsx` with zero lint errors and clean dev server compilation.
+
+#### Feature 1: Scroll-to-Bottom Floating Button
+
+**Implementation approach:**
+- Added `isScrolledUp` and `messagesBelowViewport` state to track scroll position
+- Added `scrollAreaContainerRef` to reference the ScrollArea wrapper div
+- Added a scroll listener `useEffect` that:
+  1. Queries the Radix ScrollArea viewport element via `[data-slot="scroll-area-viewport"]` selector
+  2. Attaches a passive scroll event listener with `requestAnimationFrame` throttling
+  3. Computes `distanceFromBottom = scrollHeight - (scrollTop + clientHeight)` and sets `isScrolledUp = distanceFromBottom > 200`
+  4. When scrolled up, queries all `[data-message-idx]` elements within `[data-messages-container]` and counts those whose `getBoundingClientRect().top` exceeds the viewport's bottom edge
+  5. Properly cleans up event listener and cancels any pending rAF on unmount
+
+- Added `data-message-idx={actualIndex}` wrapper divs around each MessageBubble for scroll tracking
+- Added `data-messages-container` attribute to the messages container div
+
+**Button design:**
+- Pill-shaped `motion.button` with emerald-500 background, white ChevronDown icon
+- Absolutely positioned at `bottom-4 right-4` within a relative wrapper div around the ScrollArea
+- Framer Motion entrance/exit animation: fade + slide up + scale (0.2s duration, easeOut)
+- Emerald shadow glow (`shadow-lg shadow-emerald-500/25`)
+- Hover scale (1.05) and active scale (0.95) transitions
+- Notification badge on top-right showing count of messages below viewport (emerald-600 background, border-2 border-background for visual separation)
+- Only renders when `isScrolledUp && hasMessages && !showFavoritesOnly`
+- Click calls `scrollToBottom()` which uses `bottomRef.current?.scrollIntoView({ behavior: 'smooth' })`
+
+#### Feature 2: Chat Statistics in Header
+
+**Implementation:**
+- Added `formatNumber()` helper function: formats numbers ≥1000 as "1.2K", "3K" etc.
+- Added `chatStats` useMemo that computes total word count across all messages using `content.split(/\s+/).filter(Boolean)`
+- Added `formattedStats` useMemo that generates display string: "{N} messages · {W} words"
+- Modified header subtitle to show `formattedStats` instead of simple message count
+- Only renders when `hasMessages && formattedStats` is truthy
+- Subtle `text-[11px] text-muted-foreground` styling consistent with existing design
+
+**Layout changes:**
+- Wrapped the ScrollArea in a `<div ref={scrollAreaContainerRef} className="relative flex-1 min-h-0">` to enable absolute positioning of the floating button
+- Changed ScrollArea from `className="flex-1"` to `className="h-full"` to fill the wrapper
+
+Files modified:
+- `src/components/chat/chat-area.tsx` (added scroll tracking, floating button, chat statistics)
+
+Lint passes with zero errors. Dev server compiles and serves 200 OK.

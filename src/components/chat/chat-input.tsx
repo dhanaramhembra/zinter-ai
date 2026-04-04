@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -17,13 +17,19 @@ import {
   Loader2,
   X,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { useChatStore } from '@/store/chat-store';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface AttachedImage {
+  base64: string;
+  preview: string;
+}
+
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, image?: string) => void;
   onImageGenerate: (prompt: string) => void;
   disabled?: boolean;
   /** Text to pre-fill the input (e.g. from a suggestion card click) */
@@ -43,10 +49,13 @@ export default function ChatInput({
   const [isRecording, setIsRecording] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [attachedImage, setAttachedImage] = useState<AttachedImage | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const lastAppliedInitialRef = useRef<string | null>(null);
+  const dragCounterRef = useRef(0);
   const { isGenerating } = useChatStore();
 
   // Feature 3: Word count and character count
@@ -86,16 +95,70 @@ export default function ChatInput({
     }
   }, [input]);
 
+  // --- Drag & Drop handlers ---
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) {
+      setIsDraggingOver(true);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDraggingOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDraggingOver(false);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (!file.type.startsWith('image/')) {
+      return; // Only accept image files
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setAttachedImage({
+        base64: result,
+        preview: result,
+      });
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setAttachedImage(null);
+  }, []);
+
   const handleSend = () => {
-    if (!input.trim() || disabled || isGenerating) return;
+    if ((!input.trim() && !attachedImage) || disabled || isGenerating) return;
 
     if (imageMode) {
       onImageGenerate(input.trim());
     } else {
-      onSend(input.trim());
+      onSend(input.trim(), attachedImage?.base64);
     }
     setInput('');
     setImageMode(false);
+    setAttachedImage(null);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -165,13 +228,79 @@ export default function ChatInput({
     }
   };
 
+  const canSend = (input.trim() || !!attachedImage) && !disabled && !isGenerating && !isRecording && !isTranscribing;
+
   return (
-    <div className="border-t border-border/60 bg-card/80 backdrop-blur-xl p-4 relative">
+    <div
+      className="border-t border-border/60 bg-card/80 backdrop-blur-xl p-4 relative"
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Subtle background texture */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+
+      {/* Drag & Drop overlay */}
+      <AnimatePresence>
+        {isDraggingOver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-50 flex items-center justify-center rounded-none"
+          >
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+            <div className="relative flex flex-col items-center gap-3 p-8 border-2 border-dashed border-emerald-500 rounded-2xl bg-emerald-500/5 max-w-xs mx-4">
+              <div className="w-14 h-14 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Upload className="w-7 h-7 text-emerald-500" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Drop image here</p>
+                <p className="text-xs text-muted-foreground mt-1">Image will be attached to your message</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Attached image preview */}
+      <AnimatePresence>
+        {attachedImage && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, scale: 0.95 }}
+            animate={{ opacity: 1, height: 'auto', scale: 1 }}
+            exit={{ opacity: 0, height: 0, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="mb-2 overflow-hidden"
+          >
+            <div className="relative inline-block group">
+              <img
+                src={attachedImage.preview}
+                alt="Attached image"
+                className="h-20 w-20 object-cover rounded-xl border border-border/60 shadow-sm"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-5 w-5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
+                onClick={handleRemoveImage}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+            <div className="ml-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground align-middle">
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>Image attached</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Image mode indicator with enhanced gradient and animation */}
       <AnimatePresence>
-        {imageMode && (
+        {imageMode && !attachedImage && (
           <motion.div
             initial={{ opacity: 0, height: 0, scale: 0.98 }}
             animate={{ opacity: 1, height: 'auto', scale: 1 }}
@@ -316,14 +445,12 @@ export default function ChatInput({
                   className={cn(
                     'rounded-xl h-11 w-11 shrink-0 transition-all duration-300',
                     'hover:scale-105 active:scale-95',
-                    input.trim() && !disabled && !isGenerating && !isRecording && !isTranscribing
+                    canSend
                       ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:brightness-110'
                       : ''
                   )}
                   onClick={handleSend}
-                  disabled={
-                    !input.trim() || disabled || isGenerating || isRecording || isTranscribing
-                  }
+                  disabled={!canSend}
                 >
                   {imageMode ? (
                     <Sparkles className="w-5 h-5" />
@@ -342,7 +469,7 @@ export default function ChatInput({
 
       {/* Feature 3: Word/char count */}
       <AnimatePresence>
-        {input.trim().length > 0 && (
+        {(input.trim().length > 0 || attachedImage) && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -351,7 +478,7 @@ export default function ChatInput({
             className="flex items-center justify-end mt-1.5 px-1"
           >
             <p className="text-[10px] text-muted-foreground/50">
-              {wordCount} word{wordCount !== 1 ? 's' : ''} · {charCount} char{charCount !== 1 ? 's' : ''}
+              {wordCount} word{wordCount !== 1 ? 's' : ''} · {charCount} char{charCount !== 1 ? 's' : ''}{attachedImage ? ' · 1 image' : ''}
             </p>
           </motion.div>
         )}

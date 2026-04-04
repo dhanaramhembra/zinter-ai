@@ -5,12 +5,12 @@ import ZAI from 'z-ai-web-dev-sdk';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = getSessionFromCookie();
+    const session = await getSessionFromCookie();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { message, conversationId, systemPrompt } = await req.json();
+    const { message, conversationId, systemPrompt, imageBase64 } = await req.json();
 
     if (!message || !conversationId) {
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const defaultSystemPrompt =
       'You are a helpful, friendly, and knowledgeable AI assistant. You provide clear, accurate, and concise responses. You can help with coding, writing, analysis, creative tasks, and general questions. Use markdown formatting when appropriate for code blocks, lists, and emphasis.';
 
-    const messages: Array<{ role: string; content: string }> = [
+    const messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> = [
       {
         role: 'assistant',
         content: systemPrompt || defaultSystemPrompt,
@@ -50,16 +50,40 @@ export async function POST(req: NextRequest) {
         role: m.role,
         content: m.content,
       })),
-      {
+    ];
+
+    // If there's an attached image, include it as a multimodal message
+    if (imageBase64) {
+      const imageDataUrl = imageBase64.startsWith('data:')
+        ? imageBase64
+        : `data:image/png;base64,${imageBase64}`;
+
+      messages.push({
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: message,
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageDataUrl,
+            },
+          },
+        ],
+      });
+    } else {
+      messages.push({
         role: 'user',
         content: message,
-      },
-    ];
+      });
+    }
 
     const zai = await ZAI.create();
 
     const completion = await zai.chat.completions.create({
-      messages,
+      messages: messages as any,
       thinking: { type: 'disabled' },
     });
 

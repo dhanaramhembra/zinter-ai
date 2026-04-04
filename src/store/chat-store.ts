@@ -9,6 +9,8 @@ export interface Message {
   audioUrl?: string | null;
   createdAt: string;
   responseTime?: number | null;
+  /** Base64-encoded image attached by user (for display in user bubble) */
+  attachedImage?: string | null;
 }
 
 export interface Conversation {

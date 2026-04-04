@@ -4,12 +4,12 @@ import { cookies } from 'next/headers';
 
 export async function POST() {
   try {
-    const session = getSessionFromCookie();
+    const session = await getSessionFromCookie();
     if (session) {
       deleteSession(session.userId);
     }
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(SESSION_COOKIE);
     if (sessionCookie?.value) {
       deleteSession(sessionCookie.value);
