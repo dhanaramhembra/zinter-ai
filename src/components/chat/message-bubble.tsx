@@ -17,8 +17,9 @@ import {
   Download,
   Pencil,
   X,
+  Star,
 } from 'lucide-react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter';
@@ -34,6 +35,71 @@ interface MessageBubbleProps {
   isLastInGroup?: boolean;
   onRegenerate?: (messageId: string) => void;
   onEditMessage?: (messageId: string, newContent: string) => void;
+  /** Search highlight text */
+  searchHighlight?: string | null;
+  /** Whether this message is the current search match */
+  isCurrentSearchMatch?: boolean;
+  /** Whether this message contains a search match */
+  isSearchMatch?: boolean;
+  /** Whether this message is favorited */
+  isFavorited?: boolean;
+  /** Toggle favorite callback */
+  onToggleFavorite?: (messageId: string) => void;
+  /** Whether to show response time */
+  showResponseTime?: boolean;
+}
+
+/** Highlight matching text in a string with <mark> tags */
+function highlightText(text: string, query: string, isCurrentMatch: boolean): React.ReactNode[] {
+  if (!query.trim()) return [text];
+
+  const parts: React.ReactNode[] = [];
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let lastIndex = 0;
+  let index = lowerText.indexOf(lowerQuery, lastIndex);
+
+  while (index !== -1) {
+    // Add text before match
+    if (index > lastIndex) {
+      parts.push(text.slice(lastIndex, index));
+    }
+    // Add highlighted match
+    parts.push(
+      <mark
+        key={index}
+        className={cn(
+          'rounded px-0.5',
+          isCurrentMatch
+            ? 'bg-yellow-300 dark:bg-yellow-400/40 text-inherit'
+            : 'bg-emerald-200/70 dark:bg-emerald-400/30 text-inherit'
+        )}
+      >
+        {text.slice(index, index + query.length)}
+      </mark>
+    );
+    lastIndex = index + query.length;
+    index = lowerText.indexOf(lowerQuery, lastIndex);
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
+}
+
+/** Format response time */
+function formatResponseTime(ms: number): string {
+  const seconds = ms / 1000;
+  if (seconds < 1) return '<1s';
+  if (seconds >= 60) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}m ${secs}s`;
+  }
+  return `${seconds.toFixed(1)}s`;
 }
 
 function CodeBlock({
@@ -123,6 +189,12 @@ export default function MessageBubble({
   isLastInGroup = true,
   onRegenerate,
   onEditMessage,
+  searchHighlight,
+  isCurrentSearchMatch = false,
+  isSearchMatch = false,
+  isFavorited = false,
+  onToggleFavorite,
+  showResponseTime = false,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -132,6 +204,7 @@ export default function MessageBubble({
   const [editContent, setEditContent] = useState(message.content);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
   const handleCopy = useCallback(async () => {
@@ -223,6 +296,13 @@ export default function MessageBubble({
     }
   }, [isEditing, editContent]);
 
+  // Scroll into view when this is the current search match
+  useEffect(() => {
+    if (isCurrentSearchMatch && messageRef.current) {
+      messageRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isCurrentSearchMatch]);
+
   const handleSaveEdit = useCallback(() => {
     if (!editContent.trim() || editContent.trim() === message.content) {
       setIsEditing(false);
@@ -251,10 +331,19 @@ export default function MessageBubble({
     [handleSaveEdit, handleCancelEdit]
   );
 
+  // Highlighted user message content for search
+  const highlightedUserContent = useMemo(() => {
+    if (isUser && searchHighlight && searchHighlight.trim()) {
+      return highlightText(message.content, searchHighlight, isCurrentSearchMatch);
+    }
+    return null;
+  }, [isUser, message.content, searchHighlight, isCurrentSearchMatch]);
+
   const staggerDelay = Math.min(index * 0.05, 0.5);
 
   return (
     <motion.div
+      ref={messageRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: staggerDelay }}
@@ -262,7 +351,8 @@ export default function MessageBubble({
         'flex gap-3 group px-4',
         isFirstInGroup ? 'pt-4' : 'pt-0.5',
         isLastInGroup ? 'pb-3' : 'pb-0.5',
-        isUser ? 'flex-row-reverse' : 'flex-row'
+        isUser ? 'flex-row-reverse' : 'flex-row',
+        isCurrentSearchMatch && 'ring-1 ring-emerald-500/40 rounded-xl -mx-2 px-6'
       )}
     >
       {/* Avatar - only show on last message in group */}
@@ -314,6 +404,13 @@ export default function MessageBubble({
           </div>
         )}
 
+        {/* Response time indicator - only for most recent assistant message */}
+        {!isUser && showResponseTime && message.responseTime != null && !isGenerating && (
+          <div className={cn('text-[10px] text-muted-foreground/50', isUser ? 'text-right' : '')}>
+            Responded in {formatResponseTime(message.responseTime)}
+          </div>
+        )}
+
         {/* Message bubble */}
         <div
           className={cn(
@@ -321,7 +418,8 @@ export default function MessageBubble({
             isUser
               ? 'bg-primary text-primary-foreground rounded-tr-md shadow-md shadow-emerald-500/15'
               : 'bg-muted rounded-tl-md shadow-sm',
-            isGenerating && 'animate-pulse'
+            isGenerating && 'animate-pulse',
+            !isUser && isFavorited && 'ring-1 ring-amber-400/50 shadow-[0_0_8px_oklch(0.8_0.15_85/15%)]'
           )}
         >
           {isGenerating ? (
@@ -410,7 +508,9 @@ export default function MessageBubble({
               )}
 
               {isUser ? (
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className="whitespace-pre-wrap">
+                  {highlightedUserContent || message.content}
+                </p>
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none">
                   <ReactMarkdown
@@ -536,8 +636,8 @@ export default function MessageBubble({
                     )}
                   </>
                 ) : (
-                  /* Assistant message actions: Copy + TTS + Regenerate */
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  /* Assistant message actions: Copy + TTS + Favorite + Regenerate */
+                  <>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -556,6 +656,27 @@ export default function MessageBubble({
                     >
                       {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                     </Button>
+                    {onToggleFavorite && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          'h-7 w-7 hover:scale-110 active:scale-95 transition-all duration-150',
+                          isFavorited
+                            ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                            : 'hover:bg-accent'
+                        )}
+                        onClick={() => onToggleFavorite(message.id)}
+                        title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <Star
+                          className={cn(
+                            'w-3.5 h-3.5',
+                            isFavorited && 'fill-current'
+                          )}
+                        />
+                      </Button>
+                    )}
                     {onRegenerate && (
                       <Button
                         variant="ghost"
@@ -567,7 +688,7 @@ export default function MessageBubble({
                         <RefreshCw className="w-3.5 h-3.5" />
                       </Button>
                     )}
-                  </div>
+                  </>
                 )}
               </motion.div>
             )}

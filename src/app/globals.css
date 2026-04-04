@@ -870,6 +870,237 @@ button:focus-visible {
   display: block;
 }
 
+/* ─── Slide-up animation ─── */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+/* ─── Fade-in animation ─── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+/* ─── Elevated shadow utility ─── */
+.elevated-shadow {
+  box-shadow:
+    0 4px 6px -1px oklch(0 0 0 / 8%),
+    0 10px 20px -4px oklch(0 0 0 / 6%),
+    0 0 1px oklch(0 0 0 / 10%);
+}
+
+.dark .elevated-shadow {
+  box-shadow:
+    0 4px 6px -1px oklch(0 0 0 / 30%),
+    0 10px 20px -4px oklch(0 0 0 / 25%),
+    0 0 1px oklch(0 0 0 / 40%);
+}
+
+/* ─── Text gradient alternatives ─── */
+.text-gradient-down {
+  background: linear-gradient(180deg, oklch(0.55 0.18 163), oklch(0.65 0.15 175));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-right {
+  background: linear-gradient(90deg, oklch(0.55 0.18 163), oklch(0.60 0.12 170), oklch(0.65 0.15 175));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Glass card utility ─── */
+.glass-card {
+  background: oklch(1 0 0 / 65%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid oklch(0 0 0 / 6%);
+  border-radius: var(--radius);
+}
+
+.dark .glass-card {
+  background: oklch(0.17 0.015 260 / 65%);
+  border-color: oklch(1 0 0 / 8%);
+}
+
+/* ─── Primary gradient button utility ─── */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, oklch(0.55 0.18 163), oklch(0.50 0.16 175));
+  color: oklch(0.99 0 0);
+  font-weight: 600;
+  box-shadow: 0 2px 8px oklch(0.55 0.18 163 / 25%);
+  transition: all 0.2s ease;
+}
+
+.btn-primary-gradient:hover {
+  background: linear-gradient(135deg, oklch(0.50 0.20 163), oklch(0.45 0.18 175));
+  box-shadow: 0 4px 12px oklch(0.55 0.18 163 / 30%);
+  transform: translateY(-1px);
+}
+
+.dark .btn-primary-gradient {
+  background: linear-gradient(135deg, oklch(0.65 0.20 163), oklch(0.60 0.18 175));
+  color: oklch(0.13 0.012 260);
+}
+
+/* ─── Input glow utility ─── */
+.input-glow {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.input-glow:focus {
+  border-color: oklch(0.55 0.18 163 / 50%);
+  box-shadow:
+    0 0 0 3px oklch(0.55 0.18 163 / 12%),
+    0 0 16px oklch(0.55 0.18 163 / 10%);
+}
+
+.dark .input-glow:focus {
+  border-color: oklch(0.65 0.20 163 / 50%);
+  box-shadow:
+    0 0 0 3px oklch(0.65 0.20 163 / 12%),
+    0 0 16px oklch(0.65 0.20 163 / 10%);
+}
+
+/* ─── Chat bubble utilities ─── */
+.chat-bubble-user {
+  background: linear-gradient(135deg, oklch(0.55 0.18 163), oklch(0.50 0.16 175));
+  color: oklch(0.99 0 0);
+  border-radius: 1rem 1rem 0.25rem 1rem;
+}
+
+.chat-bubble-assistant {
+  background: oklch(0.96 0.008 163);
+  color: oklch(0.13 0.015 260);
+  border-radius: 1rem 1rem 1rem 0.25rem;
+}
+
+.dark .chat-bubble-assistant {
+  background: oklch(0.22 0.025 163);
+  color: oklch(0.96 0.008 163);
+}
+
+/* ─── Message enter animation ─── */
+@keyframes message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.message-enter {
+  animation: message-enter 0.35s ease-out forwards;
+}
+
+/* ─── Sidebar scrollbar styling ─── */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.55 0.18 163 / 15%);
+  border-radius: 2px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.18 163 / 30%);
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.65 0.20 163 / 20%);
+}
+
+.dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.65 0.20 163 / 35%);
+}
+
+/* ─── Progress bar animation ─── */
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.animate-progress-sweep {
+  animation: progress-sweep 2s ease-in-out infinite;
+}
+
+/* ─── Particle float animation ─── */
+@keyframes particle-float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-80px) translateX(20px);
+  }
+}
+
+/* ─── Vignette effect ─── */
+.vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, oklch(0 0 0 / 15%) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dark .vignette::after {
+  background: radial-gradient(ellipse at center, transparent 50%, oklch(0 0 0 / 40%) 100%);
+}
+
+/* ─── Pulsing red ring (recording) ─── */
+@keyframes pulse-red-ring {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.577 0.245 27.325 / 60%);
+  }
+  70% {
+    box-shadow: 0 0 0 8px oklch(0.577 0.245 27.325 / 0%);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.577 0.245 27.325 / 0%);
+  }
+}
+
+.animate-pulse-red-ring {
+  animation: pulse-red-ring 1.5s ease-out infinite;
+}
+
 /* ─── Reduced motion ─── */
 @media (prefers-reduced-motion: reduce) {
   * {

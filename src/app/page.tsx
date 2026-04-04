@@ -10,10 +10,24 @@ import { Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function LoadingScreen() {
+  // Generate particle positions once
+  const particles = Array.from({ length: 25 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${30 + Math.random() * 60}%`,
+    size: 2 + Math.random() * 3,
+    delay: Math.random() * 5,
+    duration: 4 + Math.random() * 6,
+    opacity: 0.15 + Math.random() * 0.3,
+  }));
+
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-background to-teal-50 dark:from-emerald-950/20 dark:via-background dark:to-teal-950/20" />
+
+      {/* Vignette effect */}
+      <div className="vignette absolute inset-0 pointer-events-none" />
 
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -43,12 +57,41 @@ function LoadingScreen() {
         />
       </div>
 
+      {/* Floating particles / sparkles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {particles.map((p) => (
+          <motion.div
+            key={p.id}
+            className="absolute rounded-full bg-emerald-400 dark:bg-emerald-500"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              opacity: p.opacity,
+            }}
+            animate={{
+              y: [-20, -80, -20],
+              x: [-5, 10, -5],
+              opacity: [0, p.opacity, 0],
+              scale: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: p.delay,
+            }}
+          />
+        ))}
+      </div>
+
       <div className="relative z-10 flex flex-col items-center gap-6">
-        {/* Logo with rotating gradient ring */}
+        {/* Logo with dynamic entrance (scale + rotate) */}
         <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+          initial={{ scale: 0, opacity: 0, rotate: -180 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
           className="relative"
         >
           {/* Rotating gradient ring */}
@@ -85,26 +128,50 @@ function LoadingScreen() {
           </motion.div>
         </motion.div>
 
-        {/* Welcome text */}
+        {/* Welcome text with staggered delays */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
           className="text-center"
         >
-          <h2 className="text-2xl font-bold mb-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+          <motion.h2
+            className="text-2xl font-bold mb-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+          >
             Welcome to NexusAI
-          </h2>
-          <p className="text-sm text-muted-foreground">
+          </motion.h2>
+          <motion.p
+            className="text-sm text-muted-foreground"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65, duration: 0.5 }}
+          >
             Loading your experience...
-          </p>
+          </motion.p>
+        </motion.div>
+
+        {/* Emerald gradient progress bar */}
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="w-48 h-1 rounded-full bg-muted/60 overflow-hidden"
+        >
+          <motion.div
+            className="w-1/3 h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400"
+            animate={{ x: ['-100%', '400%'] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
         </motion.div>
 
         {/* Animated loading dots */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.9 }}
           className="flex items-center gap-1.5"
         >
           {[0, 150, 300].map((delay) => (
@@ -128,7 +195,7 @@ function LoadingScreen() {
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading, setUser, setLoading } = useAuthStore();
-  const { setConversations, clearAll } = useChatStore();
+  const { setConversations } = useChatStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check auth on mount

@@ -8,6 +8,7 @@ export interface Message {
   imagePrompt?: string | null;
   audioUrl?: string | null;
   createdAt: string;
+  responseTime?: number | null;
 }
 
 export interface Conversation {

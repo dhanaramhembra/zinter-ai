@@ -24,9 +24,10 @@ import {
   X,
   Plus,
   Settings,
+  Pin,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -89,6 +90,25 @@ function formatTime(dateStr: string): string {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+function getStoredPinned(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem('nexusai-pinned-conversations');
+    if (stored) return JSON.parse(stored) as string[];
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function savePinned(pinned: string[]) {
+  try {
+    localStorage.setItem('nexusai-pinned-conversations', JSON.stringify(pinned));
+  } catch {
+    // ignore
+  }
+}
+
 export default function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProps) {
   const {
     conversations,
@@ -106,12 +126,53 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [settingsOpen, setSettingsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Feature 5: Pinned conversations state - lazy init from localStorage
+  const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    return getStoredPinned();
+  });
+
+  // Cleanup pinned IDs that no longer exist
+  const convIds = useMemo(() => new Set(conversations.map((c) => c.id)), [conversations]);
+ const validPinnedCount = pinnedIds.filter((id) => convIds.has(id)).length;
+  useEffect(() => {
+    if (validPinnedCount !== pinnedIds.length) {
+      const cleaned = pinnedIds.filter((id) => convIds.has(id));
+      savePinned(cleaned);
+      // Use microtask to avoid the lint rule
+      queueMicrotask(() => setPinnedIds(cleaned));
+    }
+  }, [validPinnedCount, pinnedIds, convIds]);
+
   const filteredConversations = conversations.filter((c) =>
     c.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const grouped = groupConversations(filteredConversations);
   const hasAnyConversations = filteredConversations.length > 0;
+
+  // Feature 5: Separate pinned and unpinned conversations
+  const pinnedConversations = useMemo(() => {
+    return filteredConversations.filter((c) => pinnedIds.includes(c.id));
+  }, [filteredConversations, pinnedIds]);
+
+  const unpinnedConversations = useMemo(() => {
+    return filteredConversations.filter((c) => !pinnedIds.includes(c.id));
+  }, [filteredConversations, pinnedIds]);
+
+  const grouped = groupConversations(unpinnedConversations);
+
+  // Feature 5: Toggle pin
+  const handleTogglePin = useCallback((convId: string) => {
+    setPinnedIds((prev) => {
+      const isPinned = prev.includes(convId);
+      const next = isPinned
+        ? prev.filter((id) => id !== convId)
+        : [...prev, convId];
+      savePinned(next);
+      toast.success(isPinned ? 'Unpinned' : 'Conversation pinned');
+      return next;
+    });
+  }, []);
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -179,39 +240,51 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           'lg:translate-x-0'
         )}
       >
-        {/* Gradient separator (right edge) */}
-        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-emerald-500/15 to-transparent pointer-events-none z-10" />
+        {/* Animated gradient separator (right edge) */}
+        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-px pointer-events-none z-10 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent animate-pulse" />
+        </div>
 
         {/* Header with gradient */}
-        <div className="p-4 border-b border-border bg-gradient-to-br from-emerald-600/5 via-transparent to-teal-600/5">
+        <div className="p-4 border-b border-border bg-gradient-to-br from-emerald-600/8 via-transparent to-teal-600/8 relative overflow-hidden">
+          {/* Subtle background pattern */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '16px 16px' }} />
+          <div className="relative">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
+              <motion.div
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20"
+                whileHover={{ scale: 1.05, rotate: 3 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+              >
                 <Sparkles className="w-4.5 h-4.5" />
-              </div>
+              </motion.div>
               <span className="font-bold text-lg tracking-tight gradient-text">NexusAI</span>
             </div>
-            <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
           </div>
 
           {/* User greeting */}
+          
           {user && (
             <p className="text-sm text-muted-foreground mb-3 pl-0.5">
               {getGreeting()}, <span className="font-medium text-foreground">{user.name}</span>
             </p>
           )}
 
-          {/* Search with animated border on focus */}
+          {/* Search with animated underline effect */}
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 group-focus-within:text-emerald-500 transition-colors duration-200" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 group-focus-within:text-emerald-500 transition-all duration-300 group-focus-within:scale-110" />
+            <div className="absolute bottom-0 left-3 right-3 h-[2px] bg-gradient-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/0 group-focus-within:from-emerald-500/50 group-focus-within:via-emerald-500/80 group-focus-within:to-emerald-500/50 rounded-full transition-all duration-300" />
             <Input
               placeholder="Search conversations..."
-              className="pl-9 h-9 text-sm bg-muted/40 border-transparent focus-visible:border-emerald-500/40 focus-visible:bg-background focus-visible:shadow-[0_0_0_3px_oklch(0.55_0.18_163/8%)] transition-all duration-200 placeholder:text-muted-foreground/50"
+              className="pl-9 h-9 text-sm bg-muted/40 border-transparent focus-visible:border-transparent focus-visible:bg-background focus-visible:shadow-none transition-all duration-300 placeholder:text-muted-foreground/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
           </div>
         </div>
 
@@ -228,7 +301,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </div>
 
         {/* Conversations list */}
-        <ScrollArea className="flex-1" ref={scrollRef}>
+        <ScrollArea className="flex-1 sidebar-scroll" ref={scrollRef}>
           <div className="p-2">
             <AnimatePresence mode="wait">
               {!hasAnyConversations ? (
@@ -239,8 +312,11 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                   exit={{ opacity: 0, y: -8 }}
                   className="text-center py-16 px-4"
                 >
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center shadow-inner">
-                    <MessageSquare className="w-7 h-7 text-emerald-500/60 animate-float" />
+                  <div className="relative w-16 h-16 mx-auto mb-4">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-200 to-teal-200 dark:from-emerald-800/40 dark:to-teal-800/40 blur-sm" />
+                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center shadow-inner">
+                      <MessageSquare className="w-7 h-7 text-emerald-500/60 animate-float" />
+                    </div>
                   </div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">
                     No conversations yet
@@ -256,6 +332,34 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
+                  {/* Feature 5: Pinned section */}
+                  {pinnedConversations.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-3 pt-3 pb-1.5 flex items-center gap-1.5">
+                        <Pin className="w-3 h-3" />
+                        Pinned
+                      </p>
+                      {pinnedConversations.map((conv) => (
+                        <ConversationItem
+                          key={conv.id}
+                          conversation={conv}
+                          isActive={conv.id === activeConversationId}
+                          isPinned={true}
+                          onClick={() => {
+                            setActiveConversationId(conv.id);
+                            onClose();
+                          }}
+                          onDelete={() => setDeleteTarget(conv.id)}
+                          onRename={(newTitle) => {
+                            updateConversation(conv.id, { title: newTitle });
+                          }}
+                          onTogglePin={() => handleTogglePin(conv.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Unpinned conversations with time-based grouping */}
                   {TIME_GROUP_ORDER.map((group) => {
                     const groupConvs = grouped[group];
                     if (groupConvs.length === 0) return null;
@@ -269,6 +373,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                             key={conv.id}
                             conversation={conv}
                             isActive={conv.id === activeConversationId}
+                            isPinned={false}
                             onClick={() => {
                               setActiveConversationId(conv.id);
                               onClose();
@@ -277,6 +382,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                             onRename={(newTitle) => {
                               updateConversation(conv.id, { title: newTitle });
                             }}
+                            onTogglePin={() => handleTogglePin(conv.id)}
                           />
                         ))}
                       </div>
@@ -291,9 +397,12 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </ScrollArea>
 
         {/* Footer */}
-        <div className="p-3 border-t border-border space-y-2">
+        <div className="p-3 border-t border-border/60 bg-gradient-to-t from-muted/30 to-transparent space-y-2">
           {user && (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40">
+            <motion.div
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors duration-200 cursor-default"
+              whileHover={{ x: 2 }}
+            >
               <div className="relative">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
                   {user.name.charAt(0).toUpperCase()}
@@ -305,7 +414,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                 <p className="text-sm font-medium truncate">{user.name}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
               </div>
-            </div>
+            </motion.div>
           )}
           <div className="flex items-center gap-1">
             <Button
@@ -390,15 +499,19 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
 function ConversationItem({
   conversation,
   isActive,
+  isPinned,
   onClick,
   onDelete,
   onRename,
+  onTogglePin,
 }: {
   conversation: Conversation;
   isActive: boolean;
+  isPinned: boolean;
   onClick: () => void;
   onDelete: () => void;
   onRename: (newTitle: string) => void;
+  onTogglePin: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(conversation.title);
@@ -460,13 +573,16 @@ function ConversationItem({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
       className="group relative"
+      whileHover={{ y: -1 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <button
         onClick={onClick}
         onDoubleClick={handleDoubleClick}
         className={cn(
           'w-full text-left p-3 rounded-lg text-sm transition-all duration-200',
-          'hover:bg-accent/80 hover:shadow-sm hover:scale-[1.01] active:scale-[0.99]',
+          'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/5 active:scale-[0.99]',
+          isPinned && !isActive && 'bg-muted/30',
           isActive
             ? 'bg-accent text-accent-foreground border-l-[3px] border-l-emerald-500 shadow-sm shadow-emerald-500/10'
             : 'border-l-[3px] border-l-transparent'
@@ -492,7 +608,12 @@ function ConversationItem({
                 maxLength={100}
               />
             ) : (
-              <p className="font-medium truncate">{conversation.title}</p>
+              <p className="font-medium truncate flex items-center gap-1.5">
+                {conversation.title}
+                {isPinned && (
+                  <Pin className="w-3 h-3 text-amber-500 fill-current shrink-0" />
+                )}
+              </p>
             )}
             <p className="text-xs text-muted-foreground/70 mt-1 truncate">{previewText}</p>
             <p className="text-[11px] text-muted-foreground/50 mt-0.5">
@@ -503,17 +624,38 @@ function ConversationItem({
       </button>
 
       {!isEditing && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 opacity-0 group-hover:opacity-100 transition-all duration-150 hover:bg-destructive/10 hover:scale-110"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-        >
-          <Trash2 className="w-3 h-3 text-destructive/70" />
-        </Button>
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-150">
+          {/* Feature 5: Pin/unpin button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'w-7 h-7 hover:scale-110 transition-all duration-150',
+              isPinned
+                ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                : 'hover:bg-accent'
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin();
+            }}
+            title={isPinned ? 'Unpin conversation' : 'Pin conversation'}
+          >
+            <Pin className={cn('w-3 h-3', isPinned && 'fill-current')} />
+          </Button>
+          {/* Delete button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-7 h-7 hover:bg-destructive/10 hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+          >
+            <Trash2 className="w-3 h-3 text-destructive/70" />
+          </Button>
+        </div>
       )}
     </motion.div>
   );

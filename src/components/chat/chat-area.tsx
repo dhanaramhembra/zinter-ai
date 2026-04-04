@@ -4,6 +4,7 @@ import { useChatStore, Message, PERSONAS } from '@/store/chat-store';
 import MessageBubble from './message-bubble';
 import ChatInput from './chat-input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +20,12 @@ import {
   StopCircle,
   Download,
   ChevronDown,
+  Search,
+  X,
+  ChevronUp,
+  Heart,
 } from 'lucide-react';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
@@ -43,6 +48,25 @@ function getStoredFontSize(): FontSize {
     // ignore
   }
   return 'medium';
+}
+
+function getStoredFavorites(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem('nexusai-favorites');
+    if (stored) return JSON.parse(stored) as string[];
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+function saveFavorites(favorites: string[]) {
+  try {
+    localStorage.setItem('nexusai-favorites', JSON.stringify(favorites));
+  } catch {
+    // ignore
+  }
 }
 
 const SUGGESTIONS = [
@@ -112,9 +136,23 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const abortControllerRef = useRef<AbortController | null>(null);
   const personaDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Feature 1: Message search state
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Feature 2: Favorites state
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // Feature 4: Response time tracking
+  const requestStartTimeRef = useRef<number | null>(null);
+
   // Load font size from localStorage
   useEffect(() => {
     setFontSize(getStoredFontSize());
+    setFavorites(getStoredFavorites());
   }, []);
 
   // Listen for font size changes from settings
@@ -150,6 +188,86 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConversation?.messages || [];
   const currentPersona = PERSONAS.find((p) => p.id === selectedPersona) || PERSONAS[0];
+
+  // Feature 1: Compute search matches
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return messages.reduce<number[]>((acc, msg, idx) => {
+      if (msg.content.toLowerCase().includes(query)) {
+        acc.push(idx);
+      }
+      return acc;
+    }, []);
+  }, [searchQuery, messages]);
+
+  // Feature 2: Toggle favorite
+  const handleToggleFavorite = useCallback((messageId: string) => {
+    setFavorites((prev) => {
+      const isFav = prev.includes(messageId);
+      const next = isFav
+        ? prev.filter((id) => id !== messageId)
+        : [...prev, messageId];
+      saveFavorites(next);
+      toast.success(isFav ? 'Removed from favorites' : 'Message saved');
+      return next;
+    });
+  }, []);
+
+  // Feature 1: Open search with Ctrl+F/Cmd+F
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+        requestAnimationFrame(() => {
+          searchInputRef.current?.focus();
+          searchInputRef.current?.select();
+        });
+      }
+      // Escape to close search
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+        setSearchQuery('');
+      }
+      // Enter to go to next match
+      if (e.key === 'Enter' && searchOpen && searchMatches.length > 0) {
+        e.preventDefault();
+        setCurrentMatchIndex((prev) => {
+          if (e.shiftKey) {
+            return prev <= 0 ? searchMatches.length - 1 : prev - 1;
+          }
+          return prev >= searchMatches.length - 1 ? 0 : prev + 1;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen, searchMatches.length]);
+
+  // Reset current match index when search query changes
+  useEffect(() => {
+    setCurrentMatchIndex(0);
+  }, [searchQuery]);
+
+  // Feature 1: Navigate search matches with up/down
+  const handleSearchPrev = useCallback(() => {
+    if (searchMatches.length === 0) return;
+    setCurrentMatchIndex((prev) => (prev <= 0 ? searchMatches.length - 1 : prev - 1));
+  }, [searchMatches.length]);
+
+  const handleSearchNext = useCallback(() => {
+    if (searchMatches.length === 0) return;
+    setCurrentMatchIndex((prev) => (prev >= searchMatches.length - 1 ? 0 : prev + 1));
+  }, [searchMatches.length]);
+
+  const handleSearchClear = useCallback(() => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setCurrentMatchIndex(0);
+    searchInputRef.current?.blur();
+  }, []);
 
   const createNewChat = useCallback(async (): Promise<string | null> => {
     try {
@@ -241,6 +359,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       addMessage(convId, userMessage);
       setGenerating(true);
 
+      // Feature 4: Record start time
+      requestStartTimeRef.current = Date.now();
+
       // Create AbortController
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -270,12 +391,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
         const data = await res.json();
 
+        // Feature 4: Calculate response time
+        const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
+
         if (data.message) {
           const assistantMessage: Message = {
             id: data.message.id,
             content: data.message.content,
             role: 'assistant',
             createdAt: data.message.createdAt || new Date().toISOString(),
+            responseTime: responseTime,
           };
 
           addMessage(convId, assistantMessage);
@@ -296,6 +421,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       } finally {
         setGenerating(false);
         abortControllerRef.current = null;
+        requestStartTimeRef.current = null;
       }
     },
     [activeConversationId, createNewChat, addMessage, setGenerating, currentPersona.systemPrompt]
@@ -325,6 +451,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
+      // Feature 4: Record start time
+      requestStartTimeRef.current = Date.now();
+
       // Save user message to database
       try {
         await fetch(`/api/chat/${convId}/messages`, {
@@ -346,6 +475,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
         const data = await res.json();
 
+        // Feature 4: Calculate response time
+        const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
+
         if (data.success) {
           const assistantMessage: Message = {
             id: uuidv4(),
@@ -354,6 +486,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             imageUrl: data.imageUrl,
             imagePrompt: data.prompt,
             createdAt: new Date().toISOString(),
+            responseTime: responseTime,
           };
 
           addMessage(convId, assistantMessage);
@@ -389,6 +522,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       } finally {
         setGenerating(false);
         abortControllerRef.current = null;
+        requestStartTimeRef.current = null;
       }
     },
     [activeConversationId, createNewChat, addMessage, setGenerating]
@@ -420,6 +554,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       toast.info('Regenerating response...');
       setGenerating(true);
 
+      // Feature 4: Record start time
+      requestStartTimeRef.current = Date.now();
+
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
@@ -436,6 +573,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
           const data = await res.json();
 
+          // Feature 4: Calculate response time
+          const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
+
           if (data.success) {
             const newMessage: Message = {
               id: uuidv4(),
@@ -444,6 +584,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               imageUrl: data.imageUrl,
               imagePrompt: data.prompt,
               createdAt: new Date().toISOString(),
+              responseTime: responseTime,
             };
             addMessage(activeConversationId, newMessage);
             toast.success('Image generated successfully');
@@ -464,12 +605,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
           const data = await res.json();
 
+          // Feature 4: Calculate response time
+          const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
+
           if (data.message) {
             const newMessage: Message = {
               id: data.message.id || uuidv4(),
               content: data.message.content,
               role: 'assistant',
               createdAt: data.message.createdAt || new Date().toISOString(),
+              responseTime: responseTime,
             };
             addMessage(activeConversationId, newMessage);
           }
@@ -490,6 +635,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       } finally {
         setGenerating(false);
         abortControllerRef.current = null;
+        requestStartTimeRef.current = null;
       }
     },
     [activeConversationId, conversations, isGenerating, removeMessage, addMessage, setGenerating, currentPersona.systemPrompt]
@@ -531,6 +677,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
+        // Feature 4: Record start time
+        requestStartTimeRef.current = Date.now();
+
         const cleanContent = newContent.replace(/^Generate image: /, '');
         const isImageRequest = newContent.startsWith('Generate image:');
 
@@ -543,6 +692,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               signal: controller.signal,
             });
             const data = await res.json();
+            const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
             if (data.success) {
               const newMsg: Message = {
                 id: uuidv4(),
@@ -551,6 +701,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 imageUrl: data.imageUrl,
                 imagePrompt: data.prompt,
                 createdAt: new Date().toISOString(),
+                responseTime: responseTime,
               };
               addMessage(activeConversationId, newMsg);
               toast.success('Image generated successfully');
@@ -569,12 +720,14 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               signal: controller.signal,
             });
             const data = await res.json();
+            const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
             if (data.message) {
               const newMsg: Message = {
                 id: data.message.id || uuidv4(),
                 content: data.message.content,
                 role: 'assistant',
                 createdAt: data.message.createdAt || new Date().toISOString(),
+                responseTime: responseTime,
               };
               addMessage(activeConversationId, newMsg);
             }
@@ -595,6 +748,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         } finally {
           setGenerating(false);
           abortControllerRef.current = null;
+          requestStartTimeRef.current = null;
         }
       }
     },
@@ -642,7 +796,27 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     toast.success('Conversation exported as Markdown');
   }, [activeConversation, messages]);
 
-  // Typing indicator component
+  // Feature 4: Find the most recent assistant message with responseTime
+  const lastAssistantMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'assistant' && messages[i].responseTime != null) {
+        return messages[i].id;
+      }
+    }
+    return null;
+  }, [messages]);
+
+  // Feature 2: Filter messages based on favorites
+  const displayMessages = useMemo(() => {
+    if (!showFavoritesOnly) return messages;
+    return messages.filter((m) => favorites.includes(m.id));
+  }, [messages, showFavoritesOnly, favorites]);
+
+  const favoritesInConv = useMemo(() => {
+    return messages.filter((m) => favorites.includes(m.id)).length;
+  }, [messages, favorites]);
+
+  // Typing indicator component with enhanced glow
   const TypingIndicator = () => (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
@@ -652,7 +826,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       className="flex gap-3 px-4 py-2"
     >
       <Avatar className="w-8 h-8 shrink-0 mt-0.5">
-        <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+        <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
           <Sparkles className="w-4 h-4" />
         </AvatarFallback>
       </Avatar>
@@ -660,15 +834,15 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         <span>NexusAI is typing</span>
         <span className="inline-flex gap-0.5 ml-0.5">
           <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_6px_oklch(0.55_0.18_163/60%)]"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
             style={{ animationDelay: '0ms' }}
           />
           <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_6px_oklch(0.55_0.18_163/60%)]"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
             style={{ animationDelay: '150ms' }}
           />
           <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_6px_oklch(0.55_0.18_163/60%)]"
+            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
             style={{ animationDelay: '300ms' }}
           />
         </span>
@@ -676,7 +850,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     </motion.div>
   );
 
-  // Stop button component (Feature 1)
+  // Stop button component with prominent styling
   const StopButton = () => (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -689,10 +863,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         variant="outline"
         size="sm"
         onClick={handleStopGeneration}
-        className="gap-2 rounded-full border-border/60 bg-card/80 text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/5 transition-colors shadow-sm"
+        className="gap-2 rounded-full border-destructive/30 bg-card/90 backdrop-blur-sm text-destructive/80 hover:text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:shadow-md hover:shadow-destructive/10 transition-all duration-200 shadow-sm"
       >
         <StopCircle className="w-4 h-4" />
-        <span className="text-xs font-medium">Stop</span>
+        <span className="text-xs font-semibold">Stop generating</span>
       </Button>
     </motion.div>
   );
@@ -755,29 +929,41 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         <ScrollArea className="flex-1">
           <div className="flex items-center justify-center p-8 min-h-full dot-grid">
             <div className="text-center max-w-2xl w-full py-8">
-              {/* Logo */}
+              {/* Logo with dramatic entrance */}
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white mb-6 shadow-lg shadow-emerald-500/20"
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
+                className="relative inline-flex items-center justify-center mb-6"
               >
-                <Sparkles className="w-10 h-10" />
+                <motion.div
+                  className="absolute -inset-3 rounded-3xl opacity-40"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #10b981)',
+                    WebkitMask: 'radial-gradient(transparent 62%, black 64%)',
+                    mask: 'radial-gradient(transparent 62%, black 64%)',
+                  }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                />
+                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                  <Sparkles className="w-10 h-10" />
+                </div>
               </motion.div>
 
               {/* Welcome text */}
               <motion.h2
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-2xl font-bold mb-2"
+                transition={{ delay: 0.25, duration: 0.5 }}
+                className="text-2xl font-bold mb-2 gradient-text"
               >
                 Welcome to NexusAI
               </motion.h2>
               <motion.p
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
+                transition={{ delay: 0.35, duration: 0.5 }}
                 className="text-muted-foreground mb-8 max-w-md mx-auto"
               >
                 Your AI-powered assistant for chatting, generating images, and more.
@@ -835,19 +1021,19 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header with gradient accent line */}
       <div className="relative">
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent" />
-        <div className="flex items-center gap-2 p-4 border-b border-border">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/70 via-teal-400/50 to-transparent" />
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border/60 bg-card/50 backdrop-blur-sm">
           <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden shrink-0"
+          className="lg:hidden shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
           onClick={onToggleSidebar}
         >
           <Menu className="w-5 h-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h2 className="font-medium text-sm truncate">{activeConversation.title}</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="font-semibold text-sm truncate">{activeConversation.title}</h2>
+          <p className="text-[11px] text-muted-foreground">
             {messages.length} message{messages.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -865,7 +1051,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0"
+          className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
           onClick={handleExportMarkdown}
           title="Export as Markdown"
           disabled={!hasMessages}
@@ -873,12 +1059,62 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <Download className="w-4 h-4" />
         </Button>
 
+        {/* Feature 2: Favorites filter button */}
+        {hasMessages && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8 shrink-0 relative transition-all duration-200',
+              showFavoritesOnly && 'text-amber-500 hover:text-amber-600'
+            )}
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            title={showFavoritesOnly ? 'Show all messages' : 'Show favorites only'}
+          >
+            <Heart className={cn('w-4 h-4', showFavoritesOnly && 'fill-current')} />
+            {favoritesInConv > 0 && (
+              <span className={cn(
+                'absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] rounded-full text-[9px] font-bold flex items-center justify-center px-0.5',
+                showFavoritesOnly
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-muted text-muted-foreground'
+              )}>
+                {favoritesInConv}
+              </span>
+            )}
+          </Button>
+        )}
+
+        {/* Feature 1: Search button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'h-8 w-8 shrink-0 transition-all duration-200',
+            searchOpen && 'text-emerald-500 hover:text-emerald-600'
+          )}
+          onClick={() => {
+            if (searchOpen) {
+              handleSearchClear();
+            } else {
+              setSearchOpen(true);
+              requestAnimationFrame(() => {
+                searchInputRef.current?.focus();
+                searchInputRef.current?.select();
+              });
+            }
+          }}
+          title="Search messages (Ctrl+F)"
+        >
+          <Search className="w-4 h-4" />
+        </Button>
+
         {/* Feature 4: Persona selector dropdown */}
         <div className="relative" ref={personaDropdownRef}>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0"
+            className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
             onClick={() => setPersonaDropdownOpen(!personaDropdownOpen)}
             title="Select persona"
           >
@@ -891,7 +1127,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-border bg-popover p-1.5 shadow-lg z-50"
+                className="absolute right-0 top-full mt-1 w-64 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5 z-50"
               >
                 <p className="text-xs font-medium text-muted-foreground px-2.5 py-1.5">
                   Select AI Persona
@@ -905,9 +1141,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                       toast.success(`Switched to ${persona.name}`);
                     }}
                     className={cn(
-                      'w-full flex items-start gap-3 px-2.5 py-2 rounded-lg text-left transition-colors',
-                      'hover:bg-accent',
-                      selectedPersona === persona.id && 'bg-accent'
+                      'w-full flex items-start gap-3 px-2.5 py-2 rounded-lg text-left transition-all duration-150',
+                      'hover:bg-emerald-500/5 hover:translate-x-0.5',
+                      selectedPersona === persona.id && 'bg-emerald-500/8'
                     )}
                   >
                     <div
@@ -942,12 +1178,77 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           variant="outline"
           size="sm"
           onClick={() => createNewChat()}
-          className="gap-2 rounded-lg shrink-0"
+          className="gap-2 rounded-lg shrink-0 hover:scale-105 active:scale-95 transition-transform duration-200"
         >
           <MessageSquarePlus className="w-4 h-4" />
           <span className="hidden sm:inline">New Chat</span>
         </Button>
         </div>
+
+        {/* Feature 1: Search bar */}
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="border-b border-border overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-4 py-2">
+                <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search in conversation..."
+                  className="h-8 text-sm border-transparent bg-muted/40 focus-visible:bg-background focus-visible:border-emerald-500/40"
+                />
+                {searchQuery.trim() && searchMatches.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                    {currentMatchIndex + 1} of {searchMatches.length} messages
+                  </span>
+                )}
+                {searchQuery.trim() && searchMatches.length === 0 && (
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                    No matches
+                  </span>
+                )}
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleSearchPrev}
+                    disabled={searchMatches.length <= 1}
+                    title="Previous match (Shift+Enter)"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleSearchNext}
+                    disabled={searchMatches.length <= 1}
+                    title="Next match (Enter)"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleSearchClear}
+                    title="Close search (Esc)"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Messages area */}
@@ -988,15 +1289,37 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               </div>
             </div>
           </div>
+        ) : showFavoritesOnly && displayMessages.length === 0 ? (
+          /* No favorites state */
+          <div className="flex items-center justify-center min-h-full p-8">
+            <div className="text-center py-12">
+              <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No favorited messages yet
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                Star messages to save them for later
+              </p>
+            </div>
+          </div>
         ) : (
           /* Messages list with subtle dot grid background */
           <div className={cn('max-w-4xl mx-auto py-4 dot-grid rounded-lg', FONT_SIZE_CLASS[fontSize])}>
             <div className="space-y-1 [&_p]:leading-relaxed">
-              {messages.map((message, idx) => {
-                const prev = idx > 0 ? messages[idx - 1] : null;
-                const next = idx < messages.length - 1 ? messages[idx + 1] : null;
+              {displayMessages.map((message, idx) => {
+                const actualIndex = messages.indexOf(message);
+                const prev = actualIndex > 0 ? messages[actualIndex - 1] : null;
+                const next = actualIndex < messages.length - 1 ? messages[actualIndex + 1] : null;
                 const isFirstInGroup = !prev || prev.role !== message.role;
                 const isLastInGroup = !next || next.role !== message.role;
+
+                // Feature 1: Search match props
+                const isSearchMatch = searchQuery.trim() && searchMatches.includes(actualIndex);
+                const isCurrentSearchMatch = isSearchMatch && searchMatches[currentMatchIndex] === actualIndex;
+
+                // Feature 4: Show response time for most recent assistant message
+                const showResponseTime = message.id === lastAssistantMessageId;
+
                 return (
                   <MessageBubble
                     key={message.id}
@@ -1010,6 +1333,12 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                         ? handleEditMessage
                         : undefined
                     }
+                    searchHighlight={searchOpen ? searchQuery : null}
+                    isSearchMatch={isSearchMatch}
+                    isCurrentSearchMatch={isCurrentSearchMatch}
+                    isFavorited={favorites.includes(message.id)}
+                    onToggleFavorite={message.role === 'assistant' ? handleToggleFavorite : undefined}
+                    showResponseTime={showResponseTime}
                   />
                 );
               })}
@@ -1034,6 +1363,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           </div>
         )}
       </ScrollArea>
+
+      {/* Subtle separator between messages and input */}
+      <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
       {/* Chat input */}
       <ChatInput

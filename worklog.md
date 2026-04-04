@@ -4,9 +4,9 @@
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
 ## Current Project Status
-- **Phase**: v3 - Advanced Features & Production Polish Complete
+- **Phase**: v4 - Premium Features & Visual Polish Complete
 - **Status**: Stable, all lint passes, dev server compiles cleanly
-- **Last Review**: Cron Review Round 2
+- **Last Review**: Cron Review Round 3
 
 ## Completed Features
 
@@ -38,6 +38,11 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - **NEW**: AI Persona/Model selector (Pro, Creative Writer, Code Expert, Friendly)
 - **NEW**: Custom system prompts per persona
 - **NEW**: Export conversation as Markdown file
+- **NEW**: Message search within conversation (Ctrl+F, highlight matches, navigate)
+- **NEW**: Favorite/bookmark messages with persistent storage
+- **NEW**: Word/character count in chat input
+- **NEW**: AI response time indicator ("Responded in X.Xs")
+- **NEW**: Conversation pinning to top of sidebar
 
 ### 3. Image Generation
 - Toggle to Image Generation mode
@@ -92,6 +97,25 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - **NEW**: Staggered entrance animations throughout
 - **NEW**: Enhanced button scale/press effects
 - **NEW**: "Powered by AI" badge on auth page
+- **NEW**: Message search with match highlighting and navigation (Ctrl+F)
+- **NEW**: Favorite/bookmark messages with amber glow effects
+- **NEW**: AI response time indicators on messages
+- **NEW**: Word/character count in chat input
+- **NEW**: Pinned conversations section in sidebar
+- **NEW**: Animated loading screen with floating particles, progress bar, vignette
+- **NEW**: Chat bubble directional border-radius utilities
+- **NEW**: Elevated shadow utility classes
+- **NEW**: Glass card utility combining glassmorphism + border
+- **NEW**: Input emerald glow focus state utility
+- **NEW**: Message entrance animation utility
+- **NEW: Progress sweep animation for loading bars
+- **NEW**: Particle float animation for loading screens
+- **NEW**: Vignette overlay utility
+- **NEW**: Pulsing red ring animation for recording
+- **NEW**: Alternative gradient text directions (down, right)
+- **NEW: btn-primary-gradient button utility
+- **NEW: sidebar-scroll custom scrollbar utility
+- **NEW**: Slide-up and fade-in animation utilities
 
 ## Technical Architecture
 
@@ -119,7 +143,7 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - `POST /api/chat/[id]/messages` - Send message
 - `PATCH /api/chat/[id]/messages` - Update conversation title (rename) or message content (edit)
 - `DELETE /api/chat/[id]/messages` - Delete conversation
-- `POST /api/ai/chat` - AI chat completion (supports custom systemPrompt for personas)
+- `POST /api/ai/chat` - AI chat completion (supports custom systemPrompt for personas; response time tracked)
 - `POST /api/ai/image` - Generate image
 - `POST /api/ai/tts` - Text to speech
 - `POST /api/ai/asr` - Speech to text
