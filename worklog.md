@@ -4,9 +4,33 @@
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
 ## Current Project Status
-- **Phase**: v7 - Network Status, Keyboard Shortcuts Dialog, Auth Enhancements, Chat Polish
+- **Phase**: v8 - Cross-Origin Fix, Dev Server Stability
 - **Status**: Stable, all lint passes, dev server compiles cleanly, no runtime errors
-- **Last Review**: Cron Review Round 6
+- **Last Review**: Cron Review Round 7 (Cross-origin fix)
+
+## Hotfix - Cross-Origin Resource Blocking (v8)
+### Issue
+Preview panel showed blank/broken page because Next.js dev server was blocking cross-origin requests to `/_next/*` static assets (CSS, JS). The browser's `Origin` header from the preview domain (`*.space.z.ai`) did not match the configured `allowedDevOrigins`.
+
+### Root Cause
+The `allowedDevOrigins` in `next.config.ts` was set to protocol-prefixed patterns like `["https://*.space.z.ai"]`, but Next.js 16's wildcard matching requires domain-only patterns like `["*.space.z.ai"]`. The wildcard check uses `pattern.startsWith('*.')` which fails when the pattern starts with `https://`.
+
+### Fix
+Changed `next.config.ts` `allowedDevOrigins` from:
+```js
+allowedDevOrigins: ["https://*.space.z.ai", "http://*.space.z.ai", ...]
+```
+to:
+```js
+allowedDevOrigins: ["*.space.z.ai", "space.z.ai"]
+```
+
+### Verification
+- `/_next/*` resources now return 404 (not found) instead of 403 (forbidden) when accessed with cross-origin Origin header
+- API routes continue to work normally (200)
+- Homepage loads correctly (200)
+- No cross-origin blocking warnings in dev log
+- Lint passes with zero errors
 
 ## Completed Features
 
@@ -203,7 +227,7 @@ src/
 
 ## Unresolved Issues / Risks
 - **Session management**: In-memory store lost on restart; consider DB-backed sessions
-- **`allowedDevOrigins`**: Set to `["*"]`; restrict for production
+- **`allowedDevOrigins`**: Fixed to use domain-only wildcards (`["*.space.z.ai", "space.z.ai"]`) for proper cross-origin support
 - **Streaming responses**: AI chat still uses non-streaming fetch; streaming would improve perceived latency
 - **Accessibility**: Full ARIA audit still pending for screen reader support
 - **Rate limiting**: No API rate limiting on auth or AI endpoints
@@ -324,7 +348,7 @@ src/
 
 ### Unresolved Issues / Risks
 - **Session management**: In-memory store lost on restart; consider DB-backed sessions
-- **`allowedDevOrigins`**: Set to `["*"]`; restrict for production
+- **`allowedDevOrigins`**: Fixed to use domain-only wildcards (`["*.space.z.ai", "space.z.ai"]`) for proper cross-origin support
 - **Streaming responses**: AI chat still uses non-streaming fetch; streaming would improve perceived latency
 - **Accessibility**: Full ARIA audit still pending for screen reader support
 - **Rate limiting**: No API rate limiting on auth or AI endpoints
@@ -512,7 +536,7 @@ Lint passes with zero errors. Dev server running with no compilation issues.
 - **Dev server stability**: Process can be killed by system during long tasks (env issue)
 - **Session management**: In-memory store lost on restart; consider DB-backed sessions
 - **`onRegenerate` callback**: UI wired but parent does not provide implementation yet
-- **`allowedDevOrigins`**: Set to `["*"]`; restrict for production
+- **`allowedDevOrigins`**: Fixed to use domain-only wildcards (`["*.space.z.ai", "space.z.ai"]`) for proper cross-origin support
 
 ### Priority Recommendations for Next Phase
 1. Implement regenerate logic - Wire up `onRegenerate` callback
@@ -834,7 +858,7 @@ Completed all 4 features across 5 files with zero lint errors and clean dev serv
 
 ### Unresolved Issues / Risks
 - **Session management**: In-memory store lost on restart; consider DB-backed sessions
-- **`allowedDevOrigins`**: Set to `["*"]`; restrict for production
+- **`allowedDevOrigins`**: Fixed to use domain-only wildcards (`["*.space.z.ai", "space.z.ai"]`) for proper cross-origin support
 - **Streaming responses**: AI chat still uses non-streaming fetch; streaming would improve perceived latency
 - **Accessibility**: Full ARIA audit still pending for screen reader support
 - **Rate limiting**: No API rate limiting on auth or AI endpoints
