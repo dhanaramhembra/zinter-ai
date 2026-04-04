@@ -47,6 +47,8 @@ interface MessageBubbleProps {
   onToggleFavorite?: (messageId: string) => void;
   /** Whether to show response time */
   showResponseTime?: boolean;
+  /** Whether to show timestamp text */
+  showTimestamp?: boolean;
 }
 
 /** Highlight matching text in a string with <mark> tags */
@@ -195,6 +197,7 @@ export default function MessageBubble({
   isFavorited = false,
   onToggleFavorite,
   showResponseTime = false,
+  showTimestamp = true,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -361,8 +364,8 @@ export default function MessageBubble({
       transition={{ duration: 0.3, delay: staggerDelay }}
       className={cn(
         'flex gap-3 group px-4',
-        isFirstInGroup ? 'pt-4' : 'pt-0.5',
-        isLastInGroup ? 'pb-3' : 'pb-0.5',
+        isFirstInGroup ? 'pt-4' : 'pt-1',
+        isLastInGroup ? 'pb-4' : 'pb-1',
         isUser ? 'flex-row-reverse' : 'flex-row',
         isCurrentSearchMatch && 'ring-1 ring-emerald-500/40 rounded-xl -mx-2 px-6'
       )}
@@ -407,11 +410,22 @@ export default function MessageBubble({
             <span className="text-xs font-medium text-muted-foreground">
               {isUser ? user?.name || 'You' : 'NexusAI'}
             </span>
-            <span className="text-xs text-muted-foreground/60">
-              {new Date(message.createdAt).toLocaleTimeString([], {
+            <span
+              className={cn(
+                'text-xs text-muted-foreground/60',
+                !showTimestamp && 'sr-only'
+              )}
+              title={new Date(message.createdAt).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
               })}
+            >
+              {showTimestamp
+                ? new Date(message.createdAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : ''}
             </span>
           </div>
         )}
@@ -428,10 +442,10 @@ export default function MessageBubble({
           className={cn(
             'rounded-2xl px-4 py-2.5 leading-relaxed',
             isUser
-              ? 'bg-primary text-primary-foreground rounded-tr-md shadow-md shadow-emerald-500/15'
-              : 'bg-muted rounded-tl-md shadow-sm',
+              ? 'bg-gradient-to-br from-emerald-500/90 to-teal-500/85 text-white rounded-tr-md shadow-md shadow-emerald-500/20 dark:from-emerald-600/90 dark:to-teal-600/85 dark:shadow-emerald-500/15'
+              : 'bg-card/60 backdrop-blur-sm border border-border/30 rounded-tl-md shadow-sm relative',
             isGenerating && 'animate-pulse',
-            !isUser && isFavorited && 'ring-1 ring-amber-400/50 shadow-[0_0_8px_oklch(0.8_0.15_85/15%)]'
+            !isUser && isFavorited && 'ring-1 ring-amber-400/50 shadow-amber-400/20'
           )}
         >
           {isGenerating ? (
@@ -535,7 +549,9 @@ export default function MessageBubble({
                   </p>
                 </>
               ) : (
-                <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none">
+                <div className="relative pl-3">{""}
+                  <div className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full bg-gradient-to-b from-emerald-500/60 via-teal-500/40 to-emerald-500/20 dark:from-emerald-400/50 dark:via-teal-400/30 dark:to-emerald-400/10" />
+                  <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none">
                   <ReactMarkdown
                     components={{
                       code: CodeBlock as any,
@@ -616,6 +632,7 @@ export default function MessageBubble({
                   >
                     {message.content}
                   </ReactMarkdown>
+                  </div>
                 </div>
               )}
             </>

@@ -296,14 +296,14 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5 hover:shadow-emerald-500/10 transition-shadow duration-500"
+          className="relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5 hover:shadow-emerald-500/15 transition-shadow duration-500"
         >
-          <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-2xl rounded-[11px] noise-texture">
+          <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-2xl rounded-[11px] noise-texture border border-white/10 dark:border-white/5">
             <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'login' | 'signup'); setError(''); }} className="w-full">
               <TabsList className="grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0 h-auto relative">
                 {/* Sliding indicator */}
                 <motion.div
-                  className="absolute bottom-0 h-0.5 bg-primary rounded-full"
+                  className="absolute bottom-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 rounded-full shadow-sm shadow-emerald-500/30"
                   animate={{
                     left: activeTab === 'login' ? '0%' : '50%',
                     width: '50%',
@@ -338,9 +338,9 @@ export default function AuthPage() {
                         )}
                       </AnimatePresence>
                       <div className="space-y-2">
-                        <Label htmlFor="login-email">Email</Label>
+                        <Label htmlFor="login-email" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Email</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200 [&~input:focus_~&]:text-emerald-500" />
                           <Input
                             id="login-email"
                             type="email"
@@ -353,9 +353,9 @@ export default function AuthPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="login-password">Password</Label>
+                        <Label htmlFor="login-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Password</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
                             id="login-password"
                             type="password"
@@ -385,7 +385,7 @@ export default function AuthPage() {
                     <CardFooter>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98] transition-all duration-200"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300"
                         disabled={isLoading}
                       >
                         {isLoading ? (
@@ -414,9 +414,9 @@ export default function AuthPage() {
                         )}
                       </AnimatePresence>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-name">Name</Label>
+                        <Label htmlFor="signup-name" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Name</Label>
                         <div className="relative">
-                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
                             id="signup-name"
                             type="text"
@@ -429,9 +429,9 @@ export default function AuthPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-email">Email</Label>
+                        <Label htmlFor="signup-email" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Email</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
                             id="signup-email"
                             type="email"
@@ -444,9 +444,9 @@ export default function AuthPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-password">Password</Label>
+                        <Label htmlFor="signup-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Password</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
                             id="signup-password"
                             type="password"
@@ -494,9 +494,9 @@ export default function AuthPage() {
                         </AnimatePresence>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                        <Label htmlFor="signup-confirm-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Confirm Password</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
                             id="signup-confirm-password"
                             type="password"
@@ -513,7 +513,7 @@ export default function AuthPage() {
                     <CardFooter>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-[0.98] transition-all duration-200"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300"
                         disabled={isLoading}
                       >
                         {isLoading ? (

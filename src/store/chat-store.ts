@@ -30,6 +30,48 @@ export interface Persona {
   systemPrompt: string;
 }
 
+export type ChatBackground = 'default' | 'dots' | 'gradient' | 'minimal' | 'warm';
+
+export interface BackgroundTheme {
+  id: ChatBackground;
+  name: string;
+  className: string;
+  previewClass: string;
+}
+
+export const BACKGROUND_THEMES: BackgroundTheme[] = [
+  {
+    id: 'default',
+    name: 'Default',
+    className: 'dot-grid',
+    previewClass: 'bg-background',
+  },
+  {
+    id: 'dots',
+    name: 'Dots',
+    className: 'bg-dots-pattern',
+    previewClass: 'bg-background',
+  },
+  {
+    id: 'gradient',
+    name: 'Gradient',
+    className: 'bg-chat-gradient',
+    previewClass: 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20',
+  },
+  {
+    id: 'minimal',
+    name: 'Minimal',
+    className: 'bg-minimal-chat',
+    previewClass: 'bg-background',
+  },
+  {
+    id: 'warm',
+    name: 'Warm',
+    className: 'bg-warm-chat',
+    previewClass: 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/15',
+  },
+];
+
 export const PERSONAS: Persona[] = [
   {
     id: 'pro',
@@ -66,6 +108,8 @@ interface ChatState {
   activeConversationId: string | null;
   isGenerating: boolean;
   selectedPersona: PersonaId;
+  selectedBackground: ChatBackground;
+  showTimestamps: boolean;
   setConversations: (conversations: Conversation[]) => void;
   setActiveConversationId: (id: string | null) => void;
   addConversation: (conversation: Conversation) => void;
@@ -76,6 +120,8 @@ interface ChatState {
   removeMessage: (conversationId: string, messageId: string) => void;
   setGenerating: (generating: boolean) => void;
   setSelectedPersona: (persona: PersonaId) => void;
+  setSelectedBackground: (background: ChatBackground) => void;
+  setShowTimestamps: (show: boolean) => void;
   getActiveConversation: () => Conversation | null;
   clearAll: () => void;
 }
@@ -85,6 +131,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   activeConversationId: null,
   isGenerating: false,
   selectedPersona: 'pro' as PersonaId,
+  selectedBackground: 'default' as ChatBackground,
+  showTimestamps: true,
 
   setConversations: (conversations) => set({ conversations }),
 
@@ -143,6 +191,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setSelectedPersona: (persona) => set({ selectedPersona: persona }),
 
+  setSelectedBackground: (background) => set({ selectedBackground: background }),
+
+  setShowTimestamps: (show) => set({ showTimestamps: show }),
+
   getActiveConversation: () => {
     const state = get();
     return (
@@ -151,5 +203,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearAll: () =>
-    set({ conversations: [], activeConversationId: null, isGenerating: false, selectedPersona: 'pro' as PersonaId }),
+    set({ conversations: [], activeConversationId: null, isGenerating: false, selectedPersona: 'pro' as PersonaId, selectedBackground: 'default' as ChatBackground, showTimestamps: true }),
 }));

@@ -4,9 +4,9 @@
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
 ## Current Project Status
-- **Phase**: v6 - Scroll UX, Duplicate Conversations, Background Themes, Visual Polish
+- **Phase**: v5 - Bug Fixes, Drag & Drop Upload, Advanced UI Polish
 - **Status**: Stable, all lint passes, dev server compiles cleanly, no runtime errors
-- **Last Review**: Cron Review Round 5
+- **Last Review**: Cron Review Round 4
 
 ## Completed Features
 
@@ -43,12 +43,6 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - **NEW**: Word/character count in chat input
 - **NEW**: AI response time indicator ("Responded in X.Xs")
 - **NEW**: Conversation pinning to top of sidebar
-- **NEW**: Conversation duplicate/clone feature
-- **NEW**: Chat background theme selector (5 themes)
-- **NEW**: Show/hide message timestamps toggle
-- **NEW**: Enhanced scroll-to-bottom FAB with new messages badge
-- **NEW**: Animated waveform recording indicator
-- **NEW**: Gradient border utilities and hover-lift effects
 
 ### 3. Image Generation
 - Toggle to Image Generation mode
@@ -153,7 +147,6 @@ NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring rea
 - `POST /api/ai/image` - Generate image
 - `POST /api/ai/tts` - Text to speech
 - `POST /api/ai/asr` - Speech to text
-- `POST /api/chat/[conversationId]/duplicate` - Duplicate conversation with all messages
 
 ## File Structure
 ```
@@ -192,56 +185,6 @@ src/
 - **Streaming responses**: AI chat still uses non-streaming fetch; streaming would improve perceived latency
 - **Accessibility**: Full ARIA audit still pending for screen reader support
 - **Rate limiting**: No API rate limiting on auth or AI endpoints
-
----
-## Cron Review Round 5 - Overall Assessment
-
-### Verification Results
-- **Lint**: ✅ Zero errors (verified after all changes)
-- **Dev server**: ✅ Compiles cleanly, serves 200 OK
-- **QA Testing**: ✅ No console errors detected via agent-browser
-- **Code quality**: Proper TypeScript typing, no unused imports
-
-### Bug Fixes (2)
-1. **Scroll listener attachment bug**: Fixed useEffect with empty dependency array that relied on `scrollAreaContainerRef.current` not yet set on initial render. Added `scrollContainerReady` state + ref callback pattern so the effect re-runs when the DOM node is available.
-2. **MessageBubble JSX syntax error**: Fixed missing `}` in `cn()` JSX expression on line 435 that caused parsing errors.
-
-### New Features Added (3 features)
-1. **Conversation Duplicate/Clone**: New POST `/api/chat/[conversationId]/duplicate` API endpoint that copies a conversation with all messages. Frontend Copy button added to conversation hover actions in sidebar.
-2. **Chat Background Themes**: 5 selectable background themes (Default, Dots, Gradient, Minimal, Warm) with preview cards in Settings. Persisted in localStorage.
-3. **Show/Hide Timestamps Toggle**: New switch in Settings to show/hide exact timestamps on messages. Timestamps remain accessible via title attribute when hidden.
-
-### Styling Improvements (30+ changes across 5 files)
-1. **globals.css**: Added wave-bar animation for recording, gradient-border-top/bottom utilities, glass-subtle-border, hover-lift, drag-animated-border, focus-glow-ring, gradient-separator, smoother dark mode transitions
-2. **message-bubble.tsx**: User bubble gradient background, assistant bubble glass effect with border, improved grouped spacing, left accent line on assistant messages
-3. **chat-input.tsx**: Top gradient border line, animated drag-and-drop overlay, waveform recording bars replacing dots, focus glow ring wrapper
-4. **conversation-sidebar.tsx**: hover-lift on conversation items, gradient separator for pinned section, gradient border on footer, polished user profile card
-5. **auth-page.tsx**: Enhanced card shadow/border, gradient tab indicator, label focus color transitions, input icon transitions, button hover brightness
-
-### Scroll UX Enhancement
-- Redesigned scroll-to-bottom button as a circular FAB with emerald gradient, glow shadow, spring animation
-- Badge showing count of messages below viewport (capped at 99+)
-- Responsive sizing: 48x48 on mobile, 40x40 on desktop
-
-### Keyboard Shortcuts Enhancement
-- Added Ctrl+F (Search messages) and Esc (Close search/dialogs) to settings shortcuts table
-
-### Unresolved Issues / Risks
-- **Session management**: In-memory store lost on restart; consider DB-backed sessions
-- **`allowedDevOrigins`**: Set to `["*"]`; restrict for production
-- **Streaming responses**: AI chat still uses non-streaming fetch; streaming would improve perceived latency
-- **Accessibility**: Full ARIA audit still pending for screen reader support
-- **Rate limiting**: No API rate limiting on auth or AI endpoints
-- **Agent-browser testing**: React synthetic events not triggered by Playwright fill/click — requires manual testing in preview panel
-
-### Priority Recommendations for Next Phase
-1. Implement streaming responses for AI chat (SSE or WebSocket)
-2. Full accessibility audit (ARIA labels, screen reader, keyboard navigation)
-3. Add API rate limiting middleware
-4. DB-backed session management (replace in-memory)
-5. Conversation import (from Markdown files)
-6. Mobile PWA support (service worker, offline mode)
-7. Add user avatar upload/selection
 
 ---
 ## Task ID: 3-a - full-stack-developer
@@ -872,27 +815,3 @@ Created a new POST endpoint that:
 ### Verification
 - `npm run lint` passes with zero errors
 - Dev server compiles cleanly
-
----
-Task ID: 6-d
-Agent: full-stack-developer
-Task: Add chat background themes, timestamp toggle, and keyboard shortcut enhancements
-
-Work Log:
-- Added ChatBackground type and BACKGROUND_THEMES constant to chat-store.ts with 5 themes: default, dots, gradient, minimal, warm
-- Added selectedBackground and showTimestamps to Zustand store with setters and localStorage persistence
-- Added showTimestamp prop to MessageBubble component - hides timestamp text but keeps it in title attribute for accessibility
-- Updated chat-area.tsx to load background and timestamp preferences from localStorage on mount
-- Applied selected background CSS class to the messages container div
-- Passed showTimestamps from store to each MessageBubble
-- Added 5 background CSS classes to globals.css with light/dark mode variants
-- Added chat background picker to settings sheet with 5 preview cards in a grid
-- Added Show Timestamps toggle switch to settings sheet Chat section
-- Enhanced keyboard shortcuts table with 2 new entries: Ctrl+F (Search messages) and Esc (Close search/dialogs)
-- All preferences persist in localStorage and sync across tabs via StorageEvent
-
-Stage Summary:
-- 5 files modified: chat-store.ts, chat-area.tsx, message-bubble.tsx, settings-sheet.tsx, globals.css
-- ESLint passes with zero errors
-- Dev server compiles cleanly with no errors
-- All 3 features fully implemented and integrated

@@ -1,6 +1,6 @@
 'use client';
 
-import { useChatStore, Message, PERSONAS } from '@/store/chat-store';
+import { useChatStore, Message, PERSONAS, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
 import MessageBubble from './message-bubble';
 import ChatInput from './chat-input';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,28 @@ function getStoredFontSize(): FontSize {
     // ignore
   }
   return 'medium';
+}
+
+function getStoredBackground(): ChatBackground {
+  if (typeof window === 'undefined') return 'default';
+  try {
+    const stored = localStorage.getItem('nexusai-chat-background') as ChatBackground | null;
+    if (stored && BACKGROUND_THEMES.some((t) => t.id === stored)) return stored;
+  } catch {
+    // ignore
+  }
+  return 'default';
+}
+
+function getStoredShowTimestamps(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const stored = localStorage.getItem('nexusai-show-timestamps');
+    if (stored !== null) return stored === 'true';
+  } catch {
+    // ignore
+  }
+  return true;
 }
 
 function getStoredFavorites(): string[] {
@@ -135,6 +157,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     isGenerating,
     selectedPersona,
     setSelectedPersona,
+    selectedBackground,
+    setSelectedBackground,
+    showTimestamps,
+    setShowTimestamps,
   } = useChatStore();
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null);
   const [pendingImageMode, setPendingImageMode] = useState(false);
@@ -161,29 +187,46 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [messagesBelowViewport, setMessagesBelowViewport] = useState(0);
   const scrollAreaContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollContainerReady, setScrollContainerReady] = useState(false);
 
-  // Load font size from localStorage
+  // Ref callback to ensure scroll listener attaches after DOM is ready
+  const scrollAreaRefCallback = useCallback((node: HTMLDivElement | null) => {
+    scrollAreaContainerRef.current = node;
+    setScrollContainerReady(!!node);
+  }, []);
+
+  // Load preferences from localStorage
   useEffect(() => {
     setFontSize(getStoredFontSize());
     setFavorites(getStoredFavorites());
-  }, []);
+    setSelectedBackground(getStoredBackground());
+    setShowTimestamps(getStoredShowTimestamps());
+  }, [setSelectedBackground, setShowTimestamps]);
 
-  // Listen for font size changes from settings
+  // Listen for settings changes from settings sheet
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'nexusai-font-size') {
         setFontSize(getStoredFontSize());
       }
+      if (e.key === 'nexusai-chat-background') {
+        setSelectedBackground(getStoredBackground());
+      }
+      if (e.key === 'nexusai-show-timestamps') {
+        setShowTimestamps(getStoredShowTimestamps());
+      }
     };
     window.addEventListener('storage', handleStorageChange);
     const interval = setInterval(() => {
       setFontSize(getStoredFontSize());
+      setSelectedBackground(getStoredBackground());
+      setShowTimestamps(getStoredShowTimestamps());
     }, 1000);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, []);
+  }, [setSelectedBackground, setShowTimestamps]);
 
   // Close persona dropdown when clicking outside
   useEffect(() => {
@@ -199,6 +242,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   }, [personaDropdownOpen]);
 
   // Scroll listener for scroll-to-bottom button
+  // Uses scrollContainerReady state to ensure ref is set before attaching
   useEffect(() => {
     const container = scrollAreaContainerRef.current;
     if (!container) return;
@@ -242,7 +286,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       viewport.removeEventListener('scroll', handleScroll);
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [scrollContainerReady]);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConversation?.messages || [];
@@ -1337,7 +1381,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       </div>
 
       {/* Messages area */}
-      <div ref={scrollAreaContainerRef} className="relative flex-1 min-h-0">
+      <div ref={scrollAreaRefCallback} className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         {!hasMessages ? (
           /* Empty conversation state */
@@ -1390,7 +1434,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           </div>
         ) : (
           /* Messages list with subtle dot grid background */
-          <div className={cn('max-w-4xl mx-auto py-4 dot-grid rounded-lg', FONT_SIZE_CLASS[fontSize])} data-messages-container>
+          <div className={cn('max-w-4xl mx-auto py-4 rounded-lg', FONT_SIZE_CLASS[fontSize], BACKGROUND_THEMES.find((t) => t.id === selectedBackground)?.className)} data-messages-container>
             <div className="space-y-1 [&_p]:leading-relaxed">
               {displayMessages.map((message, idx) => {
                 const actualIndex = messages.indexOf(message);
@@ -1425,6 +1469,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                       isFavorited={favorites.includes(message.id)}
                       onToggleFavorite={message.role === 'assistant' ? handleToggleFavorite : undefined}
                       showResponseTime={showResponseTime}
+                      showTimestamp={showTimestamps}
                     />
                   </div>
                 );
@@ -1451,24 +1496,44 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         )}
       </ScrollArea>
 
-      {/* Scroll-to-bottom floating button */}
+      {/* Scroll-to-bottom FAB */}
       <AnimatePresence>
         {isScrolledUp && hasMessages && !showFavoritesOnly && (
-          <motion.button
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.9 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            onClick={scrollToBottom}
-            className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-105 active:scale-95 h-10 px-4 cursor-pointer"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25, mass: 0.8 }}
+            className="absolute bottom-4 right-4 z-10"
           >
-            <ChevronDown className="w-4 h-4" />
-            {messagesBelowViewport > 0 && (
-              <span className="absolute -top-2 -right-2 min-w-[20px] h-5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center px-1.5 shadow-sm border-2 border-background">
-                {messagesBelowViewport}
-              </span>
-            )}
-          </motion.button>
+            <button
+              onClick={scrollToBottom}
+              className={cn(
+                'relative w-12 h-12 sm:w-10 sm:h-10 rounded-full',
+                'bg-gradient-to-br from-emerald-500 to-teal-600 text-white',
+                'shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40',
+                'hover:scale-110 active:scale-95',
+                'transition-shadow duration-200 cursor-pointer',
+                'flex items-center justify-center'
+              )}
+              title="Scroll to bottom"
+            >
+              <ChevronDown className="w-5 h-5 sm:w-4 sm:h-4" />
+              {/* Badge showing count of messages below viewport */}
+              {messagesBelowViewport > 0 && (
+                <span className={cn(
+                  'absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px]',
+                  'rounded-full bg-gradient-to-r from-emerald-400 to-teal-500',
+                  'text-white text-[10px] font-bold',
+                  'flex items-center justify-center px-1',
+                  'shadow-md shadow-emerald-500/30',
+                  'ring-2 ring-background'
+                )}>
+                  {messagesBelowViewport > 99 ? '99+' : messagesBelowViewport}
+                </span>
+              )}
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
       </div>

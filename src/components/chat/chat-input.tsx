@@ -232,7 +232,7 @@ export default function ChatInput({
 
   return (
     <div
-      className="border-t border-border/60 bg-card/80 backdrop-blur-xl p-4 relative"
+      className="border-t border-border/40 bg-card/80 backdrop-blur-xl p-4 relative gradient-border-top"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -252,7 +252,7 @@ export default function ChatInput({
             className="absolute inset-0 z-50 flex items-center justify-center rounded-none"
           >
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-            <div className="relative flex flex-col items-center gap-3 p-8 border-2 border-dashed border-emerald-500 rounded-2xl bg-emerald-500/5 max-w-xs mx-4">
+            <div className="relative flex flex-col items-center gap-3 p-8 border-2 border-dashed border-emerald-500/60 rounded-2xl bg-emerald-500/5 max-w-xs mx-4 drag-animated-border">
               <div className="w-14 h-14 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                 <Upload className="w-7 h-7 text-emerald-500" />
               </div>
@@ -338,10 +338,12 @@ export default function ChatInput({
             className="mb-2"
           >
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/15 shadow-sm">
-              <div className="relative flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse animate-pulse-red-ring" />
-                <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse [animation-delay:0.2s]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse [animation-delay:0.4s]" />
+              <div className="flex items-center gap-[3px] h-5">
+                <div className="wave-bar text-destructive" />
+                <div className="wave-bar text-destructive" />
+                <div className="wave-bar text-destructive" />
+                <div className="wave-bar text-destructive" />
+                <div className="wave-bar text-destructive" />
               </div>
               <span className="font-medium">Recording...</span>
               <Button
@@ -358,7 +360,7 @@ export default function ChatInput({
       </AnimatePresence>
 
       {/* Input area with glow effect wrapper */}
-      <div className="relative flex items-end gap-2">
+      <div className="relative flex items-end gap-2 focus-glow-ring rounded-2xl">
         <div className="flex-1 relative">
           {/* Glow effect behind input on focus */}
           <div className={cn(

@@ -25,6 +25,7 @@ import {
   Plus,
   Settings,
   Pin,
+  Copy,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -193,6 +194,24 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     }
   }, [deleteTarget, deleteConversation]);
 
+  const handleDuplicate = useCallback(
+    async (convId: string) => {
+      try {
+        const res = await fetch(`/api/chat/${convId}/duplicate`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+        if (res.ok && data.conversation) {
+          addConversation(data.conversation);
+          toast.success('Conversation duplicated');
+        }
+      } catch (error) {
+        console.error('Failed to duplicate conversation:', error);
+      }
+    },
+    [addConversation]
+  );
+
   const createNewChat = useCallback(async () => {
     try {
       const res = await fetch('/api/chat/conversations', {
@@ -335,6 +354,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                   {/* Feature 5: Pinned section */}
                   {pinnedConversations.length > 0 && (
                     <div className="mb-2">
+                      <div className="gradient-separator mx-3 mb-2 rounded-full" />
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-3 pt-3 pb-1.5 flex items-center gap-1.5">
                         <Pin className="w-3 h-3" />
                         Pinned
@@ -354,6 +374,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                             updateConversation(conv.id, { title: newTitle });
                           }}
                           onTogglePin={() => handleTogglePin(conv.id)}
+                          onDuplicate={() => handleDuplicate(conv.id)}
                         />
                       ))}
                     </div>
@@ -383,6 +404,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                               updateConversation(conv.id, { title: newTitle });
                             }}
                             onTogglePin={() => handleTogglePin(conv.id)}
+                            onDuplicate={() => handleDuplicate(conv.id)}
                           />
                         ))}
                       </div>
@@ -397,10 +419,10 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </ScrollArea>
 
         {/* Footer */}
-        <div className="p-3 border-t border-border/60 bg-gradient-to-t from-muted/30 to-transparent space-y-2">
+        <div className="p-3 border-t border-border/40 bg-gradient-to-t from-muted/30 to-transparent space-y-2 gradient-border-top">
           {user && (
             <motion.div
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors duration-200 cursor-default"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted/70 transition-colors duration-200 cursor-default shadow-sm border border-border/20"
               whileHover={{ x: 2 }}
             >
               <div className="relative">
@@ -504,6 +526,7 @@ function ConversationItem({
   onDelete,
   onRename,
   onTogglePin,
+  onDuplicate,
 }: {
   conversation: Conversation;
   isActive: boolean;
@@ -512,6 +535,7 @@ function ConversationItem({
   onDelete: () => void;
   onRename: (newTitle: string) => void;
   onTogglePin: () => void;
+  onDuplicate: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(conversation.title);
@@ -581,7 +605,7 @@ function ConversationItem({
         onDoubleClick={handleDoubleClick}
         className={cn(
           'w-full text-left p-3 rounded-lg text-sm transition-all duration-200',
-          'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/5 active:scale-[0.99]',
+          'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/8 active:scale-[0.99] hover-lift',
           isPinned && !isActive && 'bg-muted/30',
           isActive
             ? 'bg-accent text-accent-foreground border-l-[3px] border-l-emerald-500 shadow-sm shadow-emerald-500/10'
@@ -642,6 +666,19 @@ function ConversationItem({
             title={isPinned ? 'Unpin conversation' : 'Pin conversation'}
           >
             <Pin className={cn('w-3 h-3', isPinned && 'fill-current')} />
+          </Button>
+          {/* Duplicate button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-7 h-7 hover:bg-accent hover:scale-110 transition-all duration-150"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+            title="Duplicate conversation"
+          >
+            <Copy className="w-3 h-3 text-muted-foreground/70" />
           </Button>
           {/* Delete button */}
           <Button
