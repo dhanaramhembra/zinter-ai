@@ -27,6 +27,7 @@ import ReactSyntaxHighlighter from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
+import ImageLightbox from './image-lightbox';
 
 interface MessageBubbleProps {
   message: Message;
@@ -209,6 +210,7 @@ export default function MessageBubble({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
@@ -532,9 +534,10 @@ export default function MessageBubble({
                   <img
                     src={message.imageUrl}
                     alt={message.imagePrompt || 'Generated image'}
-                    className="rounded-lg max-w-full max-h-80 object-cover"
+                    className="rounded-lg max-w-full max-h-80 object-cover cursor-pointer hover:opacity-90 transition-opacity duration-200"
                     loading="lazy"
-                  />
+                    onClick={() => setLightboxOpen(true)}
+ />
                   {/* Hover overlay */}
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -868,6 +871,16 @@ export default function MessageBubble({
           </AnimatePresence>
         )}
       </div>
+
+      {/* Image lightbox */
+      {message.imageUrl && (
+        <ImageLightbox
+          imageUrl={message.imageUrl}
+          imagePrompt={message.imagePrompt}
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </motion.div>
   );
 }

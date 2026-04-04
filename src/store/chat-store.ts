@@ -146,6 +146,8 @@ interface ChatState {
   selectedBackground: ChatBackground;
   showTimestamps: boolean;
   isUserTyping: boolean;
+  useCustomSystemPrompt: boolean;
+  customSystemPrompt: string;
   setConversations: (conversations: Conversation[]) => void;
   setActiveConversationId: (id: string | null) => void;
   addConversation: (conversation: Conversation) => void;
@@ -159,9 +161,30 @@ interface ChatState {
   setSelectedBackground: (background: ChatBackground) => void;
   setShowTimestamps: (show: boolean) => void;
   setUserTyping: (typing: boolean) => void;
+  setUseCustomSystemPrompt: (use: boolean) => void;
+  setCustomSystemPrompt: (prompt: string) => void;
   toggleReaction: (conversationId: string, messageId: string, emoji: string) => void;
   getActiveConversation: () => Conversation | null;
   clearAll: () => void;
+}
+
+function getStoredUseCustomPrompt(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const stored = localStorage.getItem('nexusai-use-custom-prompt');
+    return stored === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function getStoredCustomPrompt(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return localStorage.getItem('nexusai-custom-system-prompt') || '';
+  } catch {
+    return '';
+  }
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -172,6 +195,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   selectedBackground: 'default' as ChatBackground,
   showTimestamps: true,
   isUserTyping: false,
+  useCustomSystemPrompt: getStoredUseCustomPrompt(),
+  customSystemPrompt: getStoredCustomPrompt(),
 
   setConversations: (conversations) => set({ conversations }),
 
@@ -236,6 +261,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setUserTyping: (typing) => set({ isUserTyping: typing }),
 
+  setUseCustomSystemPrompt: (use) => {
+    set({ useCustomSystemPrompt: use });
+    try {
+      localStorage.setItem('nexusai-use-custom-prompt', String(use));
+    } catch {
+      // ignore
+    }
+  },
+
+  setCustomSystemPrompt: (prompt) => {
+    set({ customSystemPrompt: prompt });
+    try {
+      localStorage.setItem('nexusai-custom-system-prompt', prompt);
+    } catch {
+      // ignore
+    }
+  },
+
   toggleReaction: (conversationId, messageId, emoji) =>
     set((state) => ({
       conversations: state.conversations.map((c) => {
@@ -288,5 +331,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearAll: () =>
-    set({ conversations: [], activeConversationId: null, isGenerating: false, selectedPersona: 'pro' as PersonaId, selectedBackground: 'default' as ChatBackground, showTimestamps: true, isUserTyping: false }),
+    set({ conversations: [], activeConversationId: null, isGenerating: false, selectedPersona: 'pro' as PersonaId, selectedBackground: 'default' as ChatBackground, showTimestamps: true, isUserTyping: false, useCustomSystemPrompt: false, customSystemPrompt: '' }),
 }));

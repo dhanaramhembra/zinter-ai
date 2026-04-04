@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sheet,
@@ -46,6 +48,7 @@ import {
   Calendar,
   TrendingUp,
   BookOpen,
+  Brain,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -73,7 +76,7 @@ interface SettingsSheetProps {
 
 export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
   const { user, setUser } = useAuthStore();
-  const { conversations, setConversations, clearAll, selectedBackground, setSelectedBackground, showTimestamps, setShowTimestamps } = useChatStore();
+  const { conversations, setConversations, clearAll, selectedBackground, setSelectedBackground, showTimestamps, setShowTimestamps, useCustomSystemPrompt, customSystemPrompt, setUseCustomSystemPrompt, setCustomSystemPrompt } = useChatStore();
   const { theme, setTheme } = useTheme();
 
   // Profile
@@ -503,6 +506,71 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                       </p>
                     )}
                   </div>
+                </div>
+              </SettingsSection>
+
+              {/* Gradient divider */}
+              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+
+              {/* Custom Persona Section */}
+              <SettingsSection icon={Brain} title="Custom Persona" description="Override the AI's system prompt with your own">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <Label htmlFor="use-custom-prompt" className="text-sm cursor-pointer">
+                        Use Custom Prompt
+                      </Label>
+                    </div>
+                    <Switch
+                      id="use-custom-prompt"
+                      checked={useCustomSystemPrompt}
+                      onCheckedChange={(checked) => setUseCustomSystemPrompt(checked)}
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/60 ml-[26px]">
+                    When enabled, your custom prompt will override the selected persona's system prompt
+                  </p>
+                  {useCustomSystemPrompt && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-2"
+                    >
+                      <div className="space-y-1.5">
+                        <Label htmlFor="custom-system-prompt" className="text-xs text-muted-foreground">
+                          System Prompt
+                        </Label>
+                        <Textarea
+                          id="custom-system-prompt"
+                          value={customSystemPrompt}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 500) {
+                              setCustomSystemPrompt(e.target.value);
+                            }
+                          }}
+                          placeholder="Enter your custom system prompt..."
+                          className="min-h-[100px] text-sm resize-none"
+                          rows={4}
+                          maxLength={500}
+                        />
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] text-muted-foreground/50">
+                            Define how the AI should behave and respond
+                          </p>
+                          <p className={cn(
+                            'text-[11px]',
+                            customSystemPrompt.length >= 450
+                              ? 'text-amber-500'
+                              : 'text-muted-foreground/40'
+                          )}>
+                            {customSystemPrompt.length}/500
+                          </p>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  )}
                 </div>
               </SettingsSection>
 

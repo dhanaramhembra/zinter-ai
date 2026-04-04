@@ -1820,3 +1820,237 @@ html,
 body {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+/* ─── Round 7: New utility animations ─── */
+
+/* Shimmer text animation for headings */
+@keyframes shimmer-text {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    oklch(0.55 0.18 163) 0%,
+    oklch(0.65 0.15 175) 25%,
+    oklch(0.50 0.22 145) 50%,
+    oklch(0.65 0.15 175) 75%,
+    oklch(0.55 0.18 163) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer-text 3s linear infinite;
+}
+
+/* Glass input with emerald focus border */
+.glass-input {
+  background: oklch(1 0 0 / 50%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid oklch(0 0 0 / 8%);
+  border-radius: 0.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.dark .glass-input {
+  background: oklch(0.17 0.015 260 / 50%);
+  border-color: oklch(1 0 0 / 8%);
+}
+
+.glass-input:focus {
+  border-color: oklch(0.55 0.18 163 / 40%);
+  box-shadow:
+    0 0 0 3px oklch(0.55 0.18 163 / 10%),
+    0 0 16px oklch(0.55 0.18 163 / 8%);
+  background: oklch(1 0 0 / 70%);
+}
+
+.dark .glass-input:focus {
+  border-color: oklch(0.65 0.20 163 / 40%);
+  box-shadow:
+    0 0 0 3px oklch(0.65 0.20 163 / 10%),
+    0 0 16px oklch(0.65 0.20 163 / 8%);
+  background: oklch(0.17 0.015 260 / 70%);
+}
+
+/* Message hover glow */
+.message-hover-glow {
+  transition: box-shadow 0.25s ease;
+}
+
+.message-hover-glow:hover {
+  box-shadow:
+    0 0 0 1px oklch(0.55 0.18 163 / 15%),
+    0 4px 20px oklch(0.55 0.18 163 / 8%);
+}
+
+.dark .message-hover-glow:hover {
+  box-shadow:
+    0 0 0 1px oklch(0.65 0.20 163 / 15%),
+    0 4px 20px oklch(0.65 0.20 163 / 8%);
+}
+
+/* Notification dot with pulse */
+.notification-dot {
+  position: relative;
+}
+
+.notification-dot::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: oklch(0.65 0.22 145);
+  border: 1.5px solid var(--background);
+  animation: notification-pulse 2s ease-in-out infinite;
+}
+
+@keyframes notification-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+}
+
+/* Smooth spring-like appear animation */
+@keyframes smooth-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.smooth-appear {
+  animation: smooth-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Icon bounce on hover */
+.icon-bounce {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.icon-bounce:hover {
+  transform: scale(1.15);
+}
+
+.icon-bounce:active {
+  transform: scale(0.92);
+}
+
+/* Sonner toast theming */
+[data-sonner-toast] {
+  border-radius: 0.75rem !important;
+  border: 1px solid oklch(0.55 0.18 163 / 15%) !important;
+  box-shadow:
+    0 4px 16px oklch(0 0 0 / 10%),
+    0 0 0 1px oklch(0.55 0.18 163 / 8%) !important;
+}
+
+.dark [data-sonner-toast] {
+  border-color: oklch(1 0 0 / 8%) !important;
+  box-shadow:
+    0 4px 16px oklch(0 0 0 / 30%),
+    0 0 0 1px oklch(1 0 0 / 6%) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  border-color: oklch(0.55 0.18 163 / 25%) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-color: oklch(0.577 0.245 27.325 / 25%) !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: oklch(0.55 0.18 163) !important;
+}
+
+/* Gentle scale-in for cards */
+@keyframes gentle-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.gentle-scale-in {
+  animation: gentle-scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Subtle text glow on hover for headings */
+.text-glow-hover {
+  transition: text-shadow 0.3s ease;
+}
+
+.text-glow-hover:hover {
+  text-shadow:
+    0 0 12px oklch(0.55 0.18 163 / 30%),
+    0 0 24px oklch(0.55 0.18 163 / 15%);
+}
+
+.dark .text-glow-hover:hover {
+  text-shadow:
+    0 0 12px oklch(0.65 0.20 163 / 30%),
+    0 0 24px oklch(0.65 0.20 163 / 15%);
+}
+
+/* Ambient floating orbs for backgrounds */
+@keyframes orb-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.1); }
+  66% { transform: translate(-20px, 15px) scale(0.95); }
+}
+
+@keyframes orb-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-25px, 25px) scale(0.9); }
+  66% { transform: translate(15px, -30px) scale(1.05); }
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(40px);
+  opacity: 0.4;
+}
+
+.ambient-orb-1 {
+  width: 200px;
+  height: 200px;
+  background: oklch(0.55 0.18 163 / 15%);
+  animation: orb-float-1 12s ease-in-out infinite;
+}
+
+.ambient-orb-2 {
+  width: 150px;
+  height: 150px;
+  background: oklch(0.65 0.15 175 / 12%);
+  animation: orb-float-2 15s ease-in-out infinite;
+}
+
+.dark .ambient-orb-1 {
+  background: oklch(0.55 0.18 163 / 8%);
+}
+
+.dark .ambient-orb-2 {
+  background: oklch(0.65 0.15 175 / 6%);
+}

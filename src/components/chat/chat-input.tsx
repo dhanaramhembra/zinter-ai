@@ -42,6 +42,8 @@ interface ChatInputProps {
   onTypingStatusChange?: (isTyping: boolean) => void;
   /** Callback to insert template text into the input */
   onInsertTemplate?: (text: string) => void;
+  /** Current active conversation ID for draft persistence */
+  conversationId?: string | null;
 }
 
 export default function ChatInput({
@@ -52,6 +54,7 @@ export default function ChatInput({
   initialImageMode,
   onTypingStatusChange,
   onInsertTemplate,
+  conversationId,
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -68,6 +71,7 @@ export default function ChatInput({
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const templatesRef = useRef<HTMLDivElement>(null);
   const { isGenerating } = useChatStore();
+  const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Feature 3: Word count and character count
   const wordCount = useMemo(() => {
@@ -97,6 +101,68 @@ export default function ChatInput({
       lastAppliedInitialRef.current = null;
     }
   }, [initialMessage, initialImageMode]);
+
+  // Draft auto-save: save input text per conversation
+  useEffect(() => {
+    if (draftSaveTimerRef.current) {
+      clearTimeout(draftSaveTimerRef.current);
+    }
+    if (input.trim()) {
+      draftSaveTimerRef.current = setTimeout(() => {
+        try {
+          const key = conversationId ? `nexusai-draft-${conversationId}` : 'nexusai-draft-new';
+          localStorage.setItem(key, input);
+        } catch {
+          // ignore
+        }
+      }, 500);
+    } else {
+      // Clear draft when input is empty
+      try {
+        const key = conversationId ? `nexusai-draft-${conversationId}` : 'nexusai-draft-new';
+        localStorage.removeItem(key);
+      } catch {
+        // ignore
+      }
+    }
+    return () => {
+      if (draftSaveTimerRef.current) {
+        clearTimeout(draftSaveTimerRef.current);
+      }
+    };
+  }, [input, conversationId]);
+
+  // Restore draft when conversation changes
+  useEffect(() => {
+    try {
+      const key = conversationId ? `nexusai-draft-${conversationId}` : 'nexusai-draft-new';
+      const draft = localStorage.getItem(key);
+      if (draft && draft !== input) {
+        setInput(draft);
+        requestAnimationFrame(() => {
+          textareaRef.current?.focus();
+          if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+          }
+        });
+      }
+    } catch {
+      // ignore
+    }
+    // Only run when conversationId changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
+  // Clear draft on successful send
+  const clearDraft = useCallback(() => {
+    try {
+      const key = conversationId ? `nexusai-draft-${conversationId}` : 'nexusai-draft-new';
+      localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+  }, [conversationId]);
 
   // Auto-resize textarea as content changes
   useEffect(() => {
@@ -208,6 +274,7 @@ export default function ChatInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
+    clearDraft();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

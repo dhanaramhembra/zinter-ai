@@ -165,6 +165,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     isUserTyping,
     setUserTyping,
     toggleReaction,
+    useCustomSystemPrompt,
+    customSystemPrompt,
   } = useChatStore();
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null);
   const [pendingImageMode, setPendingImageMode] = useState(false);
@@ -300,6 +302,14 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConversation?.messages || [];
   const currentPersona = PERSONAS.find((p) => p.id === selectedPersona) || PERSONAS[0];
+
+  // Compute effective system prompt (custom overrides persona when enabled)
+  const effectiveSystemPrompt = useMemo(() => {
+    if (useCustomSystemPrompt && customSystemPrompt.trim()) {
+      return customSystemPrompt.trim();
+    }
+    return currentPersona.systemPrompt;
+  }, [useCustomSystemPrompt, customSystemPrompt, currentPersona.systemPrompt]);
 
   // Feature 1: Compute search matches
   const searchMatches = useMemo(() => {
@@ -497,7 +507,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           body: JSON.stringify({
             message: content || 'Analyze this image',
             conversationId: convId,
-            systemPrompt: currentPersona.systemPrompt,
+            systemPrompt: effectiveSystemPrompt,
             imageBase64: imageBase64 || undefined,
           }),
           signal: controller.signal,
@@ -514,7 +524,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             content: data.message.content,
             role: 'assistant',
             createdAt: data.message.createdAt || new Date().toISOString(),
-            responseTime: responseTime,
+ responseTime: responseTime,
           };
 
           addMessage(convId, assistantMessage);
@@ -538,7 +548,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         requestStartTimeRef.current = null;
       }
     },
-    [activeConversationId, createNewChat, addMessage, setGenerating, currentPersona.systemPrompt]
+    [activeConversationId, createNewChat, addMessage, setGenerating, effectiveSystemPrompt]
   );
 
   const generateImage = useCallback(
@@ -712,7 +722,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             body: JSON.stringify({
               message: userContent,
               conversationId: activeConversationId,
-              systemPrompt: currentPersona.systemPrompt,
+              systemPrompt: effectiveSystemPrompt,
             }),
             signal: controller.signal,
           });
@@ -752,7 +762,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         requestStartTimeRef.current = null;
       }
     },
-    [activeConversationId, conversations, isGenerating, removeMessage, addMessage, setGenerating, currentPersona.systemPrompt]
+    [activeConversationId, conversations, isGenerating, removeMessage, addMessage, setGenerating, effectiveSystemPrompt]
   );
 
   // Feature 2: Edit message handler - update content and regenerate
@@ -829,7 +839,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               body: JSON.stringify({
                 message: newContent,
                 conversationId: activeConversationId,
-                systemPrompt: currentPersona.systemPrompt,
+                systemPrompt: effectiveSystemPrompt,
               }),
               signal: controller.signal,
             });
@@ -866,7 +876,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         }
       }
     },
-    [activeConversationId, conversations, updateMessage, removeMessage, addMessage, setGenerating, isGenerating, currentPersona.systemPrompt]
+    [activeConversationId, conversations, updateMessage, removeMessage, addMessage, setGenerating, isGenerating, effectiveSystemPrompt]
   );
 
   // Share conversation as formatted text
@@ -1209,6 +1219,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           initialImageMode={pendingImageMode}
           onTypingStatusChange={handleTypingStatusChange}
           onInsertTemplate={handleInsertTemplate}
+          conversationId={activeConversationId}
         />
       </div>
     );
