@@ -76,15 +76,6 @@ export async function POST(
       },
     });
 
-    // Auto-update title from first user message
-    if (role === 'user' && conversation.title === 'New Chat') {
-      const autoTitle = content.slice(0, 50) + (content.length > 50 ? '...' : '');
-      await db.conversation.update({
-        where: { id: conversationId },
-        data: { title: autoTitle },
-      });
-    }
-
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
     console.error('Create message error:', error);

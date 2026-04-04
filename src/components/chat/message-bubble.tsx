@@ -481,7 +481,7 @@ export default function MessageBubble({
           {isGenerating ? (
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Thinking...</span>
+              <span>Thinking<span className="animate-cursor-blink">|</span></span>
             </div>
           ) : isUser && isEditing ? (
             /* Editing mode for user messages */
@@ -582,7 +582,7 @@ export default function MessageBubble({
               ) : (
                 <div className="relative pl-3">{""}
                   <div className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full bg-gradient-to-b from-emerald-500/60 via-teal-500/40 to-emerald-500/20 dark:from-emerald-400/50 dark:via-teal-400/30 dark:to-emerald-400/10" />
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none">
+                  <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none chat-scroll">
                   <ReactMarkdown
                     components={{
                       code: CodeBlock as any,

@@ -148,6 +148,8 @@ interface ChatState {
   isUserTyping: boolean;
   useCustomSystemPrompt: boolean;
   customSystemPrompt: string;
+  autoTitleLoadingId: string | null;
+  setAutoTitleLoadingId: (id: string | null) => void;
   setConversations: (conversations: Conversation[]) => void;
   setActiveConversationId: (id: string | null) => void;
   addConversation: (conversation: Conversation) => void;
@@ -197,6 +199,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isUserTyping: false,
   useCustomSystemPrompt: getStoredUseCustomPrompt(),
   customSystemPrompt: getStoredCustomPrompt(),
+  autoTitleLoadingId: null,
 
   setConversations: (conversations) => set({ conversations }),
 
@@ -269,6 +272,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // ignore
     }
   },
+
+  setAutoTitleLoadingId: (id) => set({ autoTitleLoadingId: id }),
 
   setCustomSystemPrompt: (prompt) => {
     set({ customSystemPrompt: prompt });

@@ -3,10 +3,129 @@
 ## Project Overview
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
+---
+## Task ID: 8-styling
+Agent: full-stack-developer
+Task: Improve styling with micro-animations and visual polish
+
+Work Log:
+- Added new CSS animations and utilities to globals.css (Cron Round 8 section)
+- Applied `chat-scroll` class to assistant message prose container in message-bubble.tsx
+- Added `animate-cursor-blink` blinking cursor to "Thinking..." streaming indicator
+- Added `hover-lift-sm` class to New Chat button in conversation-sidebar.tsx
+- Added `focus-ring-emerald` class to login/signup email and password inputs in auth-page.tsx
+- Added `hover-lift-sm` class to Sign In and Create Account buttons in auth-page.tsx
+- Added `focus-ring-emerald` class to chat textarea in chat-input.tsx
+- Verified with lint (zero errors) and dev server (compiles cleanly)
+
+Stage Summary:
+- Added cursor-blink, slide-in-bottom, text-shimmer, scale-in animations
+- Added glow-ring, ripple, hover-lift-sm, focus-ring-emerald utilities
+- Added streaming progress bar animation and toast-in animation
+- Improved scrollbar styling for chat area with chat-scroll utility
+- Added text-gradient-animate for animated heading gradients
+- Added skeleton-pulse-soft for loading states
+- All new CSS uses oklch color system for consistency with existing codebase
+
+---
+## Task ID: 8-autotitle
+Agent: full-stack-developer
+Task: Add auto-conversation title from first AI message
+
+Work Log:
+- Created POST `/api/ai/title` endpoint using z-ai-web-dev-sdk LLM to generate short, descriptive titles (max 50 chars)
+- Added `autoTitleLoadingId` state to chat store to track which conversation is being auto-titled
+- Implemented `generateAutoTitle` function in chat-area.tsx that calls the title API, updates both store and DB
+- Integrated auto-titling into `sendMessage`'s finally block — fires fire-and-forget after AI response completes
+- Added shimmer Skeleton placeholder in conversation sidebar when title is being generated
+- Passed `isAutoTiting` prop to ConversationItem for both pinned and unpinned conversation lists
+- Removed old simple truncation-based auto-title from POST `/api/chat/[conversationId]/messages`
+- Updated API endpoints list in worklog
+
+Stage Summary:
+- Conversations auto-titled with AI-generated short descriptions (max 50 chars)
+- Shimmer skeleton animation shown in sidebar during title generation
+- Toast notification "Smart title applied" shown with the generated title
+- Lint passes with zero errors, dev server compiles cleanly
+
 ## Current Project Status
-- **Phase**: v8 - Cross-Origin Fix, Dev Server Stability
+- **Phase**: v11 - Streaming AI Responses, Smart Auto-Titling, Visual Polish
 - **Status**: Stable, all lint passes, dev server compiles cleanly, no runtime errors
-- **Last Review**: Cron Review Round 7 (Cross-origin fix)
+- **Last Review**: Cron Review Round 8
+
+## Cron Review Round 8 - Overall Assessment
+
+### Verification Results
+- **Lint**: ✅ Zero errors (verified after all changes)
+- **Dev server**: ✅ Compiles cleanly, serves 200 OK
+- **API**: ✅ All endpoints functional (/api/auth/me returns 200, homepage loads correctly)
+- **Code quality**: Proper TypeScript typing, no unused imports
+
+### New Features Added (3 features)
+
+1. **Streaming AI Responses**: Converted `/api/ai/chat` to use Server-Sent Events (SSE) for real-time response streaming. The AI response now appears word-by-word in the chat instead of waiting for the complete response. Features:
+   - Server returns `text/event-stream` content type with SSE formatted chunks
+   - Client reads chunks via `ReadableStream` reader and updates message content in real-time
+   - Separate `isStreaming` state tracks active streaming vs initial "thinking" phase
+   - Backward compatible — falls back to JSON response if streaming fails
+   - AbortController still works to cancel mid-stream
+   - Enhanced typing indicator: "NexusAI is thinking" (dots) → "NexusAI is responding" (pulse) during streaming
+
+2. **Smart Auto-Conversation Titles**: New `/api/ai/title` endpoint generates concise, descriptive titles (max 50 chars) using the AI. Integrated into `sendMessage` — after AI responds to a "New Chat" conversation, the title is automatically updated with a smart description of the conversation topic. Features:
+   - AI-powered title generation (max 50 chars, quotes stripped)
+   - Shimmer skeleton placeholder in sidebar during title generation
+   - Toast notification "Smart title applied" on completion
+   - Updates both Zustand store AND database (via PATCH API)
+   - Fire-and-forget pattern (non-blocking)
+
+3. **Visual Polish & Micro-Animations**: 15+ new CSS utilities and animations added to `globals.css`:
+   - `cursor-blink` — Blinking cursor for streaming messages
+   - `slide-in-bottom` — Smooth entrance for new elements
+   - `text-shimmer` — Gradient text animation for loading states
+   - `scale-in` — Smooth entrance for modals/sheets
+   - `skeleton-pulse-soft` — Soft pulsing for loading placeholders
+   - `glow-ring-emerald` — Emerald glow ring on focused elements (with dark mode)
+   - `ripple-emerald` — Ripple effect on button clicks (CSS-only)
+   - `hover-lift-sm` — Subtle hover lift with emerald shadow (with dark mode)
+   - `focus-ring-emerald` — Emerald focus ring for keyboard navigation (with dark mode)
+   - `text-gradient-animate` — Animated gradient text for headings
+   - `chat-scroll` — Improved scrollbar styling for chat area (with dark mode)
+   - `animate-stream-progress` — Progress bar animation for streaming
+   - Applied to message-bubble, conversation-sidebar, auth-page, and chat-input components
+
+### Files Created
+- `src/app/api/ai/title/route.ts` — Smart title generation endpoint
+
+### Files Modified
+- `src/app/api/ai/chat/route.ts` — Converted to SSE streaming
+- `src/components/chat/chat-area.tsx` — Stream consumer, auto-titling, enhanced typing indicator
+- `src/store/chat-store.ts` — Added `autoTitleLoadingId` state
+- `src/components/chat/conversation-sidebar.tsx` — Skeleton for auto-titling, hover-lift on New Chat
+- `src/components/chat/message-bubble.tsx` — Cursor blink, chat-scroll class
+- `src/components/auth/auth-page.tsx` — Focus rings, hover-lift on buttons
+- `src/components/chat/chat-input.tsx` — Focus ring on textarea
+- `src/app/globals.css` — 15+ new animations and utilities
+
+### Unresolved Issues / Risks
+- **Session management**: In-memory store lost on restart; consider DB-backed sessions
+- **Streaming fallback**: If SDK doesn't support native streaming, falls back to chunked JSON response
+- **Accessibility**: Full ARIA audit still pending for screen reader support
+- **Rate limiting**: No API rate limiting on auth or AI endpoints
+- **Social login buttons**: Currently visual only ("Coming soon!" toast); no OAuth integration
+- **Forgot password**: Currently visual only ("Coming soon!" toast); no reset flow
+- **Terms checkbox**: Visual only, not enforced during signup
+
+### Priority Recommendations for Next Phase
+1. Full accessibility audit (ARIA labels, screen reader, keyboard navigation)
+2. DB-backed session management (replace in-memory)
+3. Add API rate limiting middleware
+4. OAuth social login integration (Google, GitHub)
+5. Password reset flow implementation
+6. Mobile PWA support (service worker, offline mode)
+7. User avatar upload/selection
+8. Conversation import (from Markdown files)
+9. Real-time collaboration features (WebSocket)
+10. Streaming response error recovery/retry logic
 
 ## Hotfix - Cross-Origin Resource Blocking (v8)
 ### Issue
@@ -49,6 +168,7 @@ allowedDevOrigins: ["*.space.z.ai", "space.z.ai"]
 
 ### 2. AI Chat System
 - Real-time AI conversation using z-ai-web-dev-sdk (LLM)
+- **NEW**: Streaming responses via Server-Sent Events (SSE) — word-by-word display
 - Multi-turn conversation with context history
 - Markdown rendering with syntax highlighting for code blocks
 - Smooth message animations with staggered entrance
@@ -93,6 +213,7 @@ allowedDevOrigins: ["*.space.z.ai", "space.z.ai"]
 - Delete conversations with confirmation
 - Search/filter conversations
 - Auto-title from first message
+- **NEW**: Auto-title conversations with AI-generated smart titles
 - Persistent storage with SQLite/Prisma
 - **NEW**: Conversation rename (double-click title to edit inline)
 - **NEW**: Grouped conversations (Today/Yesterday/This Week/Older)
@@ -161,6 +282,13 @@ allowedDevOrigins: ["*.space.z.ai", "space.z.ai"]
 - **NEW**: Kbd keyboard shortcut styling utility
 - **NEW**: Sparkle animation for AI messages
 - **NEW**: Notification badge pop animation
+- **NEW**: Blinking cursor animation for streaming messages
+- **NEW**: Slide-in-bottom entrance animation
+- **NEW**: Emerald glow ring and focus ring utilities
+- **NEW**: Hover lift-sm micro-interaction with emerald shadows
+- **NEW**: Text gradient animation for headings
+- **NEW**: Improved chat area scrollbar with emerald tint
+- **NEW**: Stream progress bar animation
 
 ## Technical Architecture
 
@@ -188,7 +316,8 @@ allowedDevOrigins: ["*.space.z.ai", "space.z.ai"]
 - `POST /api/chat/[id]/messages` - Send message
 - `PATCH /api/chat/[id]/messages` - Update conversation title (rename) or message content (edit)
 - `DELETE /api/chat/[id]/messages` - Delete conversation
-- `POST /api/ai/chat` - AI chat completion (supports custom systemPrompt, imageBase64 multimodal; response time tracked)
+- `POST /api/ai/chat` - AI chat completion via SSE streaming (supports custom systemPrompt, imageBase64 multimodal; response time tracked)
+- `POST /api/ai/title` - Generate smart conversation title from messages (max 50 chars)
 - `POST /api/ai/image` - Generate image
 - `POST /api/ai/tts` - Text to speech
 - `POST /api/ai/asr` - Speech to text
@@ -1073,4 +1202,35 @@ Stage Summary:
 - chat-area.tsx polished with 6 targeted styling improvements
 - All changes use existing CSS utility classes (chat-header, gradient-border-top, animated-border, scroll-to-bottom-btn, notification-badge, animate-pulse-ring, gradient-text, shimmer)
 - Lint passes cleanly with zero errors
+- Dev server compiles and serves 200 OK
+
+---
+## Task ID: 8-stream
+Agent: full-stack-developer
+Task: Add streaming AI chat responses
+
+Work Log:
+- Read existing `/api/ai/chat/route.ts` to understand non-streaming implementation
+- Read `chat-area.tsx` to understand sendMessage, handleRegenerate, handleEditMessage flows
+- Verified z-ai-web-dev-sdk supports `stream: true` option (returns `ReadableStream` when content-type is `text/event-stream`)
+- Rewrote `/api/ai/chat/route.ts` to attempt streaming first, fall back to non-streaming
+- Added `streamAIResponse` helper in `chat-area.tsx` that detects SSE content-type and processes chunks
+- Updated `sendMessage`, `handleRegenerate`, and `handleEditMessage` to use streaming with empty message placeholder
+- Updated `TypingIndicator` to show "NexusAI is thinking" (bouncing dots) before stream starts and "NexusAI is responding" (pulsing dots) while streaming
+- Updated `handleStopGeneration` to also clear `isStreaming` state
+- Ran full lint check - zero errors
+- Verified dev server compiles cleanly
+
+Stage Summary:
+- AI chat now streams responses in real-time via SSE (Server-Sent Events)
+- Streaming uses z-ai-web-dev-sdk's native `stream: true` support
+- Backend parses SSE events from SDK and re-emits simplified `data: {"content": "..."}` format to client
+- Backend saves complete response to DB after stream ends
+- Client creates empty assistant message immediately and appends content as tokens arrive
+- Response time tracked from first chunk to last chunk (streaming-aware)
+- Typing indicator has two states: "thinking" (before stream) and "responding" (during stream)
+- AbortController still works to stop generation mid-stream
+- Full backward compatibility: if streaming fails, falls back to non-streaming JSON response
+- Empty placeholder messages are cleaned up on error or abort
+- Lint passes with zero errors
 - Dev server compiles and serves 200 OK

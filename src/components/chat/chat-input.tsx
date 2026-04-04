@@ -490,7 +490,7 @@ export default function ChatInput({
                   : 'Type a message... (Shift+Enter for new line)'
             }
             className={cn(
-              'resize-none min-h-[44px] max-h-[200px] pr-12 rounded-xl shadow-sm input-glow relative',
+              'resize-none min-h-[44px] max-h-[200px] pr-12 rounded-xl shadow-sm input-glow relative focus-ring-emerald',
               'transition-all duration-300',
               imageMode && 'border-emerald-500/40 focus-visible:ring-emerald-500/20'
             )}

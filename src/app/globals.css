@@ -2226,3 +2226,156 @@ body {
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
 }
+
+/* === Cron Round 8: New Animations & Utilities === */
+
+/* Typing cursor blink class for streaming messages */
+.animate-cursor-blink {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+/* Slide-in from bottom for new messages */
+@keyframes slide-in-bottom {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in-bottom {
+  animation: slide-in-bottom 0.3s ease-out;
+}
+
+/* Gradient text shimmer for loading states */
+@keyframes text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.animate-text-shimmer {
+  background-size: 200% auto;
+  animation: text-shimmer 3s linear infinite;
+}
+
+/* Smooth scale-in for modals/sheets */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Skeleton pulse variant for auto-title loading */
+@keyframes skeleton-pulse-soft {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.animate-skeleton-pulse-soft {
+  animation: skeleton-pulse-soft 1.5s ease-in-out infinite;
+}
+
+/* Glow ring for active/focused elements */
+.glow-ring-emerald {
+  box-shadow: 0 0 0 2px oklch(0.55 0.18 163 / 30%), 0 0 12px oklch(0.55 0.18 163 / 15%);
+}
+
+.dark .glow-ring-emerald {
+  box-shadow: 0 0 0 2px oklch(0.65 0.20 163 / 30%), 0 0 12px oklch(0.65 0.20 163 / 15%);
+}
+
+/* Ripple effect for button clicks */
+.ripple-emerald {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-emerald::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), oklch(0.55 0.18 163 / 25%) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.ripple-emerald:active::after {
+  opacity: 1;
+  transition: opacity 0s;
+}
+
+/* Subtle text gradient animation for headings */
+.text-gradient-animate {
+  background: linear-gradient(90deg, oklch(0.55 0.18 163), oklch(0.65 0.15 175), oklch(0.55 0.18 163));
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 4s linear infinite;
+}
+
+/* Toast notification entrance animation */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%) scale(0.9); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Message streaming indicator bar */
+@keyframes stream-progress {
+  0% { width: 0%; }
+  20% { width: 30%; }
+  50% { width: 60%; }
+  80% { width: 85%; }
+  100% { width: 95%; }
+}
+.animate-stream-progress {
+  animation: stream-progress 3s ease-out forwards;
+}
+
+/* Smooth hover lift with shadow (small variant) */
+.hover-lift-sm {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift-sm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px oklch(0.55 0.18 163 / 10%);
+}
+
+.dark .hover-lift-sm:hover {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 30%);
+}
+
+/* Focus ring for inputs with emerald color */
+.focus-ring-emerald:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px oklch(0.55 0.18 163 / 30%), 0 0 0 1px oklch(0.55 0.18 163 / 50%);
+}
+
+.dark .focus-ring-emerald:focus-visible {
+  box-shadow: 0 0 0 3px oklch(0.65 0.20 163 / 30%), 0 0 0 1px oklch(0.65 0.20 163 / 50%);
+}
+
+/* Improved scrollbar for chat area */
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.55 0.18 163 / 20%);
+  border-radius: 3px;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.55 0.18 163 / 40%);
+}
+
+/* Smooth scrollbar for dark mode */
+.dark .chat-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.65 0.20 163 / 15%);
+}
+
+.dark .chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.65 0.20 163 / 30%);
+}

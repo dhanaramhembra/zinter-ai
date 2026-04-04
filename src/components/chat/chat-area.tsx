@@ -189,6 +189,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   // Typing status for header indicator
   const [typingStatus, setTypingStatus] = useState(false);
 
+  // Streaming state
+  const [isStreaming, setIsStreaming] = useState(false);
+  // Track time of first chunk for streaming response time
+  const firstChunkTimeRef = useRef<number | null>(null);
+
 
 
   // Feature 4: Response time tracking
@@ -457,8 +462,132 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       abortControllerRef.current = null;
     }
     setGenerating(false);
+    setIsStreaming(false);
     toast.success('Generation stopped');
   }, [setGenerating]);
+
+  // Auto-title a conversation using AI based on the first user message
+  const generateAutoTitle = useCallback(async (convId: string, firstMessage: string) => {
+    try {
+      useChatStore.getState().setAutoTitleLoadingId(convId);
+
+      const res = await fetch('/api/ai/title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: firstMessage }],
+        }),
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (!data.title || data.title === 'New Chat') return;
+
+      // Update title in the store
+      useChatStore.getState().updateConversation(convId, { title: data.title });
+
+      // Update title in the database
+      await fetch(`/api/chat/${convId}/messages`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: data.title }),
+      });
+
+      toast.success('Smart title applied', { description: data.title, duration: 2500 });
+    } catch (error) {
+      console.error('Auto-title error:', error);
+    } finally {
+      useChatStore.getState().setAutoTitleLoadingId(null);
+    }
+  }, []);
+
+  // Helper: consume SSE stream from AI chat and update message in real-time
+  const streamAIResponse = useCallback(
+    async (
+      res: Response,
+      convId: string,
+      assistantMsgId: string,
+      controller: AbortController
+    ): Promise<boolean> => {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('text/event-stream')) return false;
+
+      setIsStreaming(true);
+      const reader = res.body?.getReader();
+      if (!reader) return false;
+
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+            const dataStr = trimmed.slice(6);
+            if (dataStr === '[DONE]') break;
+
+            try {
+              const parsed = JSON.parse(dataStr);
+
+              // Check for stream error
+              if (parsed.error) {
+                toast.error('AI response error');
+                updateMessage(convId, assistantMsgId, {
+                  content: 'Sorry, something went wrong. Please try again.',
+                });
+                return true;
+              }
+
+              // Final event with id and createdAt
+              if (parsed.done) {
+                const responseTime = firstChunkTimeRef.current
+                  ? Date.now() - firstChunkTimeRef.current
+                  : null;
+                updateMessage(convId, assistantMsgId, {
+                  id: parsed.id || assistantMsgId,
+                  createdAt: parsed.createdAt || new Date().toISOString(),
+                  responseTime,
+                });
+                continue;
+              }
+
+              // Content delta
+              if (parsed.content) {
+                if (!firstChunkTimeRef.current) {
+                  firstChunkTimeRef.current = Date.now();
+                }
+                accumulated += parsed.content;
+                updateMessage(convId, assistantMsgId, { content: accumulated });
+              }
+            } catch {
+              // Skip malformed JSON
+            }
+          }
+        }
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          // User stopped generation - keep partial content
+        } else {
+          console.error('Stream reading error:', error);
+        }
+      } finally {
+        setIsStreaming(false);
+        firstChunkTimeRef.current = null;
+      }
+
+      return true;
+    },
+    [updateMessage]
+  );
 
   const sendMessage = useCallback(
     async (content: string, imageBase64?: string) => {
@@ -484,6 +613,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
 
       // Feature 4: Record start time
       requestStartTimeRef.current = Date.now();
+      firstChunkTimeRef.current = null;
 
       // Create AbortController
       const controller = new AbortController();
@@ -500,6 +630,15 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         console.error('Failed to save message:', error);
       }
 
+      // Create empty assistant message for streaming
+      const assistantMsgId = uuidv4();
+      addMessage(convId, {
+        id: assistantMsgId,
+        content: '',
+        role: 'assistant',
+        createdAt: new Date().toISOString(),
+      });
+
       try {
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
@@ -513,6 +652,21 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           signal: controller.signal,
         });
 
+        // Try streaming first
+        const wasStreamed = await streamAIResponse(res, convId, assistantMsgId, controller);
+
+        if (wasStreamed) {
+          // Check if content was actually accumulated (not empty from error)
+          const conv = useChatStore.getState().conversations.find((c) => c.id === convId);
+          const msg = conv?.messages.find((m) => m.id === assistantMsgId);
+          if (!msg?.content) {
+            // Stream completed but no content - remove empty message
+            removeMessage(convId, assistantMsgId);
+          }
+          return;
+        }
+
+        // Non-streaming fallback
         const data = await res.json();
 
         // Feature 4: Calculate response time
@@ -524,31 +678,45 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             content: data.message.content,
             role: 'assistant',
             createdAt: data.message.createdAt || new Date().toISOString(),
- responseTime: responseTime,
+            responseTime: responseTime,
           };
 
+          // Remove the empty placeholder and add the real message
+          removeMessage(convId, assistantMsgId);
           addMessage(convId, assistantMessage);
+        } else {
+          // No message in response, remove empty placeholder
+          removeMessage(convId, assistantMsgId);
         }
       } catch (error: unknown) {
         if (error instanceof DOMException && error.name === 'AbortError') {
-          // Generation was stopped by user - no error toast needed
+          // Generation was stopped by user - keep partial streamed content if any
+          const conv = useChatStore.getState().conversations.find((c) => c.id === convId);
+          const msg = conv?.messages.find((m) => m.id === assistantMsgId);
+          if (!msg?.content) {
+            removeMessage(convId, assistantMsgId);
+          }
         } else {
           console.error('AI chat error:', error);
           toast.error('Failed to get AI response');
-          addMessage(convId, {
-            id: uuidv4(),
+          updateMessage(convId, assistantMsgId, {
             content: 'Sorry, something went wrong. Please try again.',
-            role: 'assistant',
-            createdAt: new Date().toISOString(),
           });
         }
       } finally {
         setGenerating(false);
         abortControllerRef.current = null;
         requestStartTimeRef.current = null;
+        firstChunkTimeRef.current = null;
+
+        // Auto-title if the conversation title is still "New Chat"
+        const convForTitle = useChatStore.getState().conversations.find((c) => c.id === convId);
+        if (convForTitle && convForTitle.title === 'New Chat') {
+          generateAutoTitle(convId, content || 'Analyze this image').catch(() => {});
+        }
       }
     },
-    [activeConversationId, createNewChat, addMessage, setGenerating, effectiveSystemPrompt]
+    [activeConversationId, createNewChat, addMessage, removeMessage, updateMessage, setGenerating, effectiveSystemPrompt, streamAIResponse, generateAutoTitle]
   );
 
   const generateImage = useCallback(
@@ -716,6 +884,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             throw new Error(data.error || 'Image generation failed');
           }
         } else {
+          // Create empty assistant message for streaming
+          const regenMsgId = uuidv4();
+          addMessage(activeConversationId, {
+            id: regenMsgId,
+            content: '',
+            role: 'assistant',
+            createdAt: new Date().toISOString(),
+          });
+          firstChunkTimeRef.current = null;
+
           const res = await fetch('/api/ai/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -727,20 +905,33 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             signal: controller.signal,
           });
 
-          const data = await res.json();
+          // Try streaming first
+          const wasStreamed = await streamAIResponse(res, activeConversationId, regenMsgId, controller);
 
-          // Feature 4: Calculate response time
-          const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
+          if (wasStreamed) {
+            const convState = useChatStore.getState().conversations.find((c) => c.id === activeConversationId);
+            const msgState = convState?.messages.find((m) => m.id === regenMsgId);
+            if (!msgState?.content) {
+              removeMessage(activeConversationId, regenMsgId);
+            }
+          } else {
+            // Non-streaming fallback
+            const data = await res.json();
+            const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
 
-          if (data.message) {
-            const newMessage: Message = {
-              id: data.message.id || uuidv4(),
-              content: data.message.content,
-              role: 'assistant',
-              createdAt: data.message.createdAt || new Date().toISOString(),
-              responseTime: responseTime,
-            };
-            addMessage(activeConversationId, newMessage);
+            if (data.message) {
+              const newMessage: Message = {
+                id: data.message.id || uuidv4(),
+                content: data.message.content,
+                role: 'assistant',
+                createdAt: data.message.createdAt || new Date().toISOString(),
+                responseTime: responseTime,
+              };
+              removeMessage(activeConversationId, regenMsgId);
+              addMessage(activeConversationId, newMessage);
+            } else {
+              removeMessage(activeConversationId, regenMsgId);
+            }
           }
         }
       } catch (error: unknown) {
@@ -760,9 +951,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         setGenerating(false);
         abortControllerRef.current = null;
         requestStartTimeRef.current = null;
+        firstChunkTimeRef.current = null;
       }
     },
-    [activeConversationId, conversations, isGenerating, removeMessage, addMessage, setGenerating, effectiveSystemPrompt]
+    [activeConversationId, conversations, isGenerating, removeMessage, addMessage, setGenerating, effectiveSystemPrompt, streamAIResponse]
   );
 
   // Feature 2: Edit message handler - update content and regenerate
@@ -833,6 +1025,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               throw new Error(data.error || 'Image generation failed');
             }
           } else {
+            // Create empty assistant message for streaming
+            const editMsgId = uuidv4();
+            addMessage(activeConversationId, {
+              id: editMsgId,
+              content: '',
+              role: 'assistant',
+              createdAt: new Date().toISOString(),
+            });
+            firstChunkTimeRef.current = null;
+
             const res = await fetch('/api/ai/chat', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -843,17 +1045,33 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               }),
               signal: controller.signal,
             });
-            const data = await res.json();
-            const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
-            if (data.message) {
-              const newMsg: Message = {
-                id: data.message.id || uuidv4(),
-                content: data.message.content,
-                role: 'assistant',
-                createdAt: data.message.createdAt || new Date().toISOString(),
-                responseTime: responseTime,
-              };
-              addMessage(activeConversationId, newMsg);
+
+            // Try streaming first
+            const wasStreamed = await streamAIResponse(res, activeConversationId, editMsgId, controller);
+
+            if (wasStreamed) {
+              const convState = useChatStore.getState().conversations.find((c) => c.id === activeConversationId);
+              const msgState = convState?.messages.find((m) => m.id === editMsgId);
+              if (!msgState?.content) {
+                removeMessage(activeConversationId, editMsgId);
+              }
+            } else {
+              // Non-streaming fallback
+              const data = await res.json();
+              const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
+              if (data.message) {
+                const newMsg: Message = {
+                  id: data.message.id || uuidv4(),
+                  content: data.message.content,
+                  role: 'assistant',
+                  createdAt: data.message.createdAt || new Date().toISOString(),
+                  responseTime: responseTime,
+                };
+                removeMessage(activeConversationId, editMsgId);
+                addMessage(activeConversationId, newMsg);
+              } else {
+                removeMessage(activeConversationId, editMsgId);
+              }
             }
           }
         } catch (error: unknown) {
@@ -876,7 +1094,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         }
       }
     },
-    [activeConversationId, conversations, updateMessage, removeMessage, addMessage, setGenerating, isGenerating, effectiveSystemPrompt]
+    [activeConversationId, conversations, updateMessage, removeMessage, addMessage, setGenerating, isGenerating, effectiveSystemPrompt, streamAIResponse]
   );
 
   // Share conversation as formatted text
@@ -1024,7 +1242,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Typing indicator component with enhanced glow
+  // Typing indicator component - shows "thinking" before stream starts, "responding" while flowing
   const TypingIndicator = () => (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
@@ -1034,26 +1252,38 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       className="flex gap-3 px-4 py-2"
     >
       <Avatar className="w-8 h-8 shrink-0 mt-0.5">
-        <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
+        <AvatarFallback className={cn(
+          'text-xs font-medium bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20',
+          isStreaming && 'animate-pulse'
+        )}>
           <Sparkles className="w-4 h-4" />
         </AvatarFallback>
       </Avatar>
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground py-2">
-        <span>NexusAI is typing</span>
-        <span className="inline-flex gap-0.5 ml-0.5">
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
-            style={{ animationDelay: '0ms' }}
-          />
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
-            style={{ animationDelay: '150ms' }}
-          />
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
-            style={{ animationDelay: '300ms' }}
-          />
-        </span>
+        <span>{isStreaming ? 'NexusAI is responding' : 'NexusAI is thinking'}</span>
+        {!isStreaming && (
+          <span className="inline-flex gap-0.5 ml-0.5">
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
+              style={{ animationDelay: '0ms' }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
+              style={{ animationDelay: '150ms' }}
+            />
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce shadow-[0_0_8px_oklch(0.55_0.18_163/60%)]"
+              style={{ animationDelay: '300ms' }}
+            />
+          </span>
+        )}
+        {isStreaming && (
+          <span className="inline-flex gap-0.5 ml-0.5">
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '0ms' }} />
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '200ms' }} />
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: '400ms' }} />
+          </span>
+        )}
       </div>
     </motion.div>
   );

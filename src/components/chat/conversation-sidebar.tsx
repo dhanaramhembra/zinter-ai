@@ -2,6 +2,7 @@
 
 import { useChatStore, Conversation } from '@/store/chat-store';
 import { useAuthStore } from '@/store/auth-store';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -122,6 +123,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     addConversation,
     deleteConversation,
     updateConversation,
+    autoTitleLoadingId,
   } = useChatStore();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
@@ -429,7 +431,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         <div className="px-3 pt-3 pb-1">
           <Button
             onClick={createNewChat}
-            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/30 active:scale-[0.98] transition-all duration-200 h-10 relative overflow-hidden group"
+            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/30 active:scale-[0.98] transition-all duration-200 h-10 relative overflow-hidden group hover-lift-sm"
           >
             <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shimmer" />
             <Plus className="w-4 h-4 relative z-10" />
@@ -485,6 +487,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                           isPinned={true}
                           isSelectMode={isSelectMode}
                           isSelected={selectedIds.has(conv.id)}
+                          isAutoTiting={conv.id === autoTitleLoadingId}
                           onSelect={() => handleToggleSelect(conv.id)}
                           onClick={() => {
                             if (isSelectMode) {
@@ -522,6 +525,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                             isPinned={false}
                             isSelectMode={isSelectMode}
                             isSelected={selectedIds.has(conv.id)}
+                            isAutoTiting={conv.id === autoTitleLoadingId}
                             onSelect={() => handleToggleSelect(conv.id)}
                             onClick={() => {
                               if (isSelectMode) {
@@ -735,6 +739,7 @@ function ConversationItem({
   isPinned,
   isSelectMode,
   isSelected,
+  isAutoTiting,
   onSelect,
   onClick,
   onDelete,
@@ -747,6 +752,7 @@ function ConversationItem({
   isPinned: boolean;
   isSelectMode?: boolean;
   isSelected?: boolean;
+  isAutoTiting?: boolean;
   onSelect?: () => void;
   onClick: () => void;
   onDelete: () => void;
@@ -865,6 +871,8 @@ function ConversationItem({
                 className="h-6 text-sm px-1 py-0 border-emerald-500/50 focus-visible:ring-emerald-500/30"
                 maxLength={100}
               />
+            ) : isAutoTiting ? (
+              <Skeleton className="h-4 w-28 rounded" />
             ) : (
               <p className="font-medium truncate flex items-center gap-1.5">
                 {conversation.title}

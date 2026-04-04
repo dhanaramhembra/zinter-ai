@@ -405,7 +405,7 @@ export default function AuthPage() {
                             placeholder="you@example.com"
                             value={loginData.email}
                             onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 focus-ring-emerald"
                             required
                           />
                         </div>
@@ -420,7 +420,7 @@ export default function AuthPage() {
                             placeholder="Enter your password"
                             value={loginData.password}
                             onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
+                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 focus-ring-emerald"
                             required
                           />
                         </div>
@@ -459,7 +459,7 @@ export default function AuthPage() {
                     <CardFooter>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300 hover-lift-sm"
                         disabled={isLoading || isCheckingSession}
                       >
                         {(isLoading || isCheckingSession) ? (
@@ -630,7 +630,7 @@ export default function AuthPage() {
                     <CardFooter>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300"
+                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300 hover-lift-sm"
                         disabled={isLoading || isCheckingSession}
                       >
                         {(isLoading || isCheckingSession) ? (
