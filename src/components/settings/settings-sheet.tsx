@@ -711,7 +711,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                 </div>
               </SettingsSection>
 
-              {/* Gradient divider */
+              {/* Gradient divider */}
               <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
               {/* Data Management Section */}

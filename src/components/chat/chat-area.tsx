@@ -1855,7 +1855,6 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       <div ref={scrollAreaRefCallback} className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         {!hasMessages ? (
-          {/* Empty conversation state */}
           <div className="flex items-center justify-center min-h-full p-8">
             <div className="text-center max-w-2xl w-full py-12">
               <motion.div
@@ -1896,7 +1895,6 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             </div>
           </div>
         ) : showFavoritesOnly && displayMessages.length === 0 ? (
-          {/* No favorites state */}
           <div className="flex items-center justify-center min-h-full p-8">
             <div className="text-center py-12">
               <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
@@ -1909,9 +1907,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             </div>
           </div>
         ) : (
-          {/* Messages list with subtle dot grid background */}
           <div className={cn('max-w-4xl mx-auto py-4 rounded-lg', FONT_SIZE_CLASS[fontSize], BACKGROUND_THEMES.find((t) => t.id === selectedBackground)?.className)} data-messages-container>
-            {/* Pinned Messages collapsible section */
+            {/* Pinned Messages collapsible section */}
             {pinnedMessagesInConv.length > 0 && (
               <div className="mb-4">
                 <button
