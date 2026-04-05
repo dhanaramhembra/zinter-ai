@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
         input: chunk,
         voice,
         speed: clampedSpeed,
-        response_format: 'mp3', // MP3 is much smaller than WAV
+        response_format: 'wav', // WAV is the only supported format
         stream: false,
       });
 
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse(totalBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'audio/wav',
         'Content-Length': totalBuffer.length.toString(),
         'Cache-Control': 'no-cache',
       },
