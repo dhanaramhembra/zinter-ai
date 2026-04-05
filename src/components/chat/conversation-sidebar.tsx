@@ -43,7 +43,6 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import SettingsSheet from '@/components/settings/settings-sheet';
 import UserProfileSheet from '@/components/user-profile-sheet';
 import { AVATAR_OPTIONS } from '@/lib/avatars';
 
@@ -138,7 +137,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const [statsOpen, setStatsOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
@@ -685,8 +684,8 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               variant="ghost"
               size="icon"
               className="h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
-              onClick={() => setSettingsOpen(true)}
-              title="Settings"
+              onClick={() => setProfileDialogOpen(true)}
+              title="Profile & Settings"
             >
               <Settings className="w-4 h-4" />
             </Button>
@@ -836,10 +835,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </DialogContent>
       </Dialog>
 
-      {/* Settings sheet */}
-      <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
-
-      {/* Profile sheet */}
+      {/* Profile & Settings sheet */}
       <UserProfileSheet open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
     </>
   );

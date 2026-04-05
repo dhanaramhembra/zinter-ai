@@ -1541,3 +1541,27 @@ Implemented a full user profile panel (Sheet sliding from right) with multiple s
 - ✅ Lint: Zero errors
 - ✅ Dev server: Compiles cleanly
 - ✅ All existing functionality preserved (delete/loyout dialogs, sidebar footer)
+
+---
+## Task ID: unified-profile-settings
+Agent: main
+Task: Move all settings from settings-sheet into user-profile-sheet (unified Profile & Settings page)
+
+Work Log:
+- Rewrote `src/components/user-profile-sheet.tsx` — comprehensive tabbed profile & settings page:
+  - **Profile Card** (above tabs): Avatar with online status, name, email (with show/hide toggle), member since
+  - **Profile Tab**: Stats (Chats, Messages, Joined), Edit Display Name (with save), Avatar Picker (10 options with selection indicator), Account Information (email, account ID, member since, last updated — all with copy buttons)
+  - **Appearance Tab**: Theme selector (Light/Dark/System with descriptions), Font size selector (Small/Medium/Large with live preview bubbles), Chat Background selector (5 themes), Show Timestamps toggle
+  - **Chat Tab**: Custom Persona (toggle + system prompt textarea), Export Bookmarks (Markdown download), Keyboard Shortcuts table (6 shortcuts), Clear All Conversations (danger zone with confirmation dialog)
+  - **About Tab**: Zinter AI app info card with tech tags, Detailed Statistics (5 stat cards: conversations, messages, most active day, avg msgs/conv, total words), Quick Info items (features list)
+  - Reusable sub-components: SectionWrapper, MiniStatCard, InfoRow, QuickInfoItem, StatCard, Divider
+- Updated `src/components/chat/conversation-sidebar.tsx`:
+  - Removed SettingsSheet import
+  - Wired Settings button to open UserProfileSheet instead
+  - Removed settingsOpen state
+
+Stage Summary:
+- All settings are now accessible from ONE unified "Profile & Settings" sheet
+- Profile is accessible via: (1) User card in sidebar footer, (2) Settings gear icon in sidebar footer, (3) UserCircle button in chat headers
+- Uses shadcn/ui Tabs for clean organization (4 tabs: Profile, Look, Chat, About)
+- Lint: zero errors, dev server compiles cleanly
