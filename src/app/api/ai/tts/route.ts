@@ -44,114 +44,6 @@ function stripMarkdown(text: string): string {
   return cleaned.trim();
 }
 
-/**
- * Split text into chunks by sentences, each ~400 chars max.
- */
-function splitIntoChunks(text: string, maxLen = 400): string[] {
-  const sentences = text.match(/[^.!?।\n]+[.!?।]*/g) || [text];
-  const chunks: string[] = [];
-  let current = '';
-
-  for (const sentence of sentences) {
-    const trimmed = sentence.trim();
-    if (!trimmed) continue;
-
-    if ((current + ' ' + trimmed).trim().length <= maxLen) {
-      current = (current + ' ' + trimmed).trim();
-    } else {
-      if (current) chunks.push(current);
-      if (trimmed.length > maxLen) {
-        const parts = trimmed.split(/[,،;:]/);
-        let sub = '';
-        for (const part of parts) {
-          if ((sub + part).trim().length <= maxLen) {
-            sub = (sub + part + ',').trim();
-          } else {
-            if (sub) chunks.push(sub.replace(/[,]$/, ''));
-            sub = part.trim();
-          }
-        }
-        if (sub) chunks.push(sub.replace(/[,]$/, ''));
-        current = '';
-      } else {
-        current = trimmed;
-      }
-    }
-  }
-  if (current) chunks.push(current);
-
-  return chunks.length > 0 ? chunks : [text.slice(0, maxLen)];
-}
-
-/**
- * Read WAV header parameters from a Buffer.
- * Standard WAV: 44-byte header, PCM 16-bit little-endian.
- */
-function parseWavHeader(buf: Buffer): {
-  numChannels: number;
-  sampleRate: number;
-  bitsPerSample: number;
-  dataOffset: number;
-} {
-  const numChannels = buf.readUInt16LE(22);
-  const sampleRate = buf.readUInt32LE(24);
-  const bitsPerSample = buf.readUInt16LE(34);
-  const dataOffset = buf.readUInt32LE(16) + 8; // chunkSize + 8 for "data" tag
-  return { numChannels, sampleRate, bitsPerSample, dataOffset };
-}
-
-/**
- * Build a valid WAV file from raw PCM samples.
- */
-function buildWav(pcmData: Buffer, numChannels: number, sampleRate: number, bitsPerSample: number): Buffer {
-  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
-  const blockAlign = numChannels * (bitsPerSample / 8);
-  const dataSize = pcmData.length;
-  const headerSize = 44;
-
-  const header = Buffer.alloc(headerSize, 0);
-  // RIFF header
-  header.write('RIFF', 0);
-  header.writeUInt32LE(36 + dataSize, 4);
-  header.write('WAVE', 8);
-  // fmt sub-chunk
-  header.write('fmt ', 12);
-  header.writeUInt32LE(16, 16); // sub-chunk size
-  header.writeUInt16LE(1, 20);  // PCM format
-  header.writeUInt16LE(numChannels, 22);
-  header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(byteRate, 28);
-  header.writeUInt16LE(blockAlign, 32);
-  header.writeUInt16LE(bitsPerSample, 34);
-  // data sub-chunk
-  header.write('data', 36);
-  header.writeUInt32LE(dataSize, 40);
-
-  return Buffer.concat([header, pcmData]);
-}
-
-/**
- * Merge multiple WAV buffers into a single valid WAV file.
- * All chunks must have the same sample rate, channels, and bits per sample.
- */
-function mergeWavBuffers(buffers: Buffer[]): Buffer {
-  if (buffers.length === 1) return buffers[0];
-
-  // Parse first WAV to get format info
-  const first = parseWavHeader(buffers[0]);
-
-  // Extract raw PCM data from each WAV (skip header)
-  const pcmParts: Buffer[] = [];
-  for (const buf of buffers) {
-    const info = parseWavHeader(buf);
-    pcmParts.push(buf.subarray(info.dataOffset));
-  }
-
-  // Combine all PCM data and build a single WAV
-  const combinedPcm = Buffer.concat(pcmParts);
-  return buildWav(combinedPcm, first.numChannels, first.sampleRate, first.bitsPerSample);
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { text, speed = 1.0 } = await req.json();
@@ -168,44 +60,55 @@ export async function POST(req: NextRequest) {
 
     const clampedSpeed = Math.min(2.0, Math.max(0.5, speed));
 
-    // Split into chunks
-    const chunks = splitIntoChunks(cleanText, 400);
-    const voice = detectVoiceForText(cleanText);
-    console.log(`TTS: voice=${voice}, totalChars=${cleanText.length}, chunks=${chunks.length}`);
+    // TTS API max is 1024 chars but long text causes timeouts/errors.
+    // Keep within 400 chars for reliable, fast results (~4-5 seconds).
+    const MAX_CHARS = 400;
+    let truncated = false;
+    let ttsText = cleanText;
+
+    if (cleanText.length > MAX_CHARS) {
+      // Try to cut at the last sentence-ending punctuation before the limit
+      const cutStr = cleanText.slice(0, MAX_CHARS);
+      const lastSentenceEnd = Math.max(
+        cutStr.lastIndexOf('.'),
+        cutStr.lastIndexOf('।'),
+        cutStr.lastIndexOf('!'),
+        cutStr.lastIndexOf('?'),
+        cutStr.lastIndexOf('\n'),
+      );
+
+      ttsText = lastSentenceEnd > 100
+        ? cutStr.slice(0, lastSentenceEnd + 1).trim()
+        : cutStr.slice(0, MAX_CHARS).trim();
+
+      truncated = true;
+    }
+
+    const voice = detectVoiceForText(ttsText);
+    console.log(`TTS: voice=${voice}, originalChars=${cleanText.length}, ttsChars=${ttsText.length}, truncated=${truncated}`);
 
     const zai = await ZAI.create();
 
-    // Generate audio for each chunk
-    const audioBuffers: Buffer[] = [];
+    // Single API call — fast and reliable, no gateway timeout risk
+    const response = await zai.audio.tts.create({
+      input: ttsText,
+      voice,
+      speed: clampedSpeed,
+      response_format: 'wav',
+      stream: false,
+    });
 
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i].slice(0, 500);
-      console.log(`TTS: chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(new Uint8Array(arrayBuffer));
+    console.log(`TTS: generated ${buffer.length} bytes audio`);
 
-      const response = await zai.audio.tts.create({
-        input: chunk,
-        voice,
-        speed: clampedSpeed,
-        response_format: 'wav',
-        stream: false,
-      });
-
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(new Uint8Array(arrayBuffer));
-      audioBuffers.push(buffer);
-      console.log(`TTS: chunk ${i + 1} done, ${buffer.length} bytes`);
-    }
-
-    // Properly merge WAV chunks into one valid WAV file
-    const mergedBuffer = mergeWavBuffers(audioBuffers);
-    console.log(`TTS: merged ${audioBuffers.length} chunks → ${mergedBuffer.length} bytes`);
-
-    return new NextResponse(mergedBuffer, {
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'audio/wav',
-        'Content-Length': mergedBuffer.length.toString(),
+        'Content-Length': buffer.length.toString(),
         'Cache-Control': 'no-cache',
+        'X-TTS-Truncated': truncated ? '1' : '0',
       },
     });
   } catch (error) {

@@ -280,9 +280,8 @@ export default function MessageBubble({
       setIsSpeaking(true);
       toast.info('Generating speech...', { duration: 2000 });
 
-      // AbortController for timeout — 2 minutes for long messages
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000);
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const res = await fetch('/api/ai/tts', {
         method: 'POST',
@@ -297,6 +296,9 @@ export default function MessageBubble({
         const errBody = await res.text().catch(() => '');
         throw new Error(`TTS failed (${res.status}): ${errBody}`);
       }
+
+      // Check if text was truncated
+      const wasTruncated = res.headers.get('X-TTS-Truncated') === '1';
 
       const blob = await res.blob();
 
@@ -314,8 +316,8 @@ export default function MessageBubble({
         audioRef.current = null;
       };
 
-      audio.onerror = (e) => {
-        console.error('Audio playback error:', e);
+      audio.onerror = () => {
+        console.error('Audio playback error');
         toast.error('Audio playback failed');
         setIsSpeaking(false);
         URL.revokeObjectURL(url);
@@ -323,6 +325,12 @@ export default function MessageBubble({
       };
 
       await audio.play();
+
+      if (wasTruncated) {
+        // Dismiss the "generating" toast first, then show truncation notice
+        toast.dismiss();
+        toast.info('Playing first part (message too long for full audio)', { duration: 4000 });
+      }
     } catch (error) {
       console.error('TTS error:', error);
       if (error instanceof DOMException && error.name === 'AbortError') {
