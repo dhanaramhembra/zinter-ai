@@ -300,7 +300,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               conversationTitle: conv.title,
               content: cleaned,
               date: new Date(msg.createdAt).toLocaleString(),
-              role: msg.role === 'assistant' ? 'NexusAI' : 'You',
+              role: msg.role === 'assistant' ? 'Zinter AI' : 'You',
             });
           }
         }
@@ -312,7 +312,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
       }
 
       // Generate Markdown
-      let markdown = '# NexusAI Bookmarks\n\n';
+      let markdown = '# Zinter AI Bookmarks\n\n';
       markdown += `*Exported on ${new Date().toLocaleString()} — ${bookmarkedMessages.length} bookmark${bookmarkedMessages.length !== 1 ? 's' : ''}*\n\n`;
       markdown += '---\n\n';
 
@@ -471,7 +471,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
 
               {/* Appearance Section */}
-              <SettingsSection icon={Palette} title="Appearance" description="Customize how NexusAI looks">
+              <SettingsSection icon={Palette} title="Appearance" description="Customize how Zinter AI looks">
                 <div>
                   <Label className="text-xs text-muted-foreground mb-2.5 block">
                     Theme
@@ -782,7 +782,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">NexusAI</p>
+                      <p className="font-semibold text-sm">Zinter AI</p>
                       <p className="text-xs text-muted-foreground">v2.0</p>
                     </div>
                   </div>

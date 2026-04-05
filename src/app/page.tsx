@@ -172,7 +172,7 @@ function LoadingScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
           >
-            Welcome to NexusAI
+            Welcome to Zinter AI
           </motion.h2>
           <motion.p
             className="text-sm text-muted-foreground"

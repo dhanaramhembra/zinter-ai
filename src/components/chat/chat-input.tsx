@@ -713,7 +713,7 @@ export default function ChatInput({
       {/* Bottom hint */}
       <div className="flex items-center justify-center mt-2 relative z-10">
         <p className="text-xs text-muted-foreground/50">
-          NexusAI can make mistakes. Consider checking important information.
+          Zinter AI can make mistakes. Consider checking important information.
         </p>
       </div>
     </div>

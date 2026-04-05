@@ -113,7 +113,7 @@ export default function LoadingScreen() {
               className="text-center"
             >
               <h1 className="text-2xl font-bold tracking-tight gradient-text">
-                NexusAI
+                Zinter AI
               </h1>
               <p className="text-xs text-muted-foreground mt-1 tracking-wide">
                 Your intelligent AI companion

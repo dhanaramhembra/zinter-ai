@@ -342,7 +342,7 @@ export default function AuthPage() {
             transition={{ delay: 0.3, duration: 0.4 }}
             className="text-3xl font-bold tracking-tight gradient-text"
           >
-            NexusAI
+            Zinter AI
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 8 }}
@@ -486,7 +486,7 @@ export default function AuthPage() {
                   <form onSubmit={handleSignup}>
                     <CardHeader className="pb-4">
                       <CardTitle>Create an account</CardTitle>
-                      <CardDescription>Get started with NexusAI for free</CardDescription>
+                      <CardDescription>Get started with Zinter AI for free</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <AnimatePresence>

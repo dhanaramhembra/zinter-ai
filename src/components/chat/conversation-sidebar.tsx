@@ -428,7 +428,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               >
                 <Sparkles className="w-4.5 h-4.5" />
               </motion.div>
-              <span className="font-bold text-lg tracking-tight gradient-text">NexusAI</span>
+              <span className="font-bold text-lg tracking-tight gradient-text">Zinter AI</span>
             </div>
             <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
               <X className="w-4 h-4" />

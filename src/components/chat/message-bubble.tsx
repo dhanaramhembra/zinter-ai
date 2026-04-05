@@ -520,7 +520,7 @@ export default function MessageBubble({
         {isFirstInGroup && (
           <div className={cn('flex items-center gap-2', isUser && 'flex-row-reverse')}>
             <span className="text-xs font-medium text-muted-foreground">
-              {isUser ? user?.name || 'You' : 'NexusAI'}
+              {isUser ? user?.name || 'You' : 'Zinter AI'}
             </span>
             <span
               className={cn(

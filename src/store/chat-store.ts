@@ -110,7 +110,7 @@ export const BACKGROUND_THEMES: BackgroundTheme[] = [
 export const PERSONAS: Persona[] = [
   {
     id: 'pro',
-    name: 'NexusAI Pro',
+    name: 'Zinter AI Pro',
     description: 'Balanced, helpful assistant',
     systemPrompt:
       'You are a helpful, friendly, and knowledgeable AI assistant. You provide clear, accurate, and concise responses. You can help with coding, writing, analysis, creative tasks, and general questions. Use markdown formatting when appropriate for code blocks, lists, and emphasis.',

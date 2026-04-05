@@ -1241,7 +1241,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       day: 'numeric',
     });
 
-    let text = '🌟 NexusAI Conversation 🌟\n\n';
+    let text = '🌟 Zinter AI Conversation 🌟\n\n';
     text += `Title: ${activeConversation.title}\n`;
     text += `Date: ${date}\n`;
     text += `Persona: ${currentPersona.name}\n`;
@@ -1252,13 +1252,13 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         hour: '2-digit',
         minute: '2-digit',
       });
-      const sender = msg.role === 'user' ? '👤 User' : '🤖 NexusAI';
+      const sender = msg.role === 'user' ? '👤 User' : '🤖 Zinter AI';
       text += `${sender} (${time}):\n`;
       text += `${msg.content}\n\n`;
     }
 
     text += '━━━━━━━━━━━━━━━━━━━━━\n\n';
-    text += 'Generated with NexusAI';
+    text += 'Generated with Zinter AI';
 
     navigator.clipboard.writeText(text).then(() => {
       toast.success('Conversation copied to clipboard!');
@@ -1275,10 +1275,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     }
 
     let markdown = `# ${activeConversation.title}\n\n`;
-    markdown += `*Exported from NexusAI on ${new Date().toLocaleString()}*\n\n---\n\n`;
+    markdown += `*Exported from Zinter AI on ${new Date().toLocaleString()}*\n\n---\n\n`;
 
     for (const msg of messages) {
-      const sender = msg.role === 'user' ? '**User**' : '**NexusAI**';
+      const sender = msg.role === 'user' ? '**User**' : '**Zinter AI**';
       const time = new Date(msg.createdAt).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
@@ -1430,7 +1430,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           'text-sm font-medium',
           isStreaming ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
         )}>
-          {isStreaming ? 'NexusAI is responding' : 'NexusAI is thinking'}
+          {isStreaming ? 'Zinter AI is responding' : 'Zinter AI is thinking'}
           <span className="animate-cursor-blink ml-0.5">|</span>
         </span>
       </div>
@@ -1467,7 +1467,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
             <Menu className="w-5 h-5" />
           </Button>
-          <h1 className="font-semibold">NexusAI</h1>
+          <h1 className="font-semibold">Zinter AI</h1>
         </div>
 
         <ScrollArea className="flex-1 min-h-0">
@@ -1502,7 +1502,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 transition={{ delay: 0.25, duration: 0.5 }}
                 className="text-2xl font-bold mb-2 gradient-text"
               >
-                Welcome to NexusAI
+                Welcome to Zinter AI
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 15 }}
@@ -1553,7 +1553,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               >
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border/40 text-xs text-muted-foreground/60">
                   <Sparkles className="w-3 h-3 text-emerald-500" />
-                  <span>Powered by NexusAI</span>
+                  <span>Powered by Zinter AI</span>
                 </div>
               </motion.div>
             </div>

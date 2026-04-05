@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexusAI - AI Chat & Image Generation",
-  description: "Chat with AI, generate images, and more with NexusAI. Your intelligent assistant powered by cutting-edge AI technology.",
-  keywords: ["NexusAI", "AI Chat", "Image Generation", "Voice Chat", "AI Assistant"],
-  authors: [{ name: "NexusAI Team" }],
+  title: "Zinter AI - AI Chat & Image Generation",
+  description: "Chat with AI, generate images, and more with Zinter AI. Your intelligent assistant powered by cutting-edge AI technology.",
+  keywords: ["Zinter AI", "AI Chat", "Image Generation", "Voice Chat", "AI Assistant"],
+  authors: [{ name: "Zinter AI Team" }],
   icons: {
     icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
