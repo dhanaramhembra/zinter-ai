@@ -495,6 +495,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         body: JSON.stringify({ title: 'New Chat' }),
       });
 
+      if (!res.ok) return null;
       const data = await res.json();
 
       if (data.conversation) {
@@ -693,6 +694,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: lastMessages }),
       });
+      if (!res.ok) return;
       const data = await res.json();
       if (data.suggestions && Array.isArray(data.suggestions)) {
         setSuggestionsMap((prev) => ({ ...prev, [assistantMsgId]: data.suggestions }));
@@ -791,6 +793,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         }
 
         // Non-streaming fallback
+        if (!res.ok) throw new Error('AI chat request failed');
         const data = await res.json();
 
         // Feature 4: Calculate response time
@@ -896,6 +899,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           signal: controller.signal,
         });
 
+        if (!res.ok) throw new Error('Image generation failed');
         const data = await res.json();
 
         // Feature 4: Calculate response time
@@ -994,6 +998,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             signal: controller.signal,
           });
 
+          if (!res.ok) throw new Error('Image generation failed');
           const data = await res.json();
 
           // Feature 4: Calculate response time
@@ -1047,6 +1052,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             }
           } else {
             // Non-streaming fallback
+            if (!res.ok) throw new Error('AI chat request failed');
             const data = await res.json();
             const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
 
@@ -1138,6 +1144,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               body: JSON.stringify({ prompt: cleanContent }),
               signal: controller.signal,
             });
+            if (!res.ok) throw new Error('Image generation failed');
             const data = await res.json();
             const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
             if (data.success) {
@@ -1188,6 +1195,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
               }
             } else {
               // Non-streaming fallback
+              if (!res.ok) throw new Error('AI chat request failed');
               const data = await res.json();
               const responseTime = requestStartTimeRef.current ? Date.now() - requestStartTimeRef.current : null;
               if (data.message) {

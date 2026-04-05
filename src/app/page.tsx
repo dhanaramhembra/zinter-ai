@@ -234,6 +234,7 @@ export default function HomePage() {
     async function checkAuth() {
       try {
         const res = await fetch('/api/auth/me');
+        if (!res.ok) { setUser(null); return; }
         const data = await res.json();
 
         if (data.user) {
@@ -257,6 +258,7 @@ export default function HomePage() {
       async function loadConversations() {
         try {
           const res = await fetch('/api/chat/conversations');
+          if (!res.ok) return;
           const data = await res.json();
 
           if (data.conversations) {

@@ -220,12 +220,12 @@ export default function AuthPage() {
         body: JSON.stringify(loginData),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Login failed' }));
         setError(data.error || 'Login failed');
         return;
       }
+      const data = await res.json();
 
       setUser(data.user);
     } catch {
@@ -262,12 +262,12 @@ export default function AuthPage() {
         }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Signup failed' }));
         setError(data.error || 'Signup failed');
         return;
       }
+      const data = await res.json();
 
       setUser(data.user);
     } catch {

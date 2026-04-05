@@ -194,9 +194,10 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
         body: JSON.stringify({ name: trimmedName }),
       });
 
+      if (!res.ok) throw new Error('Profile update failed');
       const data = await res.json();
 
-      if (res.ok && data.user) {
+      if (data.user) {
         setUser(data.user);
         setProfileUpdated(true);
         setTimeout(() => setProfileUpdated(false), 2000);

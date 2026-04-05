@@ -349,6 +349,7 @@ export default function ChatInput({
         body: formData,
       });
 
+      if (!res.ok) return;
       const data = await res.json();
 
       if (data.success && data.transcription) {

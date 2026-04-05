@@ -164,7 +164,10 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     if (statsOpen) {
       setStatsLoading(true);
       fetch('/api/chat/stats')
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error('Stats fetch failed');
+          return res.json();
+        })
         .then((data) => {
           if (data.totalConversations !== undefined) {
             setStats(data);
@@ -332,8 +335,9 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         const res = await fetch(`/api/chat/${convId}/duplicate`, {
           method: 'POST',
         });
+        if (!res.ok) return;
         const data = await res.json();
-        if (res.ok && data.conversation) {
+        if (data.conversation) {
           addConversation(data.conversation);
           toast.success('Conversation duplicated');
         }
@@ -351,6 +355,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'New Chat' }),
       });
+      if (!res.ok) return;
       const data = await res.json();
       if (data.conversation) {
         addConversation({

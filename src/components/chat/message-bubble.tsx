@@ -448,6 +448,10 @@ export default function MessageBubble({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: message.content, targetLanguage: lang }),
       });
+      if (!res.ok) {
+        setTranslatedText('Translation failed.');
+        return;
+      }
       const data = await res.json();
       if (data.translation) {
         setTranslatedText(data.translation);
