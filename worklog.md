@@ -1585,3 +1585,29 @@ Stage Summary:
 - Each chat conversation in the sidebar now shows a clear, always-visible trash/delete icon button
 - No more opacity-0/hover visibility issues on mobile
 - Pin and Copy buttons removed from individual conversation items (select mode + bulk delete still available for multi-delete)
+
+---
+Task ID: fix-tts-language-detection
+Agent: main
+Task: Fix TTS reading Hindi text in Chinese voice
+
+Work Log:
+- Read `src/app/api/ai/tts/route.ts` — found voice hardcoded to `'tongtong'` (Chinese voice)
+- User reported: AI responded in Hindi, but Listen button played audio in Chinese
+- Root cause: TTS used `'tongtong'` (Chinese) voice regardless of input text language
+- Added `detectVoiceForText()` function with Unicode-based language detection:
+  - Devanagari (Hindi/Marathi/Nepali: \u0900-\u097F) → `'kazi'` (clear & standard)
+  - CJK (Chinese/Japanese Kanji: \u4E00-\u9FFF) → `'tongtong'` (Chinese native)
+  - Arabic/Urdu (\u0600-\u06FF) → `'kazi'`
+  - Japanese Kana (\u3040-\u30FF) → `'tongtong'`
+  - Korean Hangul (\uAC00-\uD7AF) → `'kazi'`
+  - Tamil/Telugu/Bengali Indic scripts → `'kazi'`
+  - Default (English/Latin) → `'jam'` (English gentleman)
+- TTS voice is now auto-detected per message instead of hardcoded
+- Lint passes with zero errors, dev server compiles cleanly
+
+Stage Summary:
+- Hindi text will now be read with 'kazi' voice (clear & standard) instead of 'tongtong' (Chinese)
+- English text uses 'jam' (English gentleman voice)
+- Chinese text still uses 'tongtong' (native Chinese voice)
+- Supports multiple languages: Hindi, English, Chinese, Arabic/Urdu, Korean, Japanese, Tamil, Telugu, Bengali
