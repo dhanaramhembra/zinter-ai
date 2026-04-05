@@ -9,16 +9,22 @@ import ChatArea from '@/components/chat/chat-area';
 import { Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+// Deterministic seeded random — avoids hydration mismatch from Math.random()
+function seededRandom(seed: number) {
+  const x = Math.sin(seed * 9301 + 49297) * 49297;
+  return x - Math.floor(x);
+}
+
 function LoadingScreen() {
-  // Generate particle positions once
+  // Generate particle positions deterministically
   const particles = Array.from({ length: 25 }, (_, i) => ({
     id: i,
-    left: `${Math.random() * 100}%`,
-    top: `${30 + Math.random() * 60}%`,
-    size: 2 + Math.random() * 3,
-    delay: Math.random() * 5,
-    duration: 4 + Math.random() * 6,
-    opacity: 0.15 + Math.random() * 0.3,
+    left: `${seededRandom(i * 7 + 1) * 100}%`,
+    top: `${30 + seededRandom(i * 7 + 2) * 60}%`,
+    size: 2 + seededRandom(i * 7 + 3) * 3,
+    delay: seededRandom(i * 7 + 4) * 5,
+    duration: 4 + seededRandom(i * 7 + 5) * 6,
+    opacity: 0.15 + seededRandom(i * 7 + 6) * 0.3,
   }));
 
   return (
