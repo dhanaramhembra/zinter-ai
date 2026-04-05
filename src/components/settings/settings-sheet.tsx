@@ -50,6 +50,7 @@ import {
   TrendingUp,
   BookOpen,
   Brain,
+  FileDown,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -256,6 +257,93 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
   }, [conversations, clearAll, setConversations]);
 
   const hasConversations = conversations.length > 0;
+
+  // Export bookmarks: collect all favorited messages across all conversations
+  const handleExportBookmarks = useCallback(() => {
+    try {
+      const favoritesJson = localStorage.getItem('nexusai-favorites');
+      const favorites: string[] = favoritesJson ? JSON.parse(favoritesJson) : [];
+
+      if (favorites.length === 0) {
+        toast.error('No bookmarks to export');
+        return;
+      }
+
+      // Collect bookmarked messages across all conversations
+      const bookmarkedMessages: Array<{
+        conversationTitle: string;
+        content: string;
+        date: string;
+        role: string;
+      }> = [];
+
+      for (const conv of conversations) {
+        for (const msg of conv.messages) {
+          if (favorites.includes(msg.id)) {
+            // Clean markdown for readability
+            const cleaned = msg.content
+              .replace(/```[\s\S]*?```/g, '[Code Block]')
+              .replace(/`([^`]+)`/g, '$1')
+              .replace(/^#{1,6}\s+/gm, '')
+              .replace(/\*\*(.+?)\*\*/g, '$1')
+              .replace(/\*(.+?)\*/g, '$1')
+              .replace(/!\[([^\]]*)\]\([^)]+\)/g, '[Image]')
+              .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')
+              .replace(/^[-*+]\s+/gm, '• ')
+              .replace(/^\d+\.\s+/gm, '• ')
+              .replace(/^>\s+/gm, '')
+              .replace(/---+/g, '')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
+
+            bookmarkedMessages.push({
+              conversationTitle: conv.title,
+              content: cleaned,
+              date: new Date(msg.createdAt).toLocaleString(),
+              role: msg.role === 'assistant' ? 'NexusAI' : 'You',
+            });
+          }
+        }
+      }
+
+      if (bookmarkedMessages.length === 0) {
+        toast.error('No bookmarks found in current conversations');
+        return;
+      }
+
+      // Generate Markdown
+      let markdown = '# NexusAI Bookmarks\n\n';
+      markdown += `*Exported on ${new Date().toLocaleString()} — ${bookmarkedMessages.length} bookmark${bookmarkedMessages.length !== 1 ? 's' : ''}*\n\n`;
+      markdown += '---\n\n';
+
+      let currentConv = '';
+      for (const bm of bookmarkedMessages) {
+        if (bm.conversationTitle !== currentConv) {
+          currentConv = bm.conversationTitle;
+          markdown += `## ${currentConv}\n\n`;
+        }
+        markdown += `**${bm.role}** — ${bm.date}\n\n`;
+        markdown += `${bm.content}\n\n`;
+        markdown += '---\n\n';
+      }
+
+      // Download
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nexusai-bookmarks.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Exported ${bookmarkedMessages.length} bookmarks`);
+    } catch (error) {
+      console.error('Export bookmarks error:', error);
+      toast.error('Failed to export bookmarks');
+    }
+  }, [conversations]);
 
   return (
     <>
@@ -620,6 +708,26 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                       </div>
                     </motion.div>
                   )}
+                </div>
+              </SettingsSection>
+
+              {/* Gradient divider */
+              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+
+              {/* Data Management Section */}
+              <SettingsSection icon={FileDown} title="Data Management" description="Export and manage your chat data">
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full h-9 gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200"
+                    onClick={handleExportBookmarks}
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    Export Bookmarks
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground/60">
+                    Download all your bookmarked messages as a Markdown file
+                  </p>
                 </div>
               </SettingsSection>
 

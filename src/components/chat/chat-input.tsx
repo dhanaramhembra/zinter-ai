@@ -21,11 +21,13 @@ import {
   BookmarkIcon,
   Clock,
   AlertTriangle,
+  Globe,
 } from 'lucide-react';
 import { PROMPT_TEMPLATES } from '@/lib/templates';
 import { useChatStore } from '@/store/chat-store';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { detectLanguage } from '@/lib/lang-detect';
 
 interface AttachedImage {
   base64: string;
@@ -97,6 +99,12 @@ export default function ChatInput({
     if (charCount >= 3000) return 'text-amber-500 dark:text-amber-400';
     return 'text-muted-foreground/50';
   }, [charCount]);
+
+  // Language detection
+  const detectedLang = useMemo(() => {
+    if (input.trim().length < 5) return null;
+    return detectLanguage(input);
+  }, [input]);
 
   // Handle initial message from suggestion click
   useEffect(() => {
@@ -674,9 +682,17 @@ export default function ChatInput({
             className="flex items-center justify-between mt-1.5 px-1"
           >
             {readingTime && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-muted-foreground/40" />
-                <p className="text-[10px] text-muted-foreground/40">{readingTime}</p>
+              <div className="flex items-center gap-1.5">
+                {detectedLang && (
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted/60 border border-border/40">
+                    <Globe className="w-2.5 h-2.5 text-muted-foreground/50" />
+                    <span className="text-[10px] font-medium text-muted-foreground/60">{detectedLang.code}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-muted-foreground/40" />
+                  <p className="text-[10px] text-muted-foreground/40">{readingTime}</p>
+                </div>
               </div>
             )}
             <div className="flex items-center gap-2">

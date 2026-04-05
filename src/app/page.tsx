@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore } from '@/store/chat-store';
 import AuthPage from '@/components/auth/auth-page';
@@ -15,8 +15,29 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
+// Detect client-side mount without setState-in-effect (React-recommended pattern)
+const emptySubscribe = () => () => {};
+function useIsMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,  // client snapshot
+    () => false  // server snapshot
+  );
+}
+
 function LoadingScreen() {
-  // Generate particle positions deterministically
+  // Only render after mount to avoid SSR hydration mismatches
+  // (dark: classes from next-themes and Framer Motion attributes differ between server/client)
+  const mounted = useIsMounted();
+
+  // During SSR, render a minimal placeholder that matches perfectly on both sides
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" />
+    );
+  }
+
+  // Generate particle positions deterministically (only on client)
   const particles = Array.from({ length: 25 }, (_, i) => ({
     id: i,
     left: `${seededRandom(i * 7 + 1) * 100}%`,
@@ -28,7 +49,11 @@ function LoadingScreen() {
   }));
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+    >
       {/* Subtle gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-background to-teal-50 dark:from-emerald-950/20 dark:via-background dark:to-teal-950/20" />
 
@@ -195,12 +220,12 @@ function LoadingScreen() {
           ))}
         </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 export default function HomePage() {
-  const { user, isAuthenticated, isLoading, setUser, setLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, setUser, setLoading } = useAuthStore();
   const { setConversations } = useChatStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 

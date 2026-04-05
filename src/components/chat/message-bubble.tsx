@@ -23,6 +23,8 @@ import {
   Plus,
   Languages,
   ChevronDown,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -64,6 +66,10 @@ interface MessageBubbleProps {
   onSuggestionClick?: (text: string) => void;
   /** Dismiss suggestions callback */
   onDismissSuggestions?: (messageId: string) => void;
+  /** Whether this message is pinned */
+  isPinned?: boolean;
+  /** Toggle pin callback */
+  onTogglePin?: (messageId: string) => void;
 }
 
 /** Highlight matching text in a string with <mark> tags */
@@ -216,6 +222,8 @@ export default function MessageBubble({
   suggestions,
   onSuggestionClick,
   onDismissSuggestions,
+  isPinned = false,
+  onTogglePin,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -549,7 +557,8 @@ export default function MessageBubble({
               ? 'bg-gradient-to-br from-emerald-500/90 to-teal-500/85 text-white rounded-tr-md shadow-md shadow-emerald-500/20 dark:from-emerald-600/90 dark:to-teal-600/85 dark:shadow-emerald-500/15'
               : 'bg-card/60 backdrop-blur-sm border border-border/30 rounded-tl-md shadow-sm relative',
             isGenerating && 'animate-pulse',
-            !isUser && isFavorited && 'ring-1 ring-amber-400/50 shadow-amber-400/20'
+            !isUser && isFavorited && 'ring-1 ring-amber-400/50 shadow-amber-400/20',
+            !isUser && isPinned && 'border-l-2 border-l-amber-500/60'
           )}
         >
           {isGenerating ? (
@@ -1013,6 +1022,22 @@ export default function MessageBubble({
                             isFavorited && 'fill-current'
                           )}
                         />
+                      </Button>
+                    )}
+                    {onTogglePin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          'h-7 w-7 hover:scale-110 active:scale-95 transition-all duration-150',
+                          isPinned
+                            ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                            : 'hover:bg-accent'
+                        )}
+                        onClick={() => onTogglePin(message.id)}
+                        title={isPinned ? 'Unpin message' : 'Pin message'}
+                      >
+                        {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
                       </Button>
                     )}
                     {/* Translate button */}

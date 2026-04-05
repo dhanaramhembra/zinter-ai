@@ -25,6 +25,8 @@ import {
   ChevronUp,
   Heart,
   Share2,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -186,6 +188,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
+  // Pinned messages state
+  const [pinnedMessages, setPinnedMessages] = useState<Set<string>>(new Set());
+  const [pinnedSectionOpen, setPinnedSectionOpen] = useState(true);
+
   // AI Quick Reply Suggestions state
   const [suggestionsMap, setSuggestionsMap] = useState<Record<string, string[]>>({});
   const [suggestionsLoading, setSuggestionsLoading] = useState<string | null>(null);
@@ -215,12 +221,29 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     setScrollContainerReady(!!node);
   }, []);
 
+  // Pinned messages localStorage helpers
+  function getStoredPinned(): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const stored = localStorage.getItem('nexusai-pinned');
+      if (stored) return new Set(JSON.parse(stored) as string[]);
+    } catch { /* ignore */ }
+    return new Set();
+  }
+
+  function savePinned(pinned: Set<string>) {
+    try {
+      localStorage.setItem('nexusai-pinned', JSON.stringify([...pinned]));
+    } catch { /* ignore */ }
+  }
+
   // Load preferences from localStorage
   useEffect(() => {
     setFontSize(getStoredFontSize());
     setFavorites(getStoredFavorites());
     setSelectedBackground(getStoredBackground());
     setShowTimestamps(getStoredShowTimestamps());
+    setPinnedMessages(getStoredPinned());
   }, [setSelectedBackground, setShowTimestamps]);
 
   // Listen for settings changes from settings sheet
@@ -331,6 +354,27 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       return acc;
     }, []);
   }, [searchQuery, messages]);
+
+  // Toggle pin on a message
+  const handleTogglePin = useCallback((messageId: string) => {
+    setPinnedMessages((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+        toast.success('Message unpinned');
+      } else {
+        next.add(messageId);
+        toast.success('Message pinned');
+      }
+      savePinned(next);
+      return next;
+    });
+  }, []);
+
+  // Get pinned messages for current conversation (up to 3)
+  const pinnedMessagesInConv = useMemo(() => {
+    return messages.filter((m) => pinnedMessages.has(m.id)).slice(0, 3);
+  }, [messages, pinnedMessages]);
 
   // Feature 2: Toggle favorite
   const handleToggleFavorite = useCallback((messageId: string) => {
@@ -592,6 +636,39 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     },
     [updateMessage]
   );
+
+  // Fetch AI suggestions after AI response (defined early to avoid TDZ with sendMessage)
+  const fetchSuggestions = useCallback(async (convId: string, assistantMsgId: string, messagesList: Message[]) => {
+    try {
+      setSuggestionsLoading(assistantMsgId);
+      const lastMessages = messagesList.slice(-6).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      const res = await fetch('/api/ai/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: lastMessages }),
+      });
+      const data = await res.json();
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        setSuggestionsMap((prev) => ({ ...prev, [assistantMsgId]: data.suggestions }));
+      }
+    } catch {
+      // Silently fail - suggestions are optional
+    } finally {
+      setSuggestionsLoading(null);
+    }
+  }, []);
+
+  // Dismiss suggestions
+  const handleDismissSuggestions = useCallback((messageId: string) => {
+    setSuggestionsMap((prev) => {
+      const next = { ...prev };
+      delete next[messageId];
+      return next;
+    });
+  }, []);
 
   const sendMessage = useCallback(
     async (content: string, imageBase64?: string) => {
@@ -1227,39 +1304,6 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     toggleReaction(activeConversationId, messageId, emoji);
   }, [activeConversationId, toggleReaction]);
 
-  // Fetch AI suggestions after AI response
-  const fetchSuggestions = useCallback(async (convId: string, assistantMsgId: string, messagesList: Message[]) => {
-    try {
-      setSuggestionsLoading(assistantMsgId);
-      const lastMessages = messagesList.slice(-6).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-      const res = await fetch('/api/ai/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: lastMessages }),
-      });
-      const data = await res.json();
-      if (data.suggestions && Array.isArray(data.suggestions)) {
-        setSuggestionsMap((prev) => ({ ...prev, [assistantMsgId]: data.suggestions }));
-      }
-    } catch {
-      // Silently fail - suggestions are optional
-    } finally {
-      setSuggestionsLoading(null);
-    }
-  }, []);
-
-  // Dismiss suggestions
-  const handleDismissSuggestions = useCallback((messageId: string) => {
-    setSuggestionsMap((prev) => {
-      const next = { ...prev };
-      delete next[messageId];
-      return next;
-    });
-  }, []);
-
   // Chat statistics
   const chatStats = useMemo(() => {
     if (messages.length === 0) return null;
@@ -1811,7 +1855,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       <div ref={scrollAreaRefCallback} className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         {!hasMessages ? (
-          /* Empty conversation state */
+          {/* Empty conversation state */}
           <div className="flex items-center justify-center min-h-full p-8">
             <div className="text-center max-w-2xl w-full py-12">
               <motion.div
@@ -1852,7 +1896,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             </div>
           </div>
         ) : showFavoritesOnly && displayMessages.length === 0 ? (
-          /* No favorites state */
+          {/* No favorites state */}
           <div className="flex items-center justify-center min-h-full p-8">
             <div className="text-center py-12">
               <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
@@ -1865,8 +1909,73 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             </div>
           </div>
         ) : (
-          /* Messages list with subtle dot grid background */
+          {/* Messages list with subtle dot grid background */}
           <div className={cn('max-w-4xl mx-auto py-4 rounded-lg', FONT_SIZE_CLASS[fontSize], BACKGROUND_THEMES.find((t) => t.id === selectedBackground)?.className)} data-messages-container>
+            {/* Pinned Messages collapsible section */
+            {pinnedMessagesInConv.length > 0 && (
+              <div className="mb-4">
+                <button
+                  onClick={() => setPinnedSectionOpen(!pinnedSectionOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10 transition-all duration-200 w-full group cursor-pointer"
+                >
+                  <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Pinned Messages</span>
+                  <span className="ml-1 min-w-[18px] h-[18px] rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center px-1">
+                    {pinnedMessages.size}
+                  </span>
+                  <div className="flex-1" />
+                  <ChevronDown className={cn(
+                    'w-3.5 h-3.5 text-amber-500/60 transition-transform duration-200',
+                    pinnedSectionOpen && 'rotate-180'
+                  )} />
+                </button>
+                <AnimatePresence>
+                  {pinnedSectionOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                        {pinnedMessagesInConv.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/5 border-l-2 border-amber-500/60 cursor-pointer hover:bg-amber-500/10 transition-colors"
+                            onClick={() => {
+                              const el = document.querySelector(`[data-message-idx]`);
+                              // Scroll to the message
+                              const msgEl = document.querySelector(`[data-pinned-id="${msg.id}"]`);
+                              if (msgEl) {
+                                msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }}
+                          >
+                            <Pin className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-foreground/80 line-clamp-2 leading-relaxed">{msg.content.slice(0, 120)}{msg.content.length > 120 ? '...' : ''}</p>
+                              <p className="text-[10px] text-muted-foreground/50 mt-1">
+                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10"
+                              onClick={(e) => { e.stopPropagation(); handleTogglePin(msg.id); }}
+                            >
+                              <PinOff className="w-3 h-3 text-amber-500" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             <div className="space-y-1 [&_p]:leading-relaxed">
               {displayMessages.map((message, idx) => {
                 const actualIndex = messages.indexOf(message);
@@ -1883,7 +1992,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 const showResponseTime = message.id === lastAssistantMessageId;
 
                 return (
-                  <div key={message.id} data-message-idx={actualIndex}>
+                  <div key={message.id} data-message-idx={actualIndex} data-pinned-id={message.id}>
                     <MessageBubble
                       message={message}
                       index={idx}
@@ -1910,6 +2019,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                       }
                       onSuggestionClick={handleSuggestionClick}
                       onDismissSuggestions={handleDismissSuggestions}
+                      isPinned={pinnedMessages.has(message.id)}
+                      onTogglePin={message.role === 'assistant' ? handleTogglePin : undefined}
                     />
                   </div>
                 );
