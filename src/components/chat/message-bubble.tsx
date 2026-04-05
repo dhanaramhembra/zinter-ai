@@ -278,10 +278,11 @@ export default function MessageBubble({
 
     try {
       setIsSpeaking(true);
+      toast.info('Generating speech...', { duration: 2000 });
 
-      // AbortController for timeout (30 seconds max)
+      // AbortController for timeout — 2 minutes for long messages
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
 
       const res = await fetch('/api/ai/tts', {
         method: 'POST',

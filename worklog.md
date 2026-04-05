@@ -1630,3 +1630,32 @@ Stage Summary:
 - TTS now works without authentication (no more 401 errors)
 - Session store now survives Turbopack hot module reloading (fixes random logouts during development)
 - Hindi text detection with kazi voice still works
+
+---
+Task ID: fix-tts-long-message-network-error
+Agent: main
+Task: Fix "network error" when listening to long AI messages (36-scene Hindi story)
+
+Work Log:
+- User reported: when AI writes a long Hindi story (36 scenes) and they press Listen, it throws "network error" TypeError
+- Root causes identified:
+  1. WAV format = uncompressed audio = huge file size for long text (1.4MB+ for 30 sec audio)
+  2. Markdown formatting (#, *, **, etc.) was sent to TTS, wasting character limit
+  3. Single 1024-char chunk for long text = very slow generation (20+ sec) = browser timeout
+  4. 30-second client timeout was too short for long messages
+- Fixes applied to `src/app/api/ai/tts/route.ts`:
+  1. Switched from WAV to MP3 format (~10x smaller file)
+  2. Added `stripMarkdown()` function — removes #, *, **, code blocks, links, blockquotes
+  3. Added `splitIntoChunks()` — splits text into ~400 char chunks by sentences
+  4. Processes chunks sequentially, concatenates MP3 buffers
+  5. Better server-side logging (voice, chars, chunks, bytes per chunk)
+- Fixes applied to `src/components/chat/message-bubble.tsx`:
+  1. Increased timeout from 30s to 120s (2 minutes) for long messages
+  2. Added "Generating speech..." toast notification so user knows it's working
+- Lint passes clean, dev server compiles
+
+Stage Summary:
+- Long messages now work: text is split into chunks, markdown stripped, MP3 used instead of WAV
+- "Generating speech..." toast gives feedback during processing
+- 2-minute timeout covers even very long messages
+- Hindi language auto-detection still works (kazi voice for Devanagari)
