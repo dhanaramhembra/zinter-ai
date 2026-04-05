@@ -44,6 +44,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import SettingsSheet from '@/components/settings/settings-sheet';
+import UserProfileSheet from '@/components/user-profile-sheet';
 import { AVATAR_OPTIONS } from '@/lib/avatars';
 
 interface ConversationSidebarProps {
@@ -140,7 +141,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [avatarSaving, setAvatarSaving] = useState(false);
+
   const [stats, setStats] = useState<{ totalConversations: number; totalMessages: number; avgMessagesPerConv: number; mostActiveDay: string } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [online, setOnline] = useState(true);
@@ -240,30 +241,6 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     setLogoutDialogOpen(false);
     toast.info('Signed out successfully');
   }, [logout]);
-
-  const handleSaveAvatar = useCallback(async (avatarId: string) => {
-    if (!user) return;
-    setAvatarSaving(true);
-    try {
-      const res = await fetch('/api/auth/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar: avatarId }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user) {
-          useAuthStore.getState().updateUser({ avatar: data.user.avatar });
-          toast.success('Avatar updated');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to save avatar:', error);
-      toast.error('Failed to save avatar');
-    } finally {
-      setAvatarSaving(false);
-    }
-  }, [user]);
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
@@ -378,7 +355,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
             onClick={onClose}
           />
         )}
@@ -392,7 +369,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
-          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[85vw] max-w-[300px] sm:w-[300px] bg-card/90 backdrop-blur-xl border-r border-border flex flex-col',
+          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[85vw] max-w-[300px] sm:w-[300px] bg-card backdrop-blur-xl border-r border-border flex flex-col shadow-2xl shadow-black/20',
           'lg:translate-x-0',
           'pt-[env(safe-area-inset-top)]'
         )}
@@ -862,88 +839,8 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
       {/* Settings sheet */}
       <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
 
-      {/* Profile / Avatar Picker dialog */}
-      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                <UserCircle className="w-4 h-4 text-white" />
-              </div>
-              Your Profile
-            </DialogTitle>
-            <DialogDescription>Customize your avatar and display name</DialogDescription>
-          </DialogHeader>
-          {user && (
-            <div className="space-y-5">
-              {/* Current avatar preview */}
-              <div className="flex items-center gap-4">
-                <div className={cn(
-                  'w-14 h-14 rounded-full text-white flex items-center justify-center text-lg font-bold shadow-lg',
-                  user.avatar
-                    ? AVATAR_OPTIONS.find(a => a.id === user.avatar)?.gradient || 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                    : 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                )}>
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground truncate">{user.name}</p>
-                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                </div>
-              </div>
-
-              {/* Avatar picker grid */}
-              <div>
-                <p className="text-sm font-medium text-foreground mb-3">Choose Avatar</p>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5">
-                  {AVATAR_OPTIONS.map((avatar) => (
-                    <motion.button
-                      key={avatar.id}
-                      type="button"
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      disabled={avatarSaving}
-                      onClick={() => handleSaveAvatar(avatar.id)}
-                      className={cn(
-                        'relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 cursor-pointer',
-                        'hover:border-foreground/20',
-                        user.avatar === avatar.id
-                          ? 'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10'
-                          : 'border-transparent bg-muted/50 hover:bg-muted/80'
-                      )}
-                    >
-                      {user.avatar === avatar.id && (
-                        <motion.div
-                          layoutId="avatar-check"
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                        >
-                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                        </motion.div>
-                      )}
-                      <div className={cn(
-                        'w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-bold shadow-md',
-                        avatar.gradient
-                      )}>
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground font-medium">{avatar.label}</span>
-                    </motion.button>
-                  ))}
-                </div>
-                {avatarSaving && (
-                  <div className="flex items-center gap-2 mt-3 justify-center">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
-                    <span className="text-xs text-muted-foreground">Saving...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Profile sheet */}
+      <UserProfileSheet open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
     </>
   );
 }

@@ -1,4 +1,35 @@
 ---
+## Task ID: user-profile-feature
+Agent: main
+Task: Add User Profile section accessible from chat header, fix mobile sidebar
+
+Work Log:
+- Created `src/components/user-profile-sheet.tsx` — comprehensive profile sheet with:
+  - Large avatar preview with online status dot
+  - User name, email (with copy buttons), member since date, account ID
+  - 3 stat cards (Chats, Messages, Joined) fetched from `/api/chat/stats`
+  - Editable display name with save button (PATCH `/api/auth/me`)
+  - Avatar picker grid with 10 gradient options and emerald selection indicator
+  - "Zinter AI v1.0" footer
+- Updated `src/app/api/auth/me/route.ts` — Added `createdAt` and `updatedAt` to GET/PATCH responses
+- Updated `src/store/auth-store.ts` — Added `createdAt` and `updatedAt` to user type
+- Updated `src/components/chat/chat-area.tsx`:
+  - Added profile button (UserCircle icon) in conversation header (before Search)
+  - Added profile button in mobile welcome screen header
+  - Renders UserProfileSheet in both views (empty state + conversation)
+  - Improved hamburger button: larger touch target (h-10 w-10), aria-label="Open menu"
+- Updated `src/components/chat/conversation-sidebar.tsx`:
+  - Replaced old inline profile Dialog with new UserProfileSheet component
+  - Improved sidebar visibility: bg-card (opaque) instead of bg-card/90, added shadow-2xl
+  - Darker overlay: bg-black/60 instead of bg-black/50
+
+Stage Summary:
+- Profile is now accessible via: (1) UserCircle button in chat header, (2) User card in sidebar footer
+- Profile sheet shows: avatar, name, email, stats, editable name, avatar picker
+- Lint: zero errors, dev server compiles cleanly
+- Mobile sidebar improvements: more opaque background, larger touch targets, shadow for depth
+
+---
 ## Task ID: mobile-responsive-fixes
 ### Work Task
 Fix mobile responsive design issues across 3 files: message-bubble.tsx, conversation-sidebar.tsx, and auth-page.tsx.
@@ -1466,3 +1497,47 @@ Stage Summary:
 - Safe area insets handled for modern phones with notches
 - Dynamic viewport height (dvh) used throughout for proper mobile browser handling
 - Zero lint errors
+
+---
+## Task ID: user-profile-sheet
+### Work Task
+Create a comprehensive UserProfileSheet component accessible from the chat header. Previously the user profile was hidden in the sidebar footer only. The user asked "Mera profile kaha per hai?" (Where is my profile?).
+
+### Work Summary
+Implemented a full user profile panel (Sheet sliding from right) with multiple sections: profile card with avatar, stats, name editing, avatar picker, and account info.
+
+#### Changes Made (6 files):
+
+**1. `src/app/api/auth/me/route.ts`** — Updated both GET and PATCH handlers to include `createdAt` and `updatedAt` in the user select.
+
+**2. `src/store/auth-store.ts`** — Added `createdAt?: string | null` and `updatedAt?: string | null` to the user type in AuthState.
+
+**3. `src/components/user-profile-sheet.tsx`** (NEW) — Created comprehensive profile sheet component with:
+- SheetHeader with UserCircle icon and "Your Profile" title
+- Profile card: large avatar (w-20 h-20) with gradient, online status dot, name, email with copy button, member since date, account ID with copy button
+- Stats section: 3 stat cards (Chats count, Messages count, Joined date) fetched from /api/chat/stats
+- Edit name section: input field with save button, character counter
+- Avatar picker section: grid of all AVATAR_OPTIONS with emerald border + checkmark for selected
+- Account section: "Zinter AI v1.0" version info with heart
+- Framer Motion animations for each section
+- Toast notifications for save/copy actions
+- Loading states for name and avatar saving
+
+**4. `src/components/chat/chat-area.tsx`** — Added profile button in chat header:
+- Imported UserCircle icon, useAuthStore, and UserProfileSheet
+- Added `profileSheetOpen` state
+- Added profile button (UserCircle icon) before search button in conversation header
+- Added profile button in mobile header (empty state)
+- Rendered UserProfileSheet in both empty state and conversation view
+
+**5. `src/components/chat/conversation-sidebar.tsx`** — Replaced inline profile dialog:
+- Imported UserProfileSheet
+- Removed `avatarSaving` state and `handleSaveAvatar` callback
+- Replaced old inline Dialog profile/avatar picker with UserProfileSheet component
+- Sidebar footer user card still opens the profile sheet when clicked
+- All other imports remain valid (Dialog, UserCircle, etc. still used elsewhere)
+
+### Verification
+- ✅ Lint: Zero errors
+- ✅ Dev server: Compiles cleanly
+- ✅ All existing functionality preserved (delete/loyout dialogs, sidebar footer)

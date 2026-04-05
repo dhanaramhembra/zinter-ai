@@ -6,6 +6,8 @@ interface AuthState {
     email: string;
     name: string;
     avatar?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
   } | null;
   isAuthenticated: boolean;
   isLoading: boolean;

@@ -27,12 +27,15 @@ import {
   Share2,
   Pin,
   PinOff,
+  UserCircle,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/auth-store';
+import UserProfileSheet from '@/components/user-profile-sheet';
 
 type FontSize = 'small' | 'medium' | 'large';
 
@@ -263,6 +266,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     scrollAreaContainerRef.current = node;
     setScrollContainerReady(!!node);
   }, []);
+
+  // Profile sheet state
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
   // Pinned messages localStorage helpers
   function getStoredPinned(): Set<string> {
@@ -1472,10 +1478,19 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       <div className="flex-1 flex flex-col min-h-0">
         {/* Mobile header */}
         <div className="flex items-center gap-3 p-4 border-b border-border lg:hidden">
-          <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
+          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={onToggleSidebar} aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </Button>
-          <h1 className="font-semibold">Zinter AI</h1>
+          <h1 className="font-semibold flex-1">Zinter AI</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
+            onClick={() => setProfileSheetOpen(true)}
+            title="Profile"
+          >
+            <UserCircle className="w-4 h-4" />
+          </Button>
         </div>
 
         <ScrollArea className="flex-1 min-h-0">
@@ -1578,6 +1593,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           onInsertTemplate={handleInsertTemplate}
           conversationId={activeConversationId}
         />
+
+        {/* Profile sheet - empty state */}
+        <UserProfileSheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen} />
       </div>
     );
   }
@@ -1594,11 +1612,12 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
+          className="lg:hidden shrink-0 h-10 w-10 hover:scale-110 active:scale-95 transition-transform duration-200"
           onClick={onToggleSidebar}
+          aria-label="Open menu"
         >
-          <Menu className="w-5 h-5" />
-        </Button>
+            <Menu className="w-5 h-5" />
+          </Button>
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm truncate">{activeConversation.title}</h2>
           {hasMessages && formattedStats && (
@@ -1675,6 +1694,17 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             )}
           </Button>
         )}
+
+        {/* Profile button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
+          onClick={() => setProfileSheetOpen(true)}
+          title="Profile"
+        >
+          <UserCircle className="w-4 h-4" />
+        </Button>
 
         {/* Feature 1: Search button */}
         <Button
@@ -2106,6 +2136,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         onTypingStatusChange={handleTypingStatusChange}
         onInsertTemplate={handleInsertTemplate}
       />
+
+      {/* Profile sheet */}
+      <UserProfileSheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen} />
     </div>
   );
 }
