@@ -1377,3 +1377,23 @@ Stage Summary:
 - Empty placeholder messages are cleaned up on error or abort
 - Lint passes with zero errors
 - Dev server compiles and serves 200 OK
+
+---
+## Task ID: image-download-fix
+Agent: main
+Task: Fix image download not working after generation
+
+Work Log:
+- Investigated image download issue: Found TWO bugs
+  1. In `message-bubble.tsx` line 641-648: Download button in image hover overlay had NO `onClick` handler — dead button
+  2. In `image-lightbox.tsx` line 36-44: Download used simple `<a>` tag with `download` attribute which doesn't work in sandboxed environments
+- Fixed `message-bubble.tsx`: Added `handleImageDownload` function using fetch+blob approach, connected it to the Download button's `onClick`
+- Fixed `image-lightbox.tsx`: Rewrote `handleDownload` to use fetch+blob approach, added toast notifications, renamed fallback from `nexusai-image.png` to `zinter-ai-image.png`
+- Added imports: `useState`, `Loader2`, `toast` to image-lightbox.tsx
+- Verified: Lint passes, dev server compiles cleanly
+
+Stage Summary:
+- Image download now works from both the hover overlay (inline) and the lightbox (fullscreen)
+- Uses robust fetch → blob → createObjectURL → anchor download approach
+- Shows toast notifications: "Downloading image..." (loading) → "Image downloaded!" (success) or "Failed to download image" (error)
+- Filename uses sanitized image prompt or "zinter-ai-image.png" fallback

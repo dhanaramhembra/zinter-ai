@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Sparkles } from 'lucide-react';
+import { X, Download, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface ImageLightboxProps {
   imageUrl: string;
@@ -33,14 +34,24 @@ export default function ImageLightbox({ imageUrl, imagePrompt, isOpen, onClose }
     };
   }, [isOpen, handleKeyDown]);
 
-  const handleDownload = useCallback(() => {
-    const a = document.createElement('a');
-    a.href = imageUrl;
-    a.download = imagePrompt ? `${imagePrompt.replace(/[^a-zA-Z0-9]/g, '_')}.png` : 'nexusai-image.png';
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleDownload = useCallback(async () => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = imagePrompt ? `${imagePrompt.replace(/[^a-zA-Z0-9\s_-]/g, '').trim().replace(/\s+/g, '_')}.png` : 'zinter-ai-image.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast.success('Image downloaded!');
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download image');
+    }
   }, [imageUrl, imagePrompt]);
 
   return (

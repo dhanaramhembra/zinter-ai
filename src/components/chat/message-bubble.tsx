@@ -472,6 +472,30 @@ export default function MessageBubble({
     return option ? `${option.gradient} text-white` : 'bg-primary text-primary-foreground';
   }, [user?.avatar]);
 
+  // Handle image download
+  const handleImageDownload = useCallback(async (url: string, prompt?: string) => {
+    try {
+      toast.loading('Downloading image...');
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = prompt ? `${prompt.replace(/[^a-zA-Z0-9\s_-]/g, '').trim().replace(/\s+/g, '_')}.png` : 'zinter-ai-image.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast.dismiss();
+      toast.success('Image downloaded!');
+    } catch (error) {
+      toast.dismiss();
+      console.error('Download failed:', error);
+      toast.error('Failed to download image');
+    }
+  }, []);
+
   return (
     <motion.div
       ref={messageRef}
@@ -642,6 +666,7 @@ export default function MessageBubble({
                         variant="secondary"
                         size="sm"
                         className="h-7 gap-1.5 text-xs bg-white/20 hover:bg-white/30 text-white border-0"
+                        onClick={() => handleImageDownload(message.imageUrl!, message.imagePrompt)}
                       >
                         <Download className="w-3.5 h-3.5" />
                         Download
