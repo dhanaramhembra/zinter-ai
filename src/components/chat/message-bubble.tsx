@@ -36,6 +36,55 @@ import { toast } from 'sonner';
 import ImageLightbox from './image-lightbox';
 import { AVATAR_OPTIONS, TRANSLATION_LANGUAGES } from '@/lib/avatars';
 
+/** Strip markdown formatting so TTS reads clean text (client-side mirror of server logic) */
+function stripMarkdownForTTS(text: string): string {
+  let cleaned = text;
+  cleaned = cleaned.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+  cleaned = cleaned.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  cleaned = cleaned.replace(/\*{1,3}([^*]*?)\*{1,3}/g, '$1');
+  cleaned = cleaned.replace(/_{1,3}([^_]*?)_{1,3}/g, '$1');
+  cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
+  cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+  cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
+  cleaned = cleaned.replace(/^[-*_]{3,}\s*$/gm, '');
+  cleaned = cleaned.replace(/^\s*>\s?/gm, '');
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  return cleaned.trim();
+}
+
+/** Split text into chunks at sentence boundaries, max ~200 chars each */
+function splitTextForTTS(text: string, maxLen = 200): string[] {
+  if (text.length <= maxLen) return [text];
+
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLen) {
+      chunks.push(remaining);
+      break;
+    }
+
+    // Find the last sentence-ending punctuation before the limit
+    const cutStr = remaining.slice(0, maxLen);
+    const lastBreak = Math.max(
+      cutStr.lastIndexOf('।'),
+      cutStr.lastIndexOf('.'),
+      cutStr.lastIndexOf('!'),
+      cutStr.lastIndexOf('?'),
+      cutStr.lastIndexOf('\n'),
+      cutStr.lastIndexOf(' '),
+    );
+
+    const cutPoint = lastBreak > 50 ? lastBreak + 1 : maxLen;
+    const chunk = remaining.slice(0, cutPoint).trim();
+    if (chunk.length > 0) chunks.push(chunk);
+    remaining = remaining.slice(cutPoint).trim();
+  }
+
+  return chunks;
+}
+
 interface MessageBubbleProps {
   message: Message;
   isGenerating?: boolean;
@@ -236,6 +285,8 @@ export default function MessageBubble({
   const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlsRef = useRef<string[]>([]); // Track all blob URLs for cleanup
+  const speakAbortRef = useRef<AbortController | null>(null); // Abort TTS sequence
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const reactionPickerRef = useRef<HTMLDivElement>(null);
@@ -269,92 +320,185 @@ export default function MessageBubble({
   }, [message.content, isUser]);
 
   const handleSpeak = useCallback(async () => {
-    if (isSpeaking && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    // Stop if already speaking
+    if (isSpeaking) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      speakAbortRef.current?.abort();
+      speakAbortRef.current = null;
+      // Clean up all audio URLs
+      audioUrlsRef.current.forEach(u => URL.revokeObjectURL(u));
+      audioUrlsRef.current = [];
+      audioRef.current = null;
       setIsSpeaking(false);
+      toast.dismiss();
       return;
     }
 
     try {
       setIsSpeaking(true);
-      toast.info('Generating speech...', { duration: 2000 });
+      const abortController = new AbortController();
+      speakAbortRef.current = abortController;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-      const res = await fetch('/api/ai/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: message.content }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => '');
-        throw new Error(`TTS failed (${res.status}): ${errBody}`);
+      // Strip markdown client-side
+      const cleanText = stripMarkdownForTTS(message.content);
+      if (!cleanText) {
+        toast.error('No readable text to speak');
+        setIsSpeaking(false);
+        return;
       }
 
-      // Check if text was truncated
-      const wasTruncated = res.headers.get('X-TTS-Truncated') === '1';
-
-      const blob = await res.blob();
-
-      if (blob.size === 0) {
-        throw new Error('TTS returned empty audio');
+      // Limit total text to ~2000 chars for practical playback
+      const MAX_TOTAL_CHARS = 2000;
+      let ttsText = cleanText;
+      let wasTruncated = false;
+      if (cleanText.length > MAX_TOTAL_CHARS) {
+        // Cut at last sentence break before limit
+        const cutStr = cleanText.slice(0, MAX_TOTAL_CHARS);
+        const lastBreak = Math.max(
+          cutStr.lastIndexOf('।'),
+          cutStr.lastIndexOf('.'),
+          cutStr.lastIndexOf('!'),
+          cutStr.lastIndexOf('?'),
+          cutStr.lastIndexOf('\n'),
+        );
+        ttsText = lastBreak > 100 ? cutStr.slice(0, lastBreak + 1).trim() : cutStr.trim();
+        wasTruncated = true;
       }
 
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-      };
-
-      audio.onerror = () => {
-        console.error('Audio playback error');
-        toast.error('Audio playback failed');
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-      };
-
-      await audio.play();
+      // Split into ~200 char chunks for reliable TTS API calls
+      const chunks = splitTextForTTS(ttsText, 200);
+      console.log(`TTS client: ${chunks.length} chunks, total ${ttsText.length} chars, truncated=${wasTruncated}`);
 
       if (wasTruncated) {
-        // Dismiss the "generating" toast first, then show truncation notice
-        toast.dismiss();
-        toast.info('Playing first part (message too long for full audio)', { duration: 4000 });
+        toast.info(`Generating speech for ${chunks.length} parts (text too long, playing first portion)...`, { duration: 4000 });
+      } else if (chunks.length > 1) {
+        toast.info(`Generating speech in ${chunks.length} parts...`, { duration: 2000 });
+      } else {
+        toast.info('Generating speech...', { duration: 2000 });
+      }
+
+      // Fetch and play each chunk sequentially
+      let allUrls: string[] = [];
+      let playedCount = 0;
+
+      for (let i = 0; i < chunks.length; i++) {
+        // Check if user stopped
+        if (abortController.signal.aborted) break;
+
+        try {
+          toast.dismiss();
+          toast.info(`Generating audio part ${i + 1}/${chunks.length}...`, { duration: 5000 });
+
+          const fetchController = new AbortController();
+          const timeoutId = setTimeout(() => fetchController.abort(), 30000); // 30s per chunk
+
+          // Listen for outer abort
+          const onOuterAbort = () => fetchController.abort();
+          abortController.signal.addEventListener('abort', onOuterAbort);
+
+          const res = await fetch('/api/ai/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: chunks[i] }),
+            signal: fetchController.signal,
+          });
+
+          clearTimeout(timeoutId);
+          abortController.signal.removeEventListener('abort', onOuterAbort);
+
+          if (abortController.signal.aborted) break;
+
+          if (!res.ok) {
+            console.warn(`TTS chunk ${i + 1} failed: ${res.status}`);
+            // Skip failed chunk and continue to next
+            continue;
+          }
+
+          const blob = await res.blob();
+          if (blob.size === 0) {
+            console.warn(`TTS chunk ${i + 1} returned empty audio, skipping`);
+            continue;
+          }
+
+          const url = URL.createObjectURL(blob);
+          allUrls.push(url);
+          audioUrlsRef.current = allUrls;
+
+          // Play this chunk
+          await new Promise<void>((resolve, reject) => {
+            const audio = new Audio(url);
+            audioRef.current = audio;
+
+            audio.onended = () => {
+              playedCount++;
+              resolve();
+            };
+
+            audio.onerror = () => {
+              console.error(`Audio playback error on chunk ${i + 1}`);
+              playedCount++;
+              resolve(); // Continue to next chunk even on error
+            };
+
+            audio.play().catch((err) => {
+              console.error(`Audio play failed on chunk ${i + 1}:`, err);
+              resolve(); // Continue to next chunk
+            });
+          });
+
+          // Clean up URL of the chunk we just played (keep future ones)
+          URL.revokeObjectURL(url);
+          allUrls = allUrls.filter(u => u !== url);
+          audioUrlsRef.current = allUrls;
+        } catch (err) {
+          if (abortController.signal.aborted) break;
+          console.warn(`TTS chunk ${i + 1} error:`, err);
+          // Skip failed chunk and continue
+        }
+      }
+
+      // Cleanup
+      audioUrlsRef.current.forEach(u => URL.revokeObjectURL(u));
+      audioUrlsRef.current = [];
+      audioRef.current = null;
+      speakAbortRef.current = null;
+      setIsSpeaking(false);
+      toast.dismiss();
+
+      if (playedCount > 0 && wasTruncated) {
+        toast.success(`Played ${playedCount}/${chunks.length} parts (text was truncated)`, { duration: 3000 });
+      } else if (playedCount === 0 && chunks.length > 0) {
+        toast.error('Failed to generate speech. Try again later.');
       }
     } catch (error) {
       console.error('TTS error:', error);
+      audioUrlsRef.current.forEach(u => URL.revokeObjectURL(u));
+      audioUrlsRef.current = [];
+      audioRef.current = null;
+      speakAbortRef.current = null;
+      setIsSpeaking(false);
+      toast.dismiss();
       if (error instanceof DOMException && error.name === 'AbortError') {
         toast.error('Speech generation timed out. Try a shorter message.');
-      } else if (error instanceof DOMException && error.name === 'NotSupportedError') {
-        toast.error('Audio format not supported by your browser');
       } else {
         toast.error('Failed to generate speech');
       }
-      setIsSpeaking(false);
     }
   }, [isSpeaking, message.content]);
 
-  // Fixed audio cleanup using ref
+  // Audio cleanup on unmount — stop any in-flight TTS and revoke all URLs
   useEffect(() => {
     return () => {
+      speakAbortRef.current?.abort();
       const audio = audioRef.current;
       if (audio) {
         audio.pause();
-        if (audio.src) {
-          URL.revokeObjectURL(audio.src);
-        }
-        audioRef.current = null;
       }
+      audioUrlsRef.current.forEach(u => URL.revokeObjectURL(u));
+      audioUrlsRef.current = [];
+      audioRef.current = null;
     };
   }, []);
 

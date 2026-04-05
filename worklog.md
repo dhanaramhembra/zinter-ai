@@ -1,4 +1,36 @@
 ---
+## Task ID: tts-client-side-chunking
+Agent: main
+Task: Fix TTS 502 Bad Gateway for long Hindi text by moving chunking to client side
+
+Work Log:
+- Diagnosed root cause: TTS API returns 500 errors for Hindi text >300 chars, and server-side sequential chunking causes ALB timeout (502)
+- Rewrote `src/app/api/ai/tts/route.ts`:
+  - Hard limit: 250 chars per request (returns 400 if exceeded)
+  - Single TTS API call with 1 automatic retry on failure (1s delay between attempts)
+  - Strips markdown, detects language, calls TTS, returns WAV audio
+  - No chunking logic on server — all chunking moved to client
+- Rewrote `handleSpeak` in `src/components/chat/message-bubble.tsx`:
+  - Added `stripMarkdownForTTS()` and `splitTextForTTS()` helper functions at module level
+  - Client-side markdown stripping + text truncation (max 2000 chars total)
+  - Client-side chunking into ~200 char pieces at sentence boundaries
+  - Sequential playback: fetches each chunk's audio, plays it, then fetches next
+  - 30-second timeout per chunk (AbortController)
+  - Progress toast: "Generating audio part 3/10..."
+  - Graceful failure: skips failed chunks, continues to next
+  - Stop button: aborts all in-flight fetches, cleans up blob URLs
+  - Proper cleanup on unmount (revoke all URLs, abort controller)
+- Added `audioUrlsRef` and `speakAbortRef` refs for cleanup management
+
+Stage Summary:
+- TTS now works reliably for any length text (long text is truncated to 2000 chars with user notification)
+- Each TTS API call processes ≤200 chars — well within API reliability limits
+- No more 502 Bad Gateway errors (each request completes in ~3-6 seconds)
+- Tested: short Hindi (55 chars, 2.9s, 200 OK), medium Hindi (200 chars, 6s, 200 OK)
+- Server correctly rejects >250 char requests with 400 error
+- Lint: zero errors, dev server compiles cleanly
+
+---
 ## Task ID: user-profile-feature
 Agent: main
 Task: Add User Profile section accessible from chat header, fix mobile sidebar

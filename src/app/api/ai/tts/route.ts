@@ -58,49 +58,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No readable text after cleaning' }, { status: 400 });
     }
 
-    const clampedSpeed = Math.min(2.0, Math.max(0.5, speed));
-
-    // TTS API max is 1024 chars but long text causes timeouts/errors.
-    // Keep within 400 chars for reliable, fast results (~4-5 seconds).
-    const MAX_CHARS = 400;
-    let truncated = false;
-    let ttsText = cleanText;
-
-    if (cleanText.length > MAX_CHARS) {
-      // Try to cut at the last sentence-ending punctuation before the limit
-      const cutStr = cleanText.slice(0, MAX_CHARS);
-      const lastSentenceEnd = Math.max(
-        cutStr.lastIndexOf('.'),
-        cutStr.lastIndexOf('।'),
-        cutStr.lastIndexOf('!'),
-        cutStr.lastIndexOf('?'),
-        cutStr.lastIndexOf('\n'),
-      );
-
-      ttsText = lastSentenceEnd > 100
-        ? cutStr.slice(0, lastSentenceEnd + 1).trim()
-        : cutStr.slice(0, MAX_CHARS).trim();
-
-      truncated = true;
+    // Hard limit: max 250 chars per request for reliability
+    // (TTS API is flaky for Hindi text > 300 chars)
+    if (cleanText.length > 250) {
+      return NextResponse.json({ error: 'Text too long. Max 250 chars per request.', maxChars: 250 }, { status: 400 });
     }
 
-    const voice = detectVoiceForText(ttsText);
-    console.log(`TTS: voice=${voice}, originalChars=${cleanText.length}, ttsChars=${ttsText.length}, truncated=${truncated}`);
+    const clampedSpeed = Math.min(2.0, Math.max(0.5, speed));
+    const voice = detectVoiceForText(cleanText);
+    console.log(`TTS: voice=${voice}, chars=${cleanText.length}`);
 
     const zai = await ZAI.create();
 
-    // Single API call — fast and reliable, no gateway timeout risk
-    const response = await zai.audio.tts.create({
-      input: ttsText,
-      voice,
-      speed: clampedSpeed,
-      response_format: 'wav',
-      stream: false,
-    });
+    // Single TTS call with one retry on failure
+    let audioBuffer: ArrayBuffer | null = null;
+    let lastError: Error | null = null;
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(new Uint8Array(arrayBuffer));
-    console.log(`TTS: generated ${buffer.length} bytes audio`);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await zai.audio.tts.create({
+          input: cleanText,
+          voice,
+          speed: clampedSpeed,
+          response_format: 'wav',
+          stream: false,
+        });
+
+        audioBuffer = await response.arrayBuffer();
+        break; // Success, exit retry loop
+      } catch (err) {
+        lastError = err as Error;
+        console.warn(`TTS attempt ${attempt} failed:`, (err as Error).message);
+        if (attempt === 1) {
+          // Wait 1 second before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+    }
+
+    if (!audioBuffer) {
+      console.error('TTS failed after retries:', lastError);
+      return NextResponse.json(
+        { error: 'TTS generation failed after retry', details: lastError?.message },
+        { status: 500 }
+      );
+    }
+
+    const buffer = Buffer.from(new Uint8Array(audioBuffer));
+    console.log(`TTS: generated ${buffer.length} bytes audio (${(buffer.length / 1024 / 1024).toFixed(1)}MB)`);
 
     return new NextResponse(buffer, {
       status: 200,
@@ -108,7 +113,6 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'audio/wav',
         'Content-Length': buffer.length.toString(),
         'Cache-Control': 'no-cache',
-        'X-TTS-Truncated': truncated ? '1' : '0',
       },
     });
   } catch (error) {
