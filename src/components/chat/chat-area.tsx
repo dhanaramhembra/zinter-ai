@@ -1251,11 +1251,6 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     }
   }, []);
 
-  // Handle suggestion click - send as next message
-  const handleSuggestionClick = useCallback((text: string) => {
-    setPendingSuggestion(text);
-  }, []);
-
   // Dismiss suggestions
   const handleDismissSuggestions = useCallback((messageId: string) => {
     setSuggestionsMap((prev) => {
