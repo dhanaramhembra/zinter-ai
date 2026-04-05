@@ -155,6 +155,22 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
     }
   }, []);
 
+  const handleAvatarSelect = useCallback((avatarId: string) => {
+    setSelectedAvatar(avatarId);
+    fetch('/api/auth/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar: avatarId }),
+    }).then((res) => {
+      if (res.ok) return res.json();
+    }).then((data) => {
+      if (data?.user) setUser(data.user);
+      toast.success('Avatar updated');
+    }).catch(() => {
+    toast.error('Failed to update avatar');
+  });
+  }, [setUser]);
+
   const handleUpdateProfile = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -283,7 +299,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                   </div>
                 </div>
 
-                {/* Avatar Picker */
+                {/* Avatar Picker */}
                 <div className="space-y-2 mb-2">
                   <p className="text-xs font-medium text-muted-foreground">Avatar</p>
                   <div className="grid grid-cols-5 gap-2">
@@ -292,23 +308,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                         key={option.id}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        onClick={async () => {
-                          setSelectedAvatar(option.id);
-                          try {
-                            const res = await fetch('/api/auth/me', {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ avatar: option.id }),
-                            });
-                            if (res.ok) {
-                              const data = await res.json();
-                              if (data.user) setUser(data.user);
-                              toast.success('Avatar updated');
-                            }
-                          } catch {
-                            toast.error('Failed to update avatar');
-                          }
-                        }}
+                        onClick={() => handleAvatarSelect(option.id)}
                         className={cn(
                           'w-full aspect-square rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm transition-all duration-200',
                           option.gradient,
