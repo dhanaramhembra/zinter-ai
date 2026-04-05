@@ -186,6 +186,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
+  // AI Quick Reply Suggestions state
+  const [suggestionsMap, setSuggestionsMap] = useState<Record<string, string[]>>({});
+  const [suggestionsLoading, setSuggestionsLoading] = useState<string | null>(null);
+
   // Typing status for header indicator
   const [typingStatus, setTypingStatus] = useState(false);
 
@@ -714,9 +718,16 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         if (convForTitle && convForTitle.title === 'New Chat') {
           generateAutoTitle(convId, content || 'Analyze this image').catch(() => {});
         }
+
+        // Fetch quick reply suggestions for the assistant message
+        const finalMsgs = useChatStore.getState().conversations.find((c) => c.id === convId)?.messages || [];
+        const lastMsg = finalMsgs[finalMsgs.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content) {
+          fetchSuggestions(convId, lastMsg.id, finalMsgs);
+        }
       }
     },
-    [activeConversationId, createNewChat, addMessage, removeMessage, updateMessage, setGenerating, effectiveSystemPrompt, streamAIResponse, generateAutoTitle]
+    [activeConversationId, createNewChat, addMessage, removeMessage, updateMessage, setGenerating, effectiveSystemPrompt, streamAIResponse, generateAutoTitle, fetchSuggestions]
   );
 
   const generateImage = useCallback(
@@ -1216,6 +1227,44 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     toggleReaction(activeConversationId, messageId, emoji);
   }, [activeConversationId, toggleReaction]);
 
+  // Fetch AI suggestions after AI response
+  const fetchSuggestions = useCallback(async (convId: string, assistantMsgId: string, messagesList: Message[]) => {
+    try {
+      setSuggestionsLoading(assistantMsgId);
+      const lastMessages = messagesList.slice(-6).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+      const res = await fetch('/api/ai/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: lastMessages }),
+      });
+      const data = await res.json();
+      if (data.suggestions && Array.isArray(data.suggestions)) {
+        setSuggestionsMap((prev) => ({ ...prev, [assistantMsgId]: data.suggestions }));
+      }
+    } catch {
+      // Silently fail - suggestions are optional
+    } finally {
+      setSuggestionsLoading(null);
+    }
+  }, []);
+
+  // Handle suggestion click - send as next message
+  const handleSuggestionClick = useCallback((text: string) => {
+    setPendingSuggestion(text);
+  }, []);
+
+  // Dismiss suggestions
+  const handleDismissSuggestions = useCallback((messageId: string) => {
+    setSuggestionsMap((prev) => {
+      const next = { ...prev };
+      delete next[messageId];
+      return next;
+    });
+  }, []);
+
   // Chat statistics
   const chatStats = useMemo(() => {
     if (messages.length === 0) return null;
@@ -1345,9 +1394,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
         transition={{ duration: 0.3, delay: 0.1 + index * 0.08 }}
         onClick={onClick}
         className={cn(
-          'animated-border flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
+          'flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
           'hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
-          'transition-all duration-200 text-left group cursor-pointer',
+          'transition-all duration-200 text-left group cursor-pointer hover-glow-emerald',
           'active:scale-[0.98]'
         )}
       >
@@ -1356,10 +1405,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200',
             suggestion.bgColor,
             'group-hover:scale-110 group-hover:shadow-sm',
-            'relative overflow-hidden'
+            'relative overflow-hidden shimmer-overlay'
           )}
         >
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/20 to-transparent shimmer" />
           <IconComp className={cn('w-4.5 h-4.5 relative z-10', suggestion.color)} />
         </div>
         <div className="min-w-0">
@@ -1860,6 +1908,13 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                       showResponseTime={showResponseTime}
                       showTimestamp={showTimestamps}
                       onToggleReaction={handleToggleReaction}
+                      suggestions={
+                        message.role === 'assistant' && isLastInGroup
+                          ? suggestionsMap[message.id]
+                          : undefined
+                      }
+                      onSuggestionClick={handleSuggestionClick}
+                      onDismissSuggestions={handleDismissSuggestions}
                     />
                   </div>
                 );

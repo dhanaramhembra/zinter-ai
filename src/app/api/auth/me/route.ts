@@ -33,34 +33,57 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name } = body;
+    const { name, avatar } = body;
 
-    if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
-      );
+    const updateData: { name?: string; avatar?: string } = {};
+
+    if (name !== undefined) {
+      if (!name || typeof name !== 'string') {
+        return NextResponse.json(
+          { error: 'Name is required' },
+          { status: 400 }
+        );
+      }
+
+      const trimmedName = name.trim();
+
+      if (trimmedName.length === 0) {
+        return NextResponse.json(
+          { error: 'Name cannot be empty' },
+          { status: 400 }
+        );
+      }
+
+      if (trimmedName.length > 50) {
+        return NextResponse.json(
+          { error: 'Name must be 50 characters or less' },
+          { status: 400 }
+        );
+      }
+
+      updateData.name = trimmedName;
     }
 
-    const trimmedName = name.trim();
-
-    if (trimmedName.length === 0) {
-      return NextResponse.json(
-        { error: 'Name cannot be empty' },
-        { status: 400 }
-      );
+    if (avatar !== undefined) {
+      if (typeof avatar !== 'string' || avatar.length > 50) {
+        return NextResponse.json(
+          { error: 'Invalid avatar value' },
+          { status: 400 }
+        );
+      }
+      updateData.avatar = avatar;
     }
 
-    if (trimmedName.length > 50) {
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: 'Name must be 50 characters or less' },
+        { error: 'No fields to update' },
         { status: 400 }
       );
     }
 
     const updatedUser = await db.user.update({
       where: { id: session.userId },
-      data: { name: trimmedName },
+      data: updateData,
       select: { id: true, email: true, name: true, avatar: true },
     });
 

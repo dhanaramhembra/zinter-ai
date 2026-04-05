@@ -485,7 +485,7 @@ export default function ChatInput({
       </AnimatePresence>
 
       {/* Input area with glow effect wrapper */}
-      <div className="relative flex items-end gap-2 focus-glow-ring rounded-2xl">
+      <div className="relative flex items-end gap-2 focus-input-glow rounded-2xl">
         <div className="flex-1 relative">
           {/* Glow effect behind input on focus */}
           <div className={cn(

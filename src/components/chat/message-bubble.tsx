@@ -21,6 +21,8 @@ import {
   Star,
   SmilePlus,
   Plus,
+  Languages,
+  ChevronDown,
 } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +32,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import ImageLightbox from './image-lightbox';
+import { AVATAR_OPTIONS, TRANSLATION_LANGUAGES } from '@/lib/avatars';
 
 interface MessageBubbleProps {
   message: Message;
@@ -55,6 +58,12 @@ interface MessageBubbleProps {
   showTimestamp?: boolean;
   /** Toggle reaction callback */
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  /** Quick reply suggestions for this message */
+  suggestions?: string[];
+  /** Callback when a suggestion is clicked */
+  onSuggestionClick?: (text: string) => void;
+  /** Dismiss suggestions callback */
+  onDismissSuggestions?: (messageId: string) => void;
 }
 
 /** Highlight matching text in a string with <mark> tags */
@@ -204,6 +213,9 @@ export default function MessageBubble({
   onToggleFavorite,
   showResponseTime = false,
   showTimestamp = true,
+  suggestions,
+  onSuggestionClick,
+  onDismissSuggestions,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
@@ -219,6 +231,12 @@ export default function MessageBubble({
   const reactionPickerRef = useRef<HTMLDivElement>(null);
   const [showCustomEmoji, setShowCustomEmoji] = useState(false);
   const [reactionAnimation, setReactionAnimation] = useState<{ emoji: string; x: number; y: number } | null>(null);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translationLang, setTranslationLang] = useState('zh');
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translationDropdownOpen, setTranslationDropdownOpen] = useState(false);
+  const translationDropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
   const handleCopy = useCallback(async (e?: React.MouseEvent) => {
@@ -335,12 +353,15 @@ export default function MessageBubble({
       if (reactionPickerRef.current && !reactionPickerRef.current.contains(e.target as Node)) {
         setReactionPickerOpen(false);
       }
+      if (translationDropdownRef.current && !translationDropdownRef.current.contains(e.target as Node)) {
+        setTranslationDropdownOpen(false);
+      }
     };
-    if (reactionPickerOpen) {
+    if (reactionPickerOpen || translationDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [reactionPickerOpen]);
+  }, [reactionPickerOpen, translationDropdownOpen]);
 
   const handleReactionClick = useCallback(
     (emoji: string, e?: React.MouseEvent) => {
@@ -406,6 +427,39 @@ export default function MessageBubble({
 
   const staggerDelay = Math.min(index * 0.05, 0.5);
 
+  // Handle translation
+  const handleTranslate = useCallback(async (lang: string) => {
+    if (!message.content.trim()) return;
+    setIsTranslating(true);
+    setTranslationLang(lang);
+    setShowTranslation(true);
+    setTranslationDropdownOpen(false);
+    try {
+      const res = await fetch('/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message.content, targetLanguage: lang }),
+      });
+      const data = await res.json();
+      if (data.translation) {
+        setTranslatedText(data.translation);
+      } else {
+        setTranslatedText('Translation failed.');
+      }
+    } catch {
+      setTranslatedText('Translation failed.');
+    } finally {
+      setIsTranslating(false);
+    }
+  }, [message.content]);
+
+  // Get user avatar class
+  const userAvatarGradient = useMemo(() => {
+    if (!user?.avatar) return 'bg-primary text-primary-foreground';
+    const option = AVATAR_OPTIONS.find(a => a.id === user.avatar);
+    return option ? `${option.gradient} text-white` : 'bg-primary text-primary-foreground';
+  }, [user?.avatar]);
+
   return (
     <motion.div
       ref={messageRef}
@@ -436,7 +490,7 @@ export default function MessageBubble({
               className={cn(
                 'text-xs font-medium',
                 isUser
-                  ? 'bg-primary text-primary-foreground'
+                  ? userAvatarGradient
                   : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
               )}
             >
@@ -690,6 +744,80 @@ export default function MessageBubble({
           )}
         </div>
 
+        {/* Translation display */}
+        {!isUser && showTranslation && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-1 max-w-[80%]"
+          >
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="h-px flex-1 bg-border/50" />
+              <div className="flex items-center gap-1.5">
+                <Languages className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  {TRANSLATION_LANGUAGES.find(l => l.code === translationLang)?.flag}{' '}
+                  {TRANSLATION_LANGUAGES.find(l => l.code === translationLang)?.label}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 hover:bg-muted/80"
+                  onClick={() => { setShowTranslation(false); setTranslatedText(null); }}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </Button>
+              </div>
+              <div className="h-px flex-1 bg-border/50" />
+            </div>
+            <div className="rounded-xl px-4 py-2.5 bg-muted/40 border border-border/30 text-sm text-foreground/80 leading-relaxed">
+              {isTranslating ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                  <span className="text-muted-foreground text-xs">Translating...</span>
+                </div>
+              ) : translatedText ? (
+                <p className="whitespace-pre-wrap">{translatedText}</p>
+              ) : null}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quick reply suggestions */}
+        {!isUser && !isGenerating && suggestions && suggestions.length > 0 && isLastInGroup && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="flex items-center gap-2 mt-1 flex-wrap"
+          >
+            {suggestions.map((suggestion, idx) => (
+              <motion.button
+                key={`${message.id}-${idx}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2, delay: 0.1 + idx * 0.08 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => onSuggestionClick?.(suggestion)}
+                className="px-3 py-1.5 rounded-full border border-border/50 bg-card/80 text-xs text-muted-foreground hover:text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all duration-200 cursor-pointer max-w-[200px] truncate shadow-sm"
+              >
+                {suggestion}
+              </motion.button>
+            ))}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 shrink-0"
+              onClick={() => onDismissSuggestions?.(message.id)}
+              title="Dismiss suggestions"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </motion.div>
+        )}
+
         {/* Reactions - show below message bubble */}
         {!isGenerating && reactions.length > 0 && (
           <div className={cn('flex items-center gap-1 mt-1 flex-wrap', isUser && 'justify-end')}>
@@ -846,7 +974,7 @@ export default function MessageBubble({
                     )}
                   </>
                 ) : (
-                  /* Assistant message actions: Copy + TTS + Favorite + Regenerate */
+                  /* Assistant message actions: Copy + TTS + Favorite + Regenerate + Translate */
                   <>
                     <Button
                       variant="ghost"
@@ -887,6 +1015,53 @@ export default function MessageBubble({
                         />
                       </Button>
                     )}
+                    {/* Translate button */}
+                    <div className="relative" ref={translationDropdownRef}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          'h-7 w-7 hover:scale-110 active:scale-95 transition-all duration-150',
+                          showTranslation ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10' : 'hover:bg-accent'
+                        )}
+                        onClick={() => setTranslationDropdownOpen(!translationDropdownOpen)}
+                        title="Translate"
+                      >
+                        <Languages className="w-3.5 h-3.5" />
+                      </Button>
+                      <AnimatePresence>
+                        {translationDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 4, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 4, scale: 0.9 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute z-50 bottom-full mb-1.5 w-48 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5"
+                          >
+                            <p className="text-[10px] font-semibold text-muted-foreground px-2 pb-1.5 pt-0.5 uppercase tracking-wider">Translate to</p>
+                            <div className="max-h-64 overflow-y-auto space-y-0.5">
+                              {TRANSLATION_LANGUAGES.map((lang) => (
+                                <button
+                                  key={lang.code}
+                                  onClick={() => handleTranslate(lang.code)}
+                                  className={cn(
+                                    'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer',
+                                    'hover:bg-muted/80',
+                                    translationLang === lang.code && showTranslation && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                  )}
+                                >
+                                  <span className="text-base shrink-0">{lang.flag}</span>
+                                  <span className="flex-1">{lang.label}</span>
+                                  {translationLang === lang.code && showTranslation && (
+                                    <Check className="w-3 h-3 text-emerald-500" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     {onRegenerate && (
                       <Button
                         variant="ghost"

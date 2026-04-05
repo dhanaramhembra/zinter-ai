@@ -36,6 +36,7 @@ import {
   Hash,
   TrendingUp,
   Calendar,
+  UserCircle,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
@@ -43,6 +44,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import SettingsSheet from '@/components/settings/settings-sheet';
+import { AVATAR_OPTIONS } from '@/lib/avatars';
 
 interface ConversationSidebarProps {
   isOpen: boolean;
@@ -137,6 +139,8 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
   const [stats, setStats] = useState<{ totalConversations: number; totalMessages: number; avgMessagesPerConv: number; mostActiveDay: string } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [online, setOnline] = useState(true);
@@ -233,6 +237,30 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
     setLogoutDialogOpen(false);
     toast.info('Signed out successfully');
   }, [logout]);
+
+  const handleSaveAvatar = useCallback(async (avatarId: string) => {
+    if (!user) return;
+    setAvatarSaving(true);
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar: avatarId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          useAuthStore.getState().updateUser({ avatar: data.user.avatar });
+          toast.success('Avatar updated');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save avatar:', error);
+      toast.error('Failed to save avatar');
+    } finally {
+      setAvatarSaving(false);
+    }
+  }, [user]);
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
@@ -630,12 +658,19 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         {/* Footer */}
         <div className="p-3 border-t border-border/40 bg-gradient-to-t from-muted/30 to-transparent space-y-2 gradient-border-top">
           {user && (
-            <motion.div
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted/70 transition-colors duration-200 cursor-default shadow-sm border border-border/20"
+            <motion.button
+              type="button"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted/70 transition-colors duration-200 w-full text-left shadow-sm border border-border/20"
               whileHover={{ x: 2 }}
+              onClick={() => setProfileDialogOpen(true)}
             >
               <div className={cn('relative', online ? 'status-online' : 'status-offline')}>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                <div className={cn(
+                  'w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-sm',
+                  user.avatar
+                    ? AVATAR_OPTIONS.find(a => a.id === user.avatar)?.gradient || 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                    : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                )}>
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 {/* Online/offline status dot */}
@@ -650,7 +685,8 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                 <p className="text-sm font-medium truncate">{user.name}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
               </div>
-            </motion.div>
+              <UserCircle className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+            </motion.button>
           )}
           <div className="flex items-center gap-1">
             <Button
@@ -819,6 +855,89 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
 
       {/* Settings sheet */}
       <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+
+      {/* Profile / Avatar Picker dialog */}
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <UserCircle className="w-4 h-4 text-white" />
+              </div>
+              Your Profile
+            </DialogTitle>
+            <DialogDescription>Customize your avatar and display name</DialogDescription>
+          </DialogHeader>
+          {user && (
+            <div className="space-y-5">
+              {/* Current avatar preview */}
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  'w-14 h-14 rounded-full text-white flex items-center justify-center text-lg font-bold shadow-lg',
+                  user.avatar
+                    ? AVATAR_OPTIONS.find(a => a.id === user.avatar)?.gradient || 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                    : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                )}>
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">{user.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                </div>
+              </div>
+
+              {/* Avatar picker grid */}
+              <div>
+                <p className="text-sm font-medium text-foreground mb-3">Choose Avatar</p>
+                <div className="grid grid-cols-5 gap-2.5">
+                  {AVATAR_OPTIONS.map((avatar) => (
+                    <motion.button
+                      key={avatar.id}
+                      type="button"
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.92 }}
+                      disabled={avatarSaving}
+                      onClick={() => handleSaveAvatar(avatar.id)}
+                      className={cn(
+                        'relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 cursor-pointer',
+                        'hover:border-foreground/20',
+                        user.avatar === avatar.id
+                          ? 'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10'
+                          : 'border-transparent bg-muted/50 hover:bg-muted/80'
+                      )}
+                    >
+                      {user.avatar === avatar.id && (
+                        <motion.div
+                          layoutId="avatar-check"
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                        >
+                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                        </motion.div>
+                      )}
+                      <div className={cn(
+                        'w-10 h-10 rounded-full text-white flex items-center justify-center text-sm font-bold shadow-md',
+                        avatar.gradient
+                      )}>
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-medium">{avatar.label}</span>
+                    </motion.button>
+                  ))}
+                </div>
+                {avatarSaving && (
+                  <div className="flex items-center gap-2 mt-3 justify-center">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                    <span className="text-xs text-muted-foreground">Saving...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
