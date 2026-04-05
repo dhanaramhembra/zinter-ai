@@ -392,8 +392,9 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
-          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[300px] bg-card/90 backdrop-blur-xl border-r border-border flex flex-col',
-          'lg:translate-x-0'
+          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[85vw] max-w-[300px] sm:w-[300px] bg-card/90 backdrop-blur-xl border-r border-border flex flex-col',
+          'lg:translate-x-0',
+          'pt-[env(safe-area-inset-top)]'
         )}
       >
         {/* Network status banner - shown when offline */}
@@ -420,11 +421,11 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </div>
 
         {/* Header with gradient */}
-        <div className="p-4 border-b border-border bg-gradient-to-br from-emerald-600/8 via-transparent to-teal-600/8 relative overflow-hidden">
+        <div className="p-3 sm:p-4 border-b border-border bg-gradient-to-br from-emerald-600/8 via-transparent to-teal-600/8 relative overflow-hidden">
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '16px 16px' }} />
           <div className="relative">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
             <div className="flex items-center gap-2.5">
               <motion.div
                 className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20"
@@ -433,17 +434,17 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               >
                 <Sparkles className="w-4.5 h-4.5" />
               </motion.div>
-              <span className="font-bold text-lg tracking-tight gradient-text">Zinter AI</span>
+              <span className="font-bold text-base sm:text-lg tracking-tight gradient-text">Zinter AI</span>
             </div>
-            <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
-              <X className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
+              <X className="w-5 h-5" />
             </Button>
           </div>
 
           {/* User greeting */}
           
           {user && (
-            <p className="text-sm text-muted-foreground mb-3 pl-0.5">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 pl-0.5">
               {getGreeting()}, <span className="font-medium text-foreground">{user.name}</span>
             </p>
           )}
@@ -487,10 +488,10 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </div>
 
         {/* New Chat button with shimmer on hover */}
-        <div className="px-3 pt-3 pb-1">
+        <div className="px-3 pt-2 sm:pt-3 pb-1">
           <Button
             onClick={createNewChat}
-            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/30 active:scale-[0.98] transition-all duration-200 h-10 relative overflow-hidden group hover-lift-sm"
+            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/30 active:scale-[0.98] transition-all duration-200 h-9 sm:h-10 relative overflow-hidden group hover-lift-sm"
           >
             <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shimmer" />
             <Plus className="w-4 h-4 relative z-10" />
@@ -661,11 +662,11 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </AnimatePresence>
 
         {/* Footer */}
-        <div className="p-3 border-t border-border/40 bg-gradient-to-t from-muted/30 to-transparent space-y-2 gradient-border-top">
+        <div className="p-3 border-t border-border/40 bg-gradient-to-t from-muted/30 to-transparent space-y-2 gradient-border-top pb-[max(1rem,env(safe-area-inset-bottom))]">
           {user && (
             <motion.button
               type="button"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-muted/70 transition-colors duration-200 w-full text-left shadow-sm border border-border/20"
+              className="flex items-center gap-3 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl bg-muted/50 hover:bg-muted/70 transition-colors duration-200 w-full text-left shadow-sm border border-border/20"
               whileHover={{ x: 2 }}
               onClick={() => setProfileDialogOpen(true)}
             >
@@ -697,7 +698,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
+              className="h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
               onClick={() => setStatsOpen(true)}
               title="Statistics"
             >
@@ -706,7 +707,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
+              className="h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
               onClick={() => setSettingsOpen(true)}
               title="Settings"
             >
@@ -715,7 +716,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
+              className="h-10 w-10 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:scale-105 active:scale-95 transition-all duration-150"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               suppressHydrationWarning
               title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
@@ -726,7 +727,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-destructive/80 hover:text-destructive hover:bg-destructive/10 hover:scale-105 active:scale-95 transition-all duration-150"
+              className="h-10 w-10 sm:h-8 sm:w-8 text-destructive/80 hover:text-destructive hover:bg-destructive/10 hover:scale-105 active:scale-95 transition-all duration-150"
               onClick={() => setLogoutDialogOpen(true)}
               title="Sign Out"
             >
@@ -820,7 +821,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
             </div>
           ) : stats ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <div className="rounded-xl border border-border/60 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 p-4 text-center">
                 <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                   <MessageSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -894,7 +895,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               {/* Avatar picker grid */}
               <div>
                 <p className="text-sm font-medium text-foreground mb-3">Choose Avatar</p>
-                <div className="grid grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5">
                   {AVATAR_OPTIONS.map((avatar) => (
                     <motion.button
                       key={avatar.id}

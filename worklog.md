@@ -1,3 +1,44 @@
+---
+## Task ID: mobile-responsive-fixes
+### Work Task
+Fix mobile responsive design issues across 3 files: message-bubble.tsx, conversation-sidebar.tsx, and auth-page.tsx.
+
+### Work Summary
+Applied 18 mobile responsive design fixes across 3 component files. All changes focus on improving touch targets, mobile-visible actions, responsive sizing, and safe-area support. Lint passes with zero errors, dev server compiles cleanly.
+
+#### File 1: `src/components/chat/message-bubble.tsx` (9 fixes)
+1. **Fix 1 - Message content width**: Changed `max-w-[80%]` to `max-w-[85%] sm:max-w-[80%] lg:max-w-[75%]` for better mobile width usage
+2. **Fix 2 - Action buttons visible on mobile (CRITICAL)**: Changed from `opacity-0 group-hover:opacity-100` to `opacity-100 sm:opacity-0 sm:group-hover:opacity-100` so mobile users can always see action buttons
+3. **Fix 3 - Action button touch targets**: Changed 10 instances of `h-7 w-7` to `h-9 w-9 sm:h-7 sm:w-7` on all main action buttons (Copy, Edit, TTS, Favorite, Regenerate, Translate, Pin, SmilePlus) for easier mobile tapping
+4. **Fix 4 - Translation close button**: Changed `h-5 w-5` to `h-7 w-7` for better touch target on translation dismiss button
+5. **Fix 5 - Dismiss suggestions button**: Changed `h-6 w-6` to `h-8 w-8` for better mobile tap target
+6. **Fix 6 - Edit mode min-width**: Changed `min-w-[200px]` to `min-w-[150px] sm:min-w-[200px]` to fit narrower mobile screens
+7. **Fix 7 - Attached image sizing**: Changed `max-w-[240px] max-h-[180px]` to `max-w-[200px] sm:max-w-[240px] max-h-[150px] sm:max-h-[180px]` for responsive image sizing
+8. **Fix 8 - Custom emoji grid**: Changed 2 instances of `grid-cols-5` to `grid-cols-4 sm:grid-cols-5` for better fit on small screens
+9. **Fix 9 - Image lightbox touch support**: Added `onClick={() => setLightboxOpen(true)}` to image container div so tapping directly opens the lightbox on mobile (not just hover)
+
+#### File 2: `src/components/chat/conversation-sidebar.tsx` (5 fixes)
+1. **Fix 1 - Sidebar width**: Changed `w-[300px]` to `w-[280px] sm:w-[300px]` for narrower mobile sidebar
+2. **Fix 2 - Footer icon buttons**: Changed 4 footer buttons (Stats, Settings, Theme, Logout) from `h-8 w-8` to `h-10 w-10 sm:h-8 sm:w-8` for better mobile touch targets
+3. **Fix 3 - Stats dialog grid**: Changed `gap-3` to `gap-2 sm:gap-3` for tighter mobile spacing in stats cards
+4. **Fix 4 - Avatar picker grid**: Changed `grid-cols-5 gap-2.5` to `grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-2.5` for better mobile layout
+5. **Fix 5 - Safe-area padding**: Added `pb-[max(1rem,env(safe-area-inset-bottom))]` to sidebar footer for iOS safe area support
+
+#### File 3: `src/components/auth/auth-page.tsx` (4 fixes)
+1. **Fix 1 - Brand logo size**: Changed `w-16 h-16` to `w-14 h-14 sm:w-16 sm:h-16` for slightly smaller mobile logo
+2. **Fix 2 - Title size**: Changed `text-3xl` to `text-2xl sm:text-3xl` for better mobile heading sizing
+3. **Fix 3 - Powered by AI spacing**: Changed `mt-6` to `mt-4 sm:mt-6` for tighter mobile spacing at bottom
+
+### Files Modified
+- `src/components/chat/message-bubble.tsx` — 9 mobile responsive fixes
+- `src/components/chat/conversation-sidebar.tsx` — 5 mobile responsive fixes
+- `src/components/auth/auth-page.tsx` — 3 mobile responsive fixes
+
+### Verification
+- ✅ Lint: Zero errors
+- ✅ Dev server: Compiles cleanly, GET / 200
+
+---
 # NexusAI - AI Chat & Image Generation Platform
 
 ## Project Overview
@@ -1397,3 +1438,31 @@ Stage Summary:
 - Uses robust fetch → blob → createObjectURL → anchor download approach
 - Shows toast notifications: "Downloading image..." (loading) → "Image downloaded!" (success) or "Failed to download image" (error)
 - Filename uses sanitized image prompt or "zinter-ai-image.png" fallback
+---
+Task ID: 1
+Agent: Main Agent
+Task: Mobile responsiveness fixes for Zinter AI - Fix sidebar, header, input, and overall mobile layout
+
+Work Log:
+- Analyzed all major components for mobile fit issues
+- Fixed main layout to use `h-[100dvh]` for dynamic viewport height on mobile browsers
+- Fixed sidebar: Changed from fixed 280-300px to `w-[85vw] max-w-[300px]` for better fit on small screens; Added `pt-[env(safe-area-inset-top)]` for notch devices; Made close button larger (h-9 w-9) for easier touch target; Made header padding responsive (p-3 sm:p-4); Made greeting text smaller on mobile; Made New Chat button height responsive
+- Fixed chat header: Reduced gap between buttons (gap-1 sm:gap-2); Reduced padding (px-3 sm:px-4, py-2.5 sm:py-3); Hidden Export and Share buttons on mobile (hidden sm:flex); Hidden persona dropdown on mobile (hidden sm:block)
+- Fixed chat input: Reduced padding (px-3 sm:px-4, pt-3 sm:pt-4); Reduced bottom safe area padding; Made input gap smaller (gap-1.5 sm:gap-2); Hidden Templates button on mobile; Reduced all action buttons from h-11 w-11 to h-10 w-10; Reduced icon sizes from w-5 to w-4.5
+- Fixed welcome screen: Reduced padding (p-4 sm:p-8); Made icon smaller on mobile (w-14 sm:w-16); Made title smaller on mobile (text-base sm:text-lg); Reduced suggestion card gaps
+- Fixed suggestion cards: Reduced padding (p-3 sm:p-4), gap (gap-2.5 sm:gap-3), icon size (w-8 sm:w-9)
+- Fixed message container: Added horizontal padding on mobile (px-2 sm:px-0); Reduced vertical padding
+- Fixed message bubbles: Increased max-width to 92% on mobile for better readability
+- Fixed image lightbox: Added safe area top padding; Made close button larger on mobile; Adjusted image max dimensions for mobile
+- Fixed auth page: Added `min-h-[100dvh]` for proper mobile viewport
+- Added CSS: body overflow hidden, 100dvh height, overscroll-behavior: contain
+- Created webDevReview cron job (every 15 minutes)
+
+Stage Summary:
+- Comprehensive mobile responsiveness overhaul completed across 7 component files
+- Sidebar now properly fits on screens as small as 320px wide
+- Chat header decluttered on mobile - only essential buttons shown
+- Chat input buttons properly sized for touch interaction
+- Safe area insets handled for modern phones with notches
+- Dynamic viewport height (dvh) used throughout for proper mobile browser handling
+- Zero lint errors

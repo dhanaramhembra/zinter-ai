@@ -278,7 +278,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-muted/50 relative overflow-hidden">
+    <div className="min-h-[100dvh] min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-muted/50 relative overflow-hidden">
       {/* Animated mesh gradient background */}
       <div className="mesh-gradient">
         <div className="mesh-gradient-extra" />
@@ -322,7 +322,7 @@ export default function AuthPage() {
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
             className={cn(
-              'inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4',
+              'inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary text-primary-foreground mb-4',
               !isCheckingSession && 'animate-breathing-glow',
               isCheckingSession && 'animate-pulse'
             )}
@@ -340,7 +340,7 @@ export default function AuthPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.4 }}
-            className="text-3xl font-bold tracking-tight gradient-text"
+            className="text-2xl sm:text-3xl font-bold tracking-tight gradient-text"
           >
             Zinter AI
           </motion.h1>
@@ -661,7 +661,7 @@ export default function AuthPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.4 }}
-          className="flex justify-center mt-6"
+          className="flex justify-center mt-4 sm:mt-6"
         >
           <div className="badge-emerald flex items-center gap-1.5">
             <Zap className="w-3 h-3" />

@@ -543,7 +543,7 @@ export default function MessageBubble({
       )}
 
       {/* Content */}
-      <div className={cn('flex-1 max-w-[80%] space-y-1', isUser && 'flex flex-col items-end')}>
+      <div className={cn('flex-1 max-w-[92%] sm:max-w-[85%] lg:max-w-[75%] space-y-1', isUser && 'flex flex-col items-end')}>
         {/* Name - only show on first message in group */}
         {isFirstInGroup && (
           <div className={cn('flex items-center gap-2', isUser && 'flex-row-reverse')}>
@@ -599,7 +599,7 @@ export default function MessageBubble({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="min-w-[200px]"
+              className="min-w-[150px] sm:min-w-[200px]"
             >
               <Textarea
                 ref={editTextareaRef}
@@ -641,6 +641,7 @@ export default function MessageBubble({
                   className="mb-3 relative group/image inline-block"
                   onMouseEnter={() => setImageHovered(true)}
                   onMouseLeave={() => setImageHovered(false)}
+                  onClick={() => setLightboxOpen(true)}
                 >
                   <img
                     src={message.imageUrl}
@@ -683,7 +684,7 @@ export default function MessageBubble({
                       <img
                         src={message.attachedImage}
                         alt="Attached image"
-                        className="max-w-[240px] max-h-[180px] object-cover rounded-lg"
+                        className="max-w-[200px] sm:max-w-[240px] max-h-[150px] sm:max-h-[180px] object-cover rounded-lg"
                       />
                     </div>
                   )}
@@ -801,7 +802,7 @@ export default function MessageBubble({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 hover:bg-muted/80"
+                  className="h-7 w-7 hover:bg-muted/80"
                   onClick={() => { setShowTranslation(false); setTranslatedText(null); }}
                 >
                   <X className="w-2.5 h-2.5" />
@@ -847,7 +848,7 @@ export default function MessageBubble({
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 shrink-0"
+              className="h-8 w-8 text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 shrink-0"
               onClick={() => onDismissSuggestions?.(message.id)}
               title="Dismiss suggestions"
             >
@@ -907,7 +908,7 @@ export default function MessageBubble({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className={cn(
-                  'flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity',
+                  'flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity',
                   isUser && 'flex-row-reverse'
                 )}
               >
@@ -917,7 +918,7 @@ export default function MessageBubble({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                      className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                       onClick={(e) => handleCopy(e)}
                       title="Copy message (Shift+Click for Markdown)"
                     >
@@ -927,7 +928,7 @@ export default function MessageBubble({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                        className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                         onClick={() => setIsEditing(true)}
                         title="Edit message"
                       >
@@ -939,7 +940,7 @@ export default function MessageBubble({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                          className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                           onClick={() => setReactionPickerOpen(!reactionPickerOpen)}
                           title="Add reaction"
                         >
@@ -989,7 +990,7 @@ export default function MessageBubble({
                                     transition={{ duration: 0.15 }}
                                     className="overflow-hidden"
                                   >
-                                    <div className="grid grid-cols-5 gap-0.5 pt-1.5 border-t border-border/40">
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-0.5 pt-1.5 border-t border-border/40">
                                       {EXTENDED_REACTION_EMOJIS.map((emoji) => (
                                         <motion.button
                                           key={emoji}
@@ -1017,7 +1018,7 @@ export default function MessageBubble({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                      className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                       onClick={(e) => handleCopy(e)}
                       title="Copy message (Shift+Click for Markdown)"
                     >
@@ -1026,7 +1027,7 @@ export default function MessageBubble({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                      className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                       onClick={handleSpeak}
                       title={isSpeaking ? 'Stop speaking' : 'Listen'}
                     >
@@ -1037,7 +1038,7 @@ export default function MessageBubble({
                         variant="ghost"
                         size="icon"
                         className={cn(
-                          'h-7 w-7 hover:scale-110 active:scale-95 transition-all duration-150',
+                          'h-9 w-9 sm:h-7 sm:w-7 hover:scale-110 active:scale-95 transition-all duration-150',
                           isFavorited
                             ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
                             : 'hover:bg-accent'
@@ -1058,7 +1059,7 @@ export default function MessageBubble({
                         variant="ghost"
                         size="icon"
                         className={cn(
-                          'h-7 w-7 hover:scale-110 active:scale-95 transition-all duration-150',
+                          'h-9 w-9 sm:h-7 sm:w-7 hover:scale-110 active:scale-95 transition-all duration-150',
                           isPinned
                             ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
                             : 'hover:bg-accent'
@@ -1075,7 +1076,7 @@ export default function MessageBubble({
                         variant="ghost"
                         size="icon"
                         className={cn(
-                          'h-7 w-7 hover:scale-110 active:scale-95 transition-all duration-150',
+                          'h-9 w-9 sm:h-7 sm:w-7 hover:scale-110 active:scale-95 transition-all duration-150',
                           showTranslation ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10' : 'hover:bg-accent'
                         )}
                         onClick={() => setTranslationDropdownOpen(!translationDropdownOpen)}
@@ -1120,7 +1121,7 @@ export default function MessageBubble({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                        className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                         onClick={() => onRegenerate(message.id)}
                         title="Regenerate response"
                       >
@@ -1132,7 +1133,7 @@ export default function MessageBubble({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
+                          className="h-9 w-9 sm:h-7 sm:w-7 hover:bg-accent hover:scale-110 active:scale-95 transition-all duration-150"
                           onClick={() => setReactionPickerOpen(!reactionPickerOpen)}
                           title="Add reaction"
                         >
@@ -1180,7 +1181,7 @@ export default function MessageBubble({
                                     transition={{ duration: 0.15 }}
                                     className="overflow-hidden"
                                   >
-                                    <div className="grid grid-cols-5 gap-0.5 pt-1.5 border-t border-border/40">
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-0.5 pt-1.5 border-t border-border/40">
                                       {EXTENDED_REACTION_EMOJIS.map((emoji) => (
                                         <motion.button
                                           key={emoji}

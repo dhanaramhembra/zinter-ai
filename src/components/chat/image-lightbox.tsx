@@ -74,14 +74,14 @@ export default function ImageLightbox({ imageUrl, imagePrompt, isOpen, onClose }
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.92 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center gap-4 p-4"
+            className="relative max-w-[90vw] max-h-[85vh] sm:max-h-[90vh] flex flex-col items-center gap-3 sm:gap-4 p-3 sm:p-4 pt-[max(3rem,env(safe-area-inset-top))]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <Button
               variant="ghost"
               size="icon"
-              className="absolute -top-2 -right-2 z-10 h-9 w-9 rounded-full bg-background/20 backdrop-blur-sm text-white hover:bg-background/30 hover:text-white hover:scale-110 transition-all"
+              className="absolute -top-2 -right-2 z-10 h-10 w-10 sm:h-9 sm:w-9 rounded-full bg-background/20 backdrop-blur-sm text-white hover:bg-background/30 hover:text-white hover:scale-110 transition-all"
               onClick={onClose}
             >
               <X className="w-4 h-4" />
@@ -92,7 +92,7 @@ export default function ImageLightbox({ imageUrl, imagePrompt, isOpen, onClose }
               <img
                 src={imageUrl}
                 alt={imagePrompt || 'Generated image'}
-                className="max-w-[80vw] max-h-[70vh] object-contain rounded-xl"
+                className="max-w-[85vw] sm:max-w-[80vw] max-h-[65vh] sm:max-h-[70vh] object-contain rounded-xl"
               />
               {/* Subtle border glow */}
               <div className="absolute inset-0 rounded-xl ring-1 ring-white/10 pointer-events-none" />

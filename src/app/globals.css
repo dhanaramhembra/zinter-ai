@@ -118,6 +118,23 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow: hidden;
+    height: 100dvh;
+    height: 100vh;
+  }
+
+  /* Mobile safe area support */
+  @supports (height: 100dvh) {
+    body {
+      height: 100dvh;
+    }
+  }
+
+  /* Prevent overscroll on mobile */
+  @supports (overscroll-behavior: contain) {
+    body, html {
+      overscroll-behavior: contain;
+    }
   }
 }
 

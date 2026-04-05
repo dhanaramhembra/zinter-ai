@@ -366,7 +366,7 @@ export default function ChatInput({
 
   return (
     <div
-      className="border-t border-border/40 bg-card/80 backdrop-blur-xl p-4 relative gradient-border-top"
+      className="border-t border-border/40 bg-card/80 backdrop-blur-xl px-3 sm:px-4 pt-3 sm:pt-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] relative gradient-border-top"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -418,7 +418,7 @@ export default function ChatInput({
               <Button
                 variant="destructive"
                 size="icon"
-                className="absolute -top-2 -right-2 h-5 w-5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
+                className="absolute -top-2 -right-2 h-5 w-5 rounded-full shadow-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
                 onClick={handleRemoveImage}
               >
                 <X className="w-3 h-3" />
@@ -452,7 +452,7 @@ export default function ChatInput({
               <Button
                 variant="ghost"
                 size="icon"
-                className="ml-auto h-6 w-6"
+                className="ml-auto h-8 w-8"
                 onClick={() => setImageMode(false)}
               >
                 <X className="w-3.5 h-3.5" />
@@ -483,7 +483,7 @@ export default function ChatInput({
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-auto h-6 text-xs"
+                className="ml-auto h-9 min-w-[44px] text-xs"
                 onClick={toggleRecording}
               >
                 Stop
@@ -494,7 +494,7 @@ export default function ChatInput({
       </AnimatePresence>
 
       {/* Input area with glow effect wrapper */}
-      <div className="relative flex items-end gap-2 focus-input-glow rounded-2xl">
+      <div className="relative flex items-end gap-1.5 sm:gap-2 focus-input-glow rounded-2xl">
         <div className="flex-1 relative">
           {/* Glow effect behind input on focus */}
           <div className={cn(
@@ -525,8 +525,8 @@ export default function ChatInput({
 
         {/* Action buttons with connected styling */}
         <div className="flex items-center gap-0.5 pb-0.5">
-          {/* Templates button */}
-          <div className="relative" ref={templatesRef}>
+          {/* Templates button - hidden on mobile to save space */}
+          <div className="relative hidden sm:block" ref={templatesRef}>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -534,14 +534,14 @@ export default function ChatInput({
                     variant={templatesOpen ? 'default' : 'ghost'}
                     size="icon"
                     className={cn(
-                      'rounded-xl h-11 w-11 shrink-0 transition-all duration-200',
+                      'rounded-xl h-10 w-10 shrink-0 transition-all duration-200',
                       'hover:scale-105 active:scale-95 hover:shadow-sm',
                       templatesOpen && 'bg-primary text-primary-foreground shadow-md shadow-emerald-500/20'
                     )}
                     onClick={() => setTemplatesOpen(!templatesOpen)}
                     disabled={disabled || isGenerating}
                   >
-                    <BookmarkIcon className="w-5 h-5" />
+                    <BookmarkIcon className="w-4.5 h-4.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -556,7 +556,7 @@ export default function ChatInput({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 bottom-full mb-1.5 w-[340px] rounded-xl border border-border/60 bg-popover p-3 shadow-lg shadow-emerald-500/5 z-50"
+                  className="absolute right-0 bottom-full mb-1.5 w-[calc(100vw-2rem)] max-w-[340px] rounded-xl border border-border/60 bg-popover p-3 shadow-lg shadow-emerald-500/5 z-50"
                 >
                   <p className="text-xs font-semibold text-muted-foreground px-1 pb-2">
                     Prompt Templates
@@ -601,14 +601,14 @@ export default function ChatInput({
                   variant={imageMode ? 'default' : 'ghost'}
                   size="icon"
                   className={cn(
-                    'rounded-xl h-11 w-11 shrink-0 transition-all duration-200',
+                    'rounded-xl h-10 w-10 shrink-0 transition-all duration-200',
                     'hover:scale-105 active:scale-95 hover:shadow-sm',
                     imageMode && 'bg-primary text-primary-foreground shadow-md shadow-emerald-500/20'
                   )}
                   onClick={() => setImageMode(!imageMode)}
                   disabled={disabled || isGenerating}
                 >
-                  <ImageIcon className="w-5 h-5" />
+                  <ImageIcon className="w-4.5 h-4.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -623,16 +623,16 @@ export default function ChatInput({
                 <Button
                   variant={isRecording ? 'destructive' : 'ghost'}
                   size="icon"
-                  className="rounded-xl h-11 w-11 shrink-0 hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-sm"
+                  className="rounded-xl h-10 w-10 shrink-0 hover:scale-105 active:scale-95 transition-all duration-200 hover:shadow-sm"
                   onClick={toggleRecording}
                   disabled={disabled || isTranscribing || isGenerating}
                 >
                   {isTranscribing ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4.5 h-4.5 animate-spin" />
                   ) : isRecording ? (
-                    <MicOff className="w-5 h-5" />
+                    <MicOff className="w-4.5 h-4.5" />
                   ) : (
-                    <Mic className="w-5 h-5" />
+                    <Mic className="w-4.5 h-4.5" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -648,7 +648,7 @@ export default function ChatInput({
                 <Button
                   size="icon"
                   className={cn(
-                    'rounded-xl h-11 w-11 shrink-0 transition-all duration-300',
+                    'rounded-xl h-10 w-10 shrink-0 transition-all duration-300',
                     'hover:scale-105 active:scale-95',
                     canSend
                       ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:brightness-110'
@@ -658,9 +658,9 @@ export default function ChatInput({
                   disabled={!canSend}
                 >
                   {imageMode ? (
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className="w-4.5 h-4.5" />
                   ) : (
-                    <Send className="w-5 h-5" />
+                    <Send className="w-4.5 h-4.5" />
                   )}
                 </Button>
               </TooltipTrigger>

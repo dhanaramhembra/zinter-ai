@@ -159,7 +159,7 @@ function SuggestionCard({
       transition={{ duration: 0.3, delay: 0.1 + index * 0.08 }}
       onClick={onClick}
       className={cn(
-        'flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
+        'flex items-start gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-xl border border-border/60 bg-card/50',
         'hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
         'transition-all duration-200 text-left group cursor-pointer hover-glow-emerald',
         'active:scale-[0.98]'
@@ -167,13 +167,13 @@ function SuggestionCard({
     >
       <div
         className={cn(
-          'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200',
+          'flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg shrink-0 transition-all duration-200',
           suggestion.bgColor,
           'group-hover:scale-110 group-hover:shadow-sm',
           'relative overflow-hidden shimmer-overlay'
         )}
       >
-        <IconComp className={cn('w-4.5 h-4.5 relative z-10', suggestion.color)} />
+        <IconComp className={cn('w-4 h-4 sm:w-4.5 sm:h-4.5 relative z-10', suggestion.color)} />
       </div>
       <div className="min-w-0">
         <p className="text-sm font-medium leading-snug">{suggestion.title}</p>
@@ -1590,7 +1590,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       {/* Header with glassmorphism and gradient accent line */}
       <div className="relative">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/70 via-teal-400/50 to-transparent" />
-        <div className="gradient-border-top chat-header flex items-center gap-2 px-4 py-3 border-b border-border/60">
+        <div className="gradient-border-top chat-header flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border/60">
           <Button
           variant="ghost"
           size="icon"
@@ -1626,11 +1626,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           {currentPersona.name}
         </Badge>
 
-        {/* Feature 3: Export button */}
+        {/* Feature 3: Export button - hidden on mobile */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
+          className="hidden sm:flex h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
           onClick={handleExportMarkdown}
           title="Export as Markdown"
           disabled={!hasMessages}
@@ -1638,11 +1638,11 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <Download className="w-4 h-4" />
         </Button>
 
-        {/* Share button */}
+        {/* Share button - hidden on mobile */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
+          className="hidden sm:flex h-8 w-8 shrink-0 hover:scale-110 active:scale-95 transition-transform duration-200"
           onClick={handleShareConversation}
           title="Share conversation"
           disabled={!hasMessages}
@@ -1700,8 +1700,8 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <Search className="w-4 h-4" />
         </Button>
 
-        {/* Feature 4: Persona selector dropdown */}
-        <div className="relative" ref={personaDropdownRef}>
+        {/* Feature 4: Persona selector dropdown - hidden on mobile */}
+        <div className="relative hidden sm:block" ref={personaDropdownRef}>
           <Button
             variant="ghost"
             size="icon"
@@ -1769,7 +1769,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           variant="outline"
           size="sm"
           onClick={() => createNewChat()}
-          className="gap-2 rounded-lg shrink-0 hover:scale-105 active:scale-95 transition-transform duration-200"
+          className="gap-1.5 sm:gap-2 rounded-lg shrink-0 hover:scale-105 active:scale-95 transition-transform duration-200"
         >
           <MessageSquarePlus className="w-4 h-4" />
           <span className="hidden sm:inline">New Chat</span>
@@ -1862,19 +1862,19 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       <div ref={scrollAreaRefCallback} className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         {!hasMessages ? (
-          <div className="flex items-center justify-center min-h-full p-8">
-            <div className="text-center max-w-2xl w-full py-12">
+          <div className="flex items-center justify-center min-h-full p-4 sm:p-8">
+            <div className="text-center max-w-2xl w-full py-6 sm:py-12">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className="mb-8"
+                className="mb-6 sm:mb-8"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20 mb-5 animated-border">
-                  <Sparkles className="w-8 h-8 text-emerald-500" />
+                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20 mb-4 sm:mb-5 animated-border">
+                  <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" />
                 </div>
                 <div className="relative inline-block">
-                  <h3 className="text-lg font-semibold mb-1 relative z-10 gradient-text">
+                  <h3 className="text-base sm:text-lg font-semibold mb-1 relative z-10 gradient-text">
                     How can I help you today?
                   </h3>
                   <div className="absolute inset-0 -z-10 blur-md bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent rounded-lg" />
@@ -1884,7 +1884,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 </p>
               </motion.div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 max-w-lg mx-auto">
                 {SUGGESTIONS.map((suggestion, index) => (
                   <SuggestionCard
                     key={suggestion.id}
@@ -1914,7 +1914,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
             </div>
           </div>
         ) : (
-          <div className={cn('max-w-4xl mx-auto py-4 rounded-lg', FONT_SIZE_CLASS[fontSize], BACKGROUND_THEMES.find((t) => t.id === selectedBackground)?.className)} data-messages-container>
+          <div className={cn('max-w-4xl mx-auto py-3 sm:py-4 px-2 sm:px-0 rounded-lg', FONT_SIZE_CLASS[fontSize], BACKGROUND_THEMES.find((t) => t.id === selectedBackground)?.className)} data-messages-container>
             {/* Pinned Messages collapsible section */}
             {pinnedMessagesInConv.length > 0 && (
               <div className="mb-4">

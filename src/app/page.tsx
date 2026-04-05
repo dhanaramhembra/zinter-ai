@@ -290,7 +290,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-[100dvh] h-screen flex overflow-hidden">
       <ConversationSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
