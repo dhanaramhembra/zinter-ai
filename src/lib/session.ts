@@ -1,4 +1,3 @@
-import { db } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,8 +10,13 @@ export interface SessionData {
 const SESSION_COOKIE = 'chat_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-// In-memory session store
-const sessions = new Map<string, SessionData>();
+// Use globalThis so the session store survives Turbopack HMR
+// Without this, every hot-reload resets the Map and logs everyone out
+const _global = globalThis as unknown as Record<string, Map<string, SessionData>>;
+if (!_global.__chat_sessions) {
+  _global.__chat_sessions = new Map<string, SessionData>();
+}
+const sessions = _global.__chat_sessions;
 
 export async function createSession(user: { id: string; email: string; name: string }): Promise<string> {
   const sessionId = uuidv4();

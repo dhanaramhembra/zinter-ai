@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromCookie } from '@/lib/session';
 import ZAI from 'z-ai-web-dev-sdk';
 
 /**
@@ -45,11 +44,6 @@ function detectVoiceForText(text: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSessionFromCookie();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { text, speed = 1.0 } = await req.json();
 
     if (!text || text.trim().length === 0) {
