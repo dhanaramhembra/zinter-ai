@@ -927,15 +927,13 @@ function ConversationItem({
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100, transition: { duration: 0.2 } }}
-      className="group relative"
+      className="group"
       whileHover={{ y: -1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
-      <button
-        onClick={onClick}
-        onDoubleClick={!isSelectMode ? handleDoubleClick : undefined}
+      <div
         className={cn(
-          'w-full text-left p-3 pr-20 sm:pr-3 rounded-lg text-sm transition-all duration-200',
+          'flex items-center gap-1 rounded-lg text-sm transition-all duration-200',
           'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/8 active:scale-[0.99] hover-lift',
           isPinned && !isActive && 'bg-muted/30',
           isActive
@@ -945,111 +943,111 @@ function ConversationItem({
           isSelectMode && 'cursor-pointer'
         )}
       >
-        <div className="flex items-start gap-3">
-          {/* Select mode checkbox */}
-          {isSelectMode && (
-            <div className="flex items-center justify-center mt-0.5 shrink-0">
-              <div
-                className={cn(
-                  'w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-150',
-                  isSelected
-                    ? 'bg-emerald-500 border-emerald-500'
-                    : 'border-muted-foreground/40 hover:border-emerald-500/60'
-                )}
-              >
-                {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+        {/* Clickable conversation content */}
+        <button
+          onClick={onClick}
+          onDoubleClick={!isSelectMode ? handleDoubleClick : undefined}
+          className="flex-1 text-left p-3 min-w-0"
+        >
+          <div className="flex items-start gap-2.5">
+            {/* Select mode checkbox */}
+            {isSelectMode && (
+              <div className="flex items-center justify-center mt-0.5 shrink-0">
+                <div
+                  className={cn(
+                    'w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-150',
+                    isSelected
+                      ? 'bg-emerald-500 border-emerald-500'
+                      : 'border-muted-foreground/40 hover:border-emerald-500/60'
+                  )}
+                >
+                  {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                </div>
               </div>
+            )}
+            <MessageSquare
+              className={cn(
+                'w-4 h-4 mt-0.5 shrink-0 transition-colors',
+                isActive ? 'text-emerald-500' : 'text-muted-foreground/60'
+              )}
+            />
+            <div className="flex-1 min-w-0">
+              {isEditing ? (
+                <Input
+                  ref={inputRef}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={handleKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  className="h-6 text-sm px-1 py-0 border-emerald-500/50 focus-visible:ring-emerald-500/30"
+                  maxLength={100}
+                />
+              ) : isAutoTiting ? (
+                <Skeleton className="h-4 w-28 rounded" />
+              ) : (
+                <p className="font-medium truncate flex items-center gap-1.5">
+                  {conversation.title}
+                  {isPinned && (
+                    <Pin className="w-3 h-3 text-amber-500 fill-current shrink-0" />
+                  )}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">{previewText}</p>
             </div>
-          )}
-          <MessageSquare
-            className={cn(
-              'w-4 h-4 mt-0.5 shrink-0 transition-colors',
-              isActive ? 'text-emerald-500' : 'text-muted-foreground/60'
-            )}
-          />
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <Input
-                ref={inputRef}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onBlur={handleRenameSubmit}
-                onKeyDown={handleKeyDown}
-                onClick={(e) => e.stopPropagation()}
-                className="h-6 text-sm px-1 py-0 border-emerald-500/50 focus-visible:ring-emerald-500/30"
-                maxLength={100}
-              />
-            ) : isAutoTiting ? (
-              <Skeleton className="h-4 w-28 rounded" />
-            ) : (
-              <p className="font-medium truncate flex items-center gap-1.5">
-                {conversation.title}
-                {isPinned && (
-                  <Pin className="w-3 h-3 text-amber-500 fill-current shrink-0" />
-                )}
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground/70 mt-1 truncate">{previewText}</p>
-            <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-              {formatTime(conversation.updatedAt)}
-            </p>
-            {conversation.messages.length > 0 && (
-              <span className="conv-stats-chip inline-flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-1">
-                {conversation.messages.length} message{conversation.messages.length !== 1 ? 's' : ''}
-              </span>
-            )}
           </div>
-        </div>
-      </button>
+        </button>
 
-      {!isEditing && !isSelectMode && (
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-150">
-          {/* Feature 5: Pin/unpin button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'h-8 w-8 hover:scale-110 transition-all duration-150',
-              isPinned
-                ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
-                : 'hover:bg-accent'
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin();
-            }}
-            title={isPinned ? 'Unpin conversation' : 'Pin conversation'}
-          >
-            <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
-          </Button>
-          {/* Duplicate button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-accent hover:scale-110 transition-all duration-150"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDuplicate();
-            }}
-            title="Duplicate conversation"
-          >
-            <Copy className="w-3.5 h-3.5 text-muted-foreground/70" />
-          </Button>
-          {/* Delete button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-destructive/10 hover:scale-110"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            title="Delete conversation"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
-          </Button>
-        </div>
-      )}
+        {/* Action buttons - always visible on mobile, hover on desktop */}
+        {!isEditing && !isSelectMode && (
+          <div className="flex items-center shrink-0 pr-1.5 gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-150">
+            {/* Pin/unpin button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'h-8 w-8 hover:scale-110 transition-all duration-150',
+                isPinned
+                  ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
+                  : 'hover:bg-accent'
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin();
+              }}
+              title={isPinned ? 'Unpin conversation' : 'Pin conversation'}
+            >
+              <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
+            </Button>
+            {/* Duplicate button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-accent hover:scale-110 transition-all duration-150"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate();
+              }}
+              title="Duplicate conversation"
+            >
+              <Copy className="w-3.5 h-3.5 text-muted-foreground/70" />
+            </Button>
+            {/* Delete button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-destructive/10 hover:scale-110"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title="Delete conversation"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+            </Button>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
