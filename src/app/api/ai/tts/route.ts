@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
 
     // Auto-detect language and pick the right voice
     const voice = detectVoiceForText(truncatedText);
+    console.log(`TTS: voice=${voice}, chars=${truncatedText.length}`);
 
     const zai = await ZAI.create();
 
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
 
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(new Uint8Array(arrayBuffer));
+    console.log(`TTS: generated ${buffer.length} bytes audio`);
 
     return new NextResponse(buffer, {
       status: 200,
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('TTS error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate speech' },
+      { error: 'Failed to generate speech', details: String(error) },
       { status: 500 }
     );
   }

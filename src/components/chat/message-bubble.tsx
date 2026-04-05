@@ -278,15 +278,31 @@ export default function MessageBubble({
 
     try {
       setIsSpeaking(true);
+
+      // AbortController for timeout (30 seconds max)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const res = await fetch('/api/ai/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: message.content }),
+        signal: controller.signal,
       });
 
-      if (!res.ok) throw new Error('TTS failed');
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '');
+        throw new Error(`TTS failed (${res.status}): ${errBody}`);
+      }
 
       const blob = await res.blob();
+
+      if (blob.size === 0) {
+        throw new Error('TTS returned empty audio');
+      }
+
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -297,18 +313,24 @@ export default function MessageBubble({
         audioRef.current = null;
       };
 
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        toast.error('Audio playback failed');
         setIsSpeaking(false);
-        if (audioRef.current?.src) {
-          URL.revokeObjectURL(audioRef.current.src);
-        }
+        URL.revokeObjectURL(url);
         audioRef.current = null;
       };
 
-      audio.play();
+      await audio.play();
     } catch (error) {
       console.error('TTS error:', error);
-      toast.error('Failed to generate speech');
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('Speech generation timed out. Try a shorter message.');
+      } else if (error instanceof DOMException && error.name === 'NotSupportedError') {
+        toast.error('Audio format not supported by your browser');
+      } else {
+        toast.error('Failed to generate speech');
+      }
       setIsSpeaking(false);
     }
   }, [isSpeaking, message.content]);
