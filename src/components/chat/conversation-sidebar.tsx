@@ -935,7 +935,7 @@ function ConversationItem({
         onClick={onClick}
         onDoubleClick={!isSelectMode ? handleDoubleClick : undefined}
         className={cn(
-          'w-full text-left p-3 rounded-lg text-sm transition-all duration-200',
+          'w-full text-left p-3 pr-20 sm:pr-3 rounded-lg text-sm transition-all duration-200',
           'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/8 active:scale-[0.99] hover-lift',
           isPinned && !isActive && 'bg-muted/30',
           isActive
@@ -1003,13 +1003,13 @@ function ConversationItem({
       </button>
 
       {!isEditing && !isSelectMode && (
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-150">
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-150">
           {/* Feature 5: Pin/unpin button */}
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              'w-7 h-7 hover:scale-110 transition-all duration-150',
+              'h-8 w-8 hover:scale-110 transition-all duration-150',
               isPinned
                 ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
                 : 'hover:bg-accent'
@@ -1020,32 +1020,33 @@ function ConversationItem({
             }}
             title={isPinned ? 'Unpin conversation' : 'Pin conversation'}
           >
-            <Pin className={cn('w-3 h-3', isPinned && 'fill-current')} />
+            <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
           </Button>
           {/* Duplicate button */}
           <Button
             variant="ghost"
             size="icon"
-            className="w-7 h-7 hover:bg-accent hover:scale-110 transition-all duration-150"
+            className="h-8 w-8 hover:bg-accent hover:scale-110 transition-all duration-150"
             onClick={(e) => {
               e.stopPropagation();
               onDuplicate();
             }}
             title="Duplicate conversation"
           >
-            <Copy className="w-3 h-3 text-muted-foreground/70" />
+            <Copy className="w-3.5 h-3.5 text-muted-foreground/70" />
           </Button>
           {/* Delete button */}
           <Button
             variant="ghost"
             size="icon"
-            className="w-7 h-7 hover:bg-destructive/10 hover:scale-110"
+            className="h-8 w-8 hover:bg-destructive/10 hover:scale-110"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
+            title="Delete conversation"
           >
-            <Trash2 className="w-3 h-3 text-destructive/70" />
+            <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
           </Button>
         </div>
       )}
