@@ -1565,3 +1565,23 @@ Stage Summary:
 - Profile is accessible via: (1) User card in sidebar footer, (2) Settings gear icon in sidebar footer, (3) UserCircle button in chat headers
 - Uses shadcn/ui Tabs for clean organization (4 tabs: Profile, Look, Chat, About)
 - Lint: zero errors, dev server compiles cleanly
+
+---
+Task ID: fix-delete-button-sidebar
+Agent: main
+Task: Fix delete button not showing on chat conversations in sidebar
+
+Work Log:
+- Read `src/components/chat/conversation-sidebar.tsx` to examine action buttons in ConversationItem
+- Found action buttons (Pin, Copy, Delete) at lines 1001-1048 using `sm:opacity-0 sm:group-hover:opacity-100` visibility
+- User reported all buttons disappeared and requested only delete option
+- Replaced the 3-button group (Pin, Copy, Delete) with a single, always-visible Delete button
+- Delete button uses `text-muted-foreground/60` color, turns `text-destructive` on hover with `hover:bg-destructive/10` background
+- Removed opacity-based hiding — button is now always visible on all screen sizes
+- Removed unused imports (Pin, Copy from the action section — Pin still used elsewhere)
+- Lint passes with zero errors, dev server compiles cleanly
+
+Stage Summary:
+- Each chat conversation in the sidebar now shows a clear, always-visible trash/delete icon button
+- No more opacity-0/hover visibility issues on mobile
+- Pin and Copy buttons removed from individual conversation items (select mode + bulk delete still available for multi-delete)

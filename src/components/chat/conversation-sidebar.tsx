@@ -998,52 +998,20 @@ function ConversationItem({
           </div>
         </button>
 
-        {/* Action buttons - always visible on mobile, hover on desktop */}
+        {/* Delete button - always visible */}
         {!isEditing && !isSelectMode && (
-          <div className="flex items-center shrink-0 pr-1.5 gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-150">
-            {/* Pin/unpin button */}
+          <div className="shrink-0 pr-1.5">
             <Button
               variant="ghost"
               size="icon"
-              className={cn(
-                'h-8 w-8 hover:scale-110 transition-all duration-150',
-                isPinned
-                  ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-500/10'
-                  : 'hover:bg-accent'
-              )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePin();
-              }}
-              title={isPinned ? 'Unpin conversation' : 'Pin conversation'}
-            >
-              <Pin className={cn('w-3.5 h-3.5', isPinned && 'fill-current')} />
-            </Button>
-            {/* Duplicate button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-accent hover:scale-110 transition-all duration-150"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDuplicate();
-              }}
-              title="Duplicate conversation"
-            >
-              <Copy className="w-3.5 h-3.5 text-muted-foreground/70" />
-            </Button>
-            {/* Delete button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:bg-destructive/10 hover:scale-110"
+              className="h-8 w-8 text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 hover:scale-110 active:scale-95 transition-all duration-150"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
               title="Delete conversation"
             >
-              <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+              <Trash2 className="w-3.5 h-3.5" />
             </Button>
           </div>
         )}
