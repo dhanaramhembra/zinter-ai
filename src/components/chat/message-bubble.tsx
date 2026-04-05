@@ -224,7 +224,9 @@ export default function MessageBubble({
   onDismissSuggestions,
   isPinned = false,
   onTogglePin,
+  onToggleReaction,
 }: MessageBubbleProps) {
+  const reactions = message.reactions || [];
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -394,8 +396,6 @@ export default function MessageBubble({
     },
     [message.id, onToggleReaction, reactions]
   );
-
-  const reactions = message.reactions || [];
 
   const handleSaveEdit = useCallback(() => {
     if (!editContent.trim() || editContent.trim() === message.content) {

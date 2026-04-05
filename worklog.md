@@ -4,6 +4,41 @@
 NexusAI is a comprehensive AI chat platform built with Next.js 16, featuring real-time chat, AI-powered conversations, image generation, voice input/output, and a beautiful responsive UI with dark/light mode support.
 
 ---
+## Bug Fix Round - JSX Parsing, Missing Chat Input, Blinking Cards, Runtime Error
+
+### Current Project Status
+- **Phase**: v12 - Bug fixes for build errors, layout, and runtime issues
+- **Status**: Stable, dev server compiles cleanly, GET / 200
+
+### Bug Fixes (5)
+
+1. **JSX comment inside ternary branch (chat-area.tsx)**: Three `{/* ... */}` comments placed after ternary `?` operators (lines 1858, 1899, 1912) caused "Expected '</', got 'className'" parsing error. Fix: Removed comments from ternary branches.
+
+2. **Unclosed JSX comments (2 files)**:
+   - `settings-sheet.tsx:714` — `{/* Gradient divider */` missing closing `}` — Fixed to `{/* Gradient divider */}`
+   - `chat-area.tsx:1911` — `{/* Pinned Messages collapsible section */` missing closing `}` — Fixed to `{/* Pinned Messages collapsible section */}`
+
+3. **Chat input not visible (chat-area.tsx)**: The `ScrollArea` in the "no active conversation" view lacked `min-h-0`, causing the flex container to expand beyond viewport and push the `ChatInput` off-screen. Fix: Added `min-h-0` to the parent flex column and the `ScrollArea`. Also added `min-h-0` to the conversation view container.
+
+4. **Blinking suggestion cards (chat-area.tsx)**: `SuggestionCard` was defined as a `const` inside the `ChatArea` component body, causing it to be recreated on every render. This made Framer Motion replay entrance animations repeatedly. Fix: Moved `SuggestionCard` to module scope (outside the component).
+
+5. **ReferenceError: onToggleReaction not defined (message-bubble.tsx)**: Three issues:
+   - `onToggleReaction` prop was defined in `MessageBubbleProps` interface but NOT destructured in the function parameters
+   - `reactions` variable was used inside `handleReactionClick` useCallback (line 377) but declared AFTER the callback (line 398), causing a Temporal Dead Zone error
+   - Fix: Added `onToggleReaction` to destructured props, moved `const reactions = message.reactions || []` before the `useCallback`
+
+### Files Modified
+- `src/components/chat/chat-area.tsx` — Fixed JSX comments, added min-h-0, moved SuggestionCard
+- `src/components/settings/settings-sheet.tsx` — Fixed unclosed JSX comment
+- `src/components/chat/message-bubble.tsx` — Fixed onToggleReaction destructuring and reactions TDZ
+
+### Verification
+- ✅ Build: GET / 200, no compilation errors
+- ✅ Chat input visible on welcome screen (verified via agent-browser + VLM)
+- ✅ Suggestion cards static, no blinking
+- ✅ No runtime errors on conversation view
+
+---
 ## Cron Review Round 9 - Overall Assessment
 
 ### Current Project Status

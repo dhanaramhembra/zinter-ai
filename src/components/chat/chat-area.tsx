@@ -142,6 +142,49 @@ const SUGGESTIONS = [
   },
 ];
 
+function SuggestionCard({
+  suggestion,
+  index,
+  onClick,
+}: {
+  suggestion: (typeof SUGGESTIONS)[number];
+  index: number;
+  onClick: () => void;
+}) {
+  const IconComp = suggestion.icon;
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.1 + index * 0.08 }}
+      onClick={onClick}
+      className={cn(
+        'flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
+        'hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
+        'transition-all duration-200 text-left group cursor-pointer hover-glow-emerald',
+        'active:scale-[0.98]'
+      )}
+    >
+      <div
+        className={cn(
+          'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200',
+          suggestion.bgColor,
+          'group-hover:scale-110 group-hover:shadow-sm',
+          'relative overflow-hidden shimmer-overlay'
+        )}
+      >
+        <IconComp className={cn('w-4.5 h-4.5 relative z-10', suggestion.color)} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-medium leading-snug">{suggestion.title}</p>
+        <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
+          {suggestion.description}
+        </p>
+      </div>
+    </motion.button>
+  );
+}
+
 interface ChatAreaProps {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
@@ -1415,54 +1458,10 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
     </motion.div>
   );
 
-  // Suggestion card component with enhanced hover effects
-  const SuggestionCard = ({
-    suggestion,
-    index,
-    onClick,
-  }: {
-    suggestion: (typeof SUGGESTIONS)[number];
-    index: number;
-    onClick: () => void;
-  }) => {
-    const IconComp = suggestion.icon;
-    return (
-      <motion.button
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 + index * 0.08 }}
-        onClick={onClick}
-        className={cn(
-          'flex items-start gap-3 p-4 rounded-xl border border-border/60 bg-card/50',
-          'hover:bg-emerald-500/5 hover:border-emerald-500/30 hover:shadow-md hover:shadow-emerald-500/5',
-          'transition-all duration-200 text-left group cursor-pointer hover-glow-emerald',
-          'active:scale-[0.98]'
-        )}
-      >
-        <div
-          className={cn(
-            'flex items-center justify-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200',
-            suggestion.bgColor,
-            'group-hover:scale-110 group-hover:shadow-sm',
-            'relative overflow-hidden shimmer-overlay'
-          )}
-        >
-          <IconComp className={cn('w-4.5 h-4.5 relative z-10', suggestion.color)} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium leading-snug">{suggestion.title}</p>
-          <p className="text-xs text-muted-foreground/70 mt-0.5 leading-relaxed">
-            {suggestion.description}
-          </p>
-        </div>
-      </motion.button>
-    );
-  };
-
   // Empty state when no conversation is selected
   if (!activeConversation) {
     return (
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* Mobile header */}
         <div className="flex items-center gap-3 p-4 border-b border-border lg:hidden">
           <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
@@ -1471,7 +1470,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <h1 className="font-semibold">NexusAI</h1>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="flex items-center justify-center p-8 min-h-full dot-grid">
             <div className="text-center max-w-2xl w-full py-8">
               {/* Logo with dramatic entrance */}
@@ -1579,7 +1578,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 min-h-0">
       {/* Header with glassmorphism and gradient accent line */}
       <div className="relative">
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/70 via-teal-400/50 to-transparent" />
