@@ -1,48 +1,29 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+import { createClient } from '@libsql/client'
 
 let _db: PrismaClient | null = null
 
-function createPrismaClient(): PrismaClient {
-  const dbUrl = process.env.DATABASE_URL
-  const authToken = process.env.DATABASE_AUTH_TOKEN || undefined
+function createDb(): PrismaClient {
+  const url = process.env.DATABASE_URL
+  const token = process.env.DATABASE_AUTH_TOKEN
 
-  if (!dbUrl) {
-    console.error('⚠️ DATABASE_URL is not set!')
-    return new PrismaClient()
+  if (url && url.startsWith('libsql://')) {
+    const libsql = createClient({ url, authToken: token })
+    const adapter = new PrismaLibSql(libsql)
+    return new PrismaClient({ adapter })
   }
 
-  try {
-    if (!dbUrl.startsWith('file:')) {
-      // Turso / cloud database — use libSQL adapter with factory config
-      const adapter = new PrismaLibSql({
-        url: dbUrl,
-        authToken,
-      })
-      // Do NOT pass datasources when using adapter!
-      return new PrismaClient({ adapter })
-    }
-
-    // Local file: database — use default Prisma
-    return new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['query'] : [],
-    })
-  } catch (error) {
-    console.error('Failed to create DB client:', error)
-    return new PrismaClient()
-  }
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+  })
 }
 
-export const db = new Proxy({} as PrismaClient, {
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    if (!_db) {
-      _db = globalForPrisma.prisma ?? createPrismaClient()
-      if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = _db
-    }
-    return (_db as any)[prop]
-  }
+    if (!_db) { _db = createDb() }
+    const value = Reflect.get(_db, prop) as unknown
+    if (typeof value === 'function') return value.bind(_db)
+    return value
+  },
 })
