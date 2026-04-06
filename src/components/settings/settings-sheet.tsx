@@ -321,7 +321,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-full sm:max-w-md p-0">
           {/* Gradient header background */}
-          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-emerald-500/8 via-teal-500/5 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-purple-500/8 via-purple-500/5 to-transparent pointer-events-none" />
           <SheetHeader className="p-6 pb-0 relative">
             <div className="flex items-center gap-3">
               <ZinterLogo variant="full" size="sm" />
@@ -340,10 +340,10 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               <SettingsSection icon={User} title="Profile" description="Update your personal information">
                 <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-muted/30">
                   <div className="relative">
-                    <div className="w-14 h-14 rounded-full text-white flex items-center justify-center text-xl font-bold shadow-md transition-all duration-300 bg-gradient-to-br from-emerald-500 to-teal-600">
+                    <div className="w-14 h-14 rounded-full text-white flex items-center justify-center text-xl font-bold shadow-md transition-all duration-300 bg-gradient-to-br from-purple-500 to-purple-600">
                       {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center">
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-500 border-2 border-background flex items-center justify-center">
                       <Check className="w-2.5 h-2.5 text-white" />
                     </div>
                   </div>
@@ -393,7 +393,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                   <Button
                     onClick={handleUpdateProfile}
                     disabled={isUpdatingProfile || name.trim() === user?.name}
-                    className="w-full h-9 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 transition-all duration-200"
+                    className="w-full h-9 bg-gradient-to-r from-purple-500 to-purple-500 hover:from-purple-600 hover:to-purple-600 text-white shadow-sm shadow-purple-500/20 transition-all duration-200"
                   >
                     {isUpdatingProfile ? (
                       <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
@@ -410,7 +410,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               </SettingsSection>
 
               {/* Gradient divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Appearance Section */}
               <SettingsSection icon={Palette} title="Appearance" description="Customize how Zinter AI looks">
@@ -430,7 +430,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                         className={cn(
                           'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all duration-200',
                           theme === value
-                            ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                            ? 'border-purple-500 bg-purple-500/5 text-purple-600 dark:text-purple-400'
                             : 'border-border hover:border-border/80 hover:bg-muted/50 text-muted-foreground'
                         )}
                         suppressHydrationWarning
@@ -439,7 +439,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                           className={cn(
                             'w-4 h-4 transition-colors',
                             theme === value
-                              ? 'text-emerald-500'
+                              ? 'text-purple-500'
                               : 'text-muted-foreground/70'
                           )}
                         />
@@ -451,7 +451,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               </SettingsSection>
 
               {/* Gradient divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Chat Section */}
               <SettingsSection icon={MessageSquare} title="Chat" description="Chat preferences and data management">
@@ -468,7 +468,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                           className={cn(
                             'flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all duration-200',
                             fontSize === size
-                              ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
+                              ? 'border-purple-500 bg-purple-500/5 text-purple-600 dark:text-purple-400'
                               : 'border-border hover:border-border/80 hover:bg-muted/50 text-muted-foreground'
                           )}
                         >
@@ -476,7 +476,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                             'transition-colors',
                             FONT_SIZE_MAP[size].iconSize,
                             fontSize === size
-                              ? 'text-emerald-500'
+                              ? 'text-purple-500'
                               : 'text-muted-foreground/70'
                           )} />
                           <span className="text-xs font-medium">{FONT_SIZE_MAP[size].label}</span>
@@ -540,7 +540,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               </SettingsSection>
 
               {/* Gradient divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Custom Persona Section */}
               <SettingsSection icon={Brain} title="Custom Persona" description="Override the AI's system prompt with your own">
@@ -605,14 +605,14 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               </SettingsSection>
 
               {/* Gradient divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Data Management Section */}
               <SettingsSection icon={FileDown} title="Data Management" description="Export and manage your chat data">
                 <div className="space-y-3">
                   <Button
                     variant="outline"
-                    className="w-full h-9 gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200"
+                    className="w-full h-9 gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/30 transition-all duration-200"
                     onClick={handleExportBookmarks}
                   >
                     <FileDown className="w-3.5 h-3.5" />
@@ -625,7 +625,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               </SettingsSection>
 
               {/* Gradient divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Keyboard Shortcuts Section */}
               <SettingsSection icon={Keyboard} title="Keyboard Shortcuts" description="Quick actions to speed up your workflow">
@@ -636,7 +636,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                         <tr
                           key={index}
                           className={cn(
-                            'border-b border-border/40 last:border-b-0 transition-colors duration-150 hover:bg-emerald-500/5',
+                            'border-b border-border/40 last:border-b-0 transition-colors duration-150 hover:bg-purple-500/5',
                             index % 2 === 0 ? 'bg-muted/30' : ''
                           )}
                         >
@@ -665,7 +665,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               </SettingsSection>
 
               {/* Gradient divider */}
-              <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+              <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* About Section */}
               <SettingsSection icon={Info} title="About" description="Application information">
@@ -690,33 +690,33 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                     icon={MessageCircle}
                     label="Conversations"
                     value={stats.totalConversations.toString()}
-                    accent="emerald"
+                    accent="purple"
                   />
                   <StatCard
                     icon={MessageSquare}
                     label="Total Messages"
                     value={stats.totalMessages.toString()}
-                    accent="teal"
+                    accent="purple"
                   />
                   <StatCard
                     icon={Calendar}
                     label="Most Active Day"
                     value={stats.mostActiveDay}
                     small
-                    accent="emerald"
+                    accent="purple"
                   />
                   <StatCard
                     icon={TrendingUp}
                     label="Avg Messages / Conv"
                     value={stats.avgMessagesPerConv}
                     small
-                    accent="teal"
+                    accent="purple"
                   />
                   <StatCard
                     icon={BookOpen}
                     label="Total Words Written"
                     value={stats.totalWords.toLocaleString()}
-                    accent="emerald"
+                    accent="purple"
                     className="col-span-2"
                   />
                 </div>
@@ -776,8 +776,8 @@ function SettingsSection({
   return (
     <div className="animate-slide-up">
       <div className="flex items-center gap-2.5 mb-3">
-        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/10 transition-all duration-200">
-          <Icon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/10 border border-purple-500/10 transition-all duration-200">
+          <Icon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
         </div>
         <div>
           <h3 className="text-sm font-semibold">{title}</h3>
@@ -793,14 +793,14 @@ function StatCard({
   icon: Icon,
   label,
   value,
-  accent = 'emerald',
+  accent = 'purple',
   small,
   className,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  accent?: 'emerald' | 'teal';
+  accent?: 'purple' | 'purple';
   small?: boolean;
   className?: string;
 }) {
@@ -812,11 +812,11 @@ function StatCard({
       <div className="flex items-center gap-2 mb-1.5">
         <div className={cn(
           'flex items-center justify-center w-6 h-6 rounded-md',
-          accent === 'emerald' ? 'bg-emerald-500/10' : 'bg-teal-500/10'
+          accent === 'purple' ? 'bg-purple-500/10' : 'bg-purple-500/10'
         )}>
           <Icon className={cn(
             'w-3.5 h-3.5',
-            accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'
+            accent === 'purple' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600 dark:text-purple-400'
           )} />
         </div>
         <p className="text-[11px] text-muted-foreground">{label}</p>
@@ -824,7 +824,7 @@ function StatCard({
       <p className={cn(
         'font-bold',
         small ? 'text-sm' : 'text-lg',
-        accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' : 'text-teal-600 dark:text-teal-400'
+        accent === 'purple' ? 'text-purple-600 dark:text-purple-400' : 'text-purple-600 dark:text-purple-400'
       )}>
         {value}
       </p>

@@ -386,12 +386,12 @@ export default function ChatInput({
             className="absolute inset-0 z-50 flex items-center justify-center rounded-none"
           >
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-            <div className="relative flex flex-col items-center gap-3 p-8 border-2 border-dashed border-emerald-500/60 rounded-2xl bg-emerald-500/5 max-w-xs mx-4 drag-animated-border">
-              <div className="w-14 h-14 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Upload className="w-7 h-7 text-emerald-500" />
+            <div className="relative flex flex-col items-center gap-3 p-8 border-2 border-dashed border-purple-500/60 rounded-2xl bg-purple-500/5 max-w-xs mx-4 drag-animated-border">
+              <div className="w-14 h-14 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                <Upload className="w-7 h-7 text-purple-500" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Drop image here</p>
+                <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Drop image here</p>
                 <p className="text-xs text-muted-foreground mt-1">Image will be attached to your message</p>
               </div>
             </div>
@@ -442,8 +442,8 @@ export default function ChatInput({
             transition={{ duration: 0.25, ease: 'easeOut' }}
             className="mb-2"
           >
-            <div className="relative flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/8 to-primary/5 text-emerald-700 dark:text-emerald-300 text-sm border border-emerald-500/20 overflow-hidden shadow-sm">
-              <div className="absolute inset-0 animate-progress-sweep bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent" style={{ width: '50%' }} />
+            <div className="relative flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/10 via-purple-500/8 to-primary/5 text-purple-700 dark:text-purple-300 text-sm border border-purple-500/20 overflow-hidden shadow-sm">
+              <div className="absolute inset-0 animate-progress-sweep bg-gradient-to-r from-transparent via-purple-500/5 to-transparent" style={{ width: '50%' }} />
               <ImageIcon className="w-4 h-4" />
               <span className="font-medium">Image Generation Mode</span>
               <span className="text-xs opacity-70">
@@ -499,7 +499,7 @@ export default function ChatInput({
           {/* Glow effect behind input on focus */}
           <div className={cn(
             'absolute -inset-0.5 rounded-2xl opacity-0 transition-opacity duration-300 pointer-events-none',
-            'bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 blur-sm',
+            'bg-gradient-to-r from-purple-500/15 via-purple-500/10 to-purple-500/15 blur-sm',
           )} style={{ opacity: (input || true) ? undefined : 0 }} />
           <Textarea
             ref={textareaRef}
@@ -514,9 +514,9 @@ export default function ChatInput({
                   : 'Type a message... (Shift+Enter for new line)'
             }
             className={cn(
-              'resize-none min-h-[44px] max-h-[200px] pr-12 rounded-xl shadow-sm input-glow relative focus-ring-emerald',
+              'resize-none min-h-[44px] max-h-[200px] pr-12 rounded-xl shadow-sm input-glow relative focus-ring-purple',
               'transition-all duration-300',
-              imageMode && 'border-emerald-500/40 focus-visible:ring-emerald-500/20'
+              imageMode && 'border-purple-500/40 focus-visible:ring-purple-500/20'
             )}
             disabled={disabled || isGenerating}
             rows={1}
@@ -536,7 +536,7 @@ export default function ChatInput({
                     className={cn(
                       'rounded-xl h-10 w-10 shrink-0 transition-all duration-200',
                       'hover:scale-105 active:scale-95 hover:shadow-sm',
-                      templatesOpen && 'bg-primary text-primary-foreground shadow-md shadow-emerald-500/20'
+                      templatesOpen && 'bg-primary text-primary-foreground shadow-md shadow-purple-500/20'
                     )}
                     onClick={() => setTemplatesOpen(!templatesOpen)}
                     disabled={disabled || isGenerating}
@@ -556,7 +556,7 @@ export default function ChatInput({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 bottom-full mb-1.5 w-[calc(100vw-2rem)] max-w-[340px] rounded-xl border border-border/60 bg-popover p-3 shadow-lg shadow-emerald-500/5 z-50"
+                  className="absolute right-0 bottom-full mb-1.5 w-[calc(100vw-2rem)] max-w-[340px] rounded-xl border border-border/60 bg-popover p-3 shadow-lg shadow-purple-500/5 z-50"
                 >
                   <p className="text-xs font-semibold text-muted-foreground px-1 pb-2">
                     Prompt Templates
@@ -603,7 +603,7 @@ export default function ChatInput({
                   className={cn(
                     'rounded-xl h-10 w-10 shrink-0 transition-all duration-200',
                     'hover:scale-105 active:scale-95 hover:shadow-sm',
-                    imageMode && 'bg-primary text-primary-foreground shadow-md shadow-emerald-500/20'
+                    imageMode && 'bg-primary text-primary-foreground shadow-md shadow-purple-500/20'
                   )}
                   onClick={() => setImageMode(!imageMode)}
                   disabled={disabled || isGenerating}
@@ -651,7 +651,7 @@ export default function ChatInput({
                     'rounded-xl h-10 w-10 shrink-0 transition-all duration-300',
                     'hover:scale-105 active:scale-95',
                     canSend
-                      ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 hover:brightness-110'
+                      ? 'bg-gradient-to-br from-purple-500 via-purple-600 to-purple-500 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 hover:brightness-110'
                       : ''
                   )}
                   onClick={handleSend}

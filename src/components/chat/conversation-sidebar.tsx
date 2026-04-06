@@ -393,11 +393,11 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
 
         {/* Animated gradient separator (right edge) */}
         <div className="absolute top-0 right-0 bottom-0 w-px pointer-events-none z-10 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/20 to-transparent animate-pulse" />
         </div>
 
         {/* Header with gradient */}
-        <div className="p-3 sm:p-4 border-b border-border bg-gradient-to-br from-emerald-600/8 via-transparent to-teal-600/8 relative overflow-hidden">
+        <div className="p-3 sm:p-4 border-b border-border bg-gradient-to-br from-purple-600/8 via-transparent to-purple-600/8 relative overflow-hidden">
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '16px 16px' }} />
           <div className="relative">
@@ -418,8 +418,8 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
 
           {/* Search with animated underline effect */}
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 group-focus-within:text-emerald-500 transition-all duration-300 group-focus-within:scale-110" />
-            <div className="absolute bottom-0 left-3 right-3 h-[2px] bg-gradient-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/0 group-focus-within:from-emerald-500/50 group-focus-within:via-emerald-500/80 group-focus-within:to-emerald-500/50 rounded-full transition-all duration-300" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 group-focus-within:text-purple-500 transition-all duration-300 group-focus-within:scale-110" />
+            <div className="absolute bottom-0 left-3 right-3 h-[2px] bg-gradient-to-r from-purple-500/0 via-purple-500/0 to-purple-500/0 group-focus-within:from-purple-500/50 group-focus-within:via-purple-500/80 group-focus-within:to-purple-500/50 rounded-full transition-all duration-300" />
             <Input
               placeholder="Search conversations..."
               className="pl-9 h-9 text-sm bg-muted/40 border-transparent focus-visible:border-transparent focus-visible:bg-background focus-visible:shadow-none transition-all duration-300 placeholder:text-muted-foreground/50"
@@ -436,7 +436,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               className={cn(
                 'w-full mt-2 gap-2 rounded-lg h-9 text-xs font-medium transition-all duration-200',
                 isSelectMode
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 hover:bg-purple-500/20'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               )}
               onClick={() => {
@@ -447,7 +447,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                 }
               }}
             >
-              <CheckSquare className={cn('w-3.5 h-3.5', isSelectMode && 'text-emerald-500')} />
+              <CheckSquare className={cn('w-3.5 h-3.5', isSelectMode && 'text-purple-500')} />
               {isSelectMode ? 'Exit Select Mode' : 'Select Multiple'}
             </Button>
           )}
@@ -458,7 +458,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         <div className="px-3 pt-2 sm:pt-3 pb-1">
           <Button
             onClick={createNewChat}
-            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm shadow-emerald-500/20 hover:shadow-md hover:shadow-emerald-500/30 active:scale-[0.98] transition-all duration-200 h-9 sm:h-10 relative overflow-hidden group hover-lift-sm"
+            className="w-full justify-start gap-2.5 rounded-lg bg-gradient-to-r from-purple-500 to-purple-500 hover:from-purple-600 hover:to-purple-600 text-white shadow-sm shadow-purple-500/20 hover:shadow-md hover:shadow-purple-500/30 active:scale-[0.98] transition-all duration-200 h-9 sm:h-10 relative overflow-hidden group hover-lift-sm"
           >
             <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shimmer" />
             <Plus className="w-4 h-4 relative z-10" />
@@ -479,9 +479,9 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
                   className="text-center py-16 px-4"
                 >
                   <div className="relative w-16 h-16 mx-auto mb-4">
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-200 to-teal-200 dark:from-emerald-800/40 dark:to-teal-800/40 blur-sm" />
-                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center shadow-inner">
-                      <MessageSquare className="w-7 h-7 text-emerald-500/60 animate-float" />
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-200 to-purple-200 dark:from-purple-800/40 dark:to-purple-800/40 blur-sm" />
+                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-100 dark:from-purple-900/30 dark:to-purple-900/30 flex items-center justify-center shadow-inner">
+                      <MessageSquare className="w-7 h-7 text-purple-500/60 animate-float" />
                     </div>
                   </div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">
@@ -591,18 +591,18 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               className="absolute bottom-0 left-0 right-0 z-20 p-3"
             >
-              <div className="rounded-xl border border-emerald-500/30 bg-background/95 backdrop-blur-xl shadow-lg shadow-emerald-500/10 p-3 flex items-center gap-2">
+              <div className="rounded-xl border border-purple-500/30 bg-background/95 backdrop-blur-xl shadow-lg shadow-purple-500/10 p-3 flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
                   onClick={handleSelectAll}
                 >
-                  <CheckSquare className={cn('w-3.5 h-3.5', selectedIds.size === filteredConversations.length && 'text-emerald-500')} />
+                  <CheckSquare className={cn('w-3.5 h-3.5', selectedIds.size === filteredConversations.length && 'text-purple-500')} />
                   {selectedIds.size === filteredConversations.length ? 'Deselect All' : 'Select All'}
                 </Button>
                 <div className="flex-1 text-center">
-                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
                     {selectedIds.size} selected
                   </span>
                 </div>
@@ -639,14 +639,14 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             >
               <div className={cn('relative', online ? 'status-online' : 'status-offline')}>
                 <div className={cn(
-                  'w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-sm bg-gradient-to-br from-emerald-500 to-teal-600'
+                  'w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-sm bg-gradient-to-br from-purple-500 to-purple-600'
                 )}>
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 {/* Online/offline status dot */}
                 <div className={cn(
                   'absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background transition-colors duration-300',
-                  online ? 'bg-emerald-500' : 'bg-amber-500'
+                  online ? 'bg-purple-500' : 'bg-amber-500'
                 )} />
                 {/* Pulsing ring */}
                 <div className="absolute -inset-0.5 rounded-full animate-pulse-ring" />
@@ -773,7 +773,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                 <BarChart3 className="w-4 h-4 text-white" />
               </div>
               Conversation Statistics
@@ -782,20 +782,20 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           </DialogHeader>
           {statsLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
             </div>
           ) : stats ? (
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 p-4 text-center">
-                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-purple-500/5 to-purple-500/5 p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <p className="text-2xl font-bold text-foreground">{stats.totalConversations}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Conversations</p>
               </div>
-              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 p-4 text-center">
-                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-teal-500/10 flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              <div className="rounded-xl border border-border/60 bg-gradient-to-br from-purple-500/5 to-cyan-500/5 p-4 text-center">
+                <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <p className="text-2xl font-bold text-foreground">{stats.totalMessages}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Messages</p>
@@ -922,12 +922,12 @@ function ConversationItem({
       <div
         className={cn(
           'flex items-center gap-1 rounded-lg text-sm transition-all duration-200',
-          'hover:bg-accent/80 hover:shadow-md hover:shadow-emerald-500/8 active:scale-[0.99] hover-lift',
+          'hover:bg-accent/80 hover:shadow-md hover:shadow-purple-500/8 active:scale-[0.99] hover-lift',
           isPinned && !isActive && 'bg-muted/30',
           isActive
-            ? 'bg-accent text-accent-foreground border-l-[3px] border-l-emerald-500 shadow-sm shadow-emerald-500/10'
+            ? 'bg-accent text-accent-foreground border-l-[3px] border-l-purple-500 shadow-sm shadow-purple-500/10'
             : 'border-l-[3px] border-l-transparent',
-          isSelectMode && isSelected && 'bg-emerald-500/10 border-l-emerald-500',
+          isSelectMode && isSelected && 'bg-purple-500/10 border-l-purple-500',
           isSelectMode && 'cursor-pointer'
         )}
       >
@@ -945,8 +945,8 @@ function ConversationItem({
                   className={cn(
                     'w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-150',
                     isSelected
-                      ? 'bg-emerald-500 border-emerald-500'
-                      : 'border-muted-foreground/40 hover:border-emerald-500/60'
+                      ? 'bg-purple-500 border-purple-500'
+                      : 'border-muted-foreground/40 hover:border-purple-500/60'
                   )}
                 >
                   {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
@@ -956,7 +956,7 @@ function ConversationItem({
             <MessageSquare
               className={cn(
                 'w-4 h-4 mt-0.5 shrink-0 transition-colors',
-                isActive ? 'text-emerald-500' : 'text-muted-foreground/60'
+                isActive ? 'text-purple-500' : 'text-muted-foreground/60'
               )}
             />
             <div className="flex-1 min-w-0">
@@ -968,7 +968,7 @@ function ConversationItem({
                   onBlur={handleRenameSubmit}
                   onKeyDown={handleKeyDown}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-6 text-sm px-1 py-0 border-emerald-500/50 focus-visible:ring-emerald-500/30"
+                  className="h-6 text-sm px-1 py-0 border-purple-500/50 focus-visible:ring-purple-500/30"
                   maxLength={100}
                 />
               ) : isAutoTiting ? (

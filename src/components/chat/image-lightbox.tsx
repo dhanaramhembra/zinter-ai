@@ -101,7 +101,7 @@ export default function ImageLightbox({ imageUrl, imagePrompt, isOpen, onClose }
             {/* Image info and actions */}
             <div className="flex items-center gap-3">
               {/* AI badge */}
-              <div className="badge-emerald">
+              <div className="badge-purple">
                 <Sparkles className="w-3 h-3" />
                 <span>AI Generated</span>
               </div>

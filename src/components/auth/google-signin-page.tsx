@@ -12,8 +12,8 @@ function getInitials(email: string) {
 
 function getAvatarColor(email: string) {
   const colors = [
-    'bg-blue-500', 'bg-red-500', 'bg-emerald-500', 'bg-amber-500',
-    'bg-purple-500', 'bg-pink-500', 'bg-teal-500', 'bg-orange-500',
+    'bg-blue-500', 'bg-red-500', 'bg-purple-500', 'bg-amber-500',
+    'bg-purple-500', 'bg-pink-500', 'bg-purple-500', 'bg-orange-500',
   ];
   let hash = 0;
   for (let i = 0; i < email.length; i++) {
@@ -566,8 +566,8 @@ function GoogleSignInContent() {
                   transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
                   className="mb-6"
                 >
-                  <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                  <div className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-10 h-10 text-purple-500" />
                   </div>
                 </motion.div>
                 <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -577,7 +577,7 @@ function GoogleSignInContent() {
                   Redirecting you to the app...
                 </p>
                 <div className="mt-6 flex justify-center">
-                  <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                 </div>
               </motion.div>
             )}

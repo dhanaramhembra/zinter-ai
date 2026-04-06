@@ -269,7 +269,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
 
   const shortenId = (id: string) => `${id.slice(0, 4)}...${id.slice(-4)}`;
 
-  const avatarGradient = 'bg-gradient-to-br from-emerald-500 to-teal-600';
+  const avatarGradient = 'bg-gradient-to-br from-purple-500 to-purple-600';
 
   const hasConversations = conversations.length > 0;
 
@@ -278,10 +278,10 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-full sm:max-w-md p-0">
           {/* Gradient header background */}
-          <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent pointer-events-none" />
           <SheetHeader className="p-5 pb-0 relative">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20">
                 <UserCircle className="w-5 h-5" />
               </div>
               <div>
@@ -305,7 +305,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                   <div className={cn('w-14 h-14 rounded-full text-white flex items-center justify-center text-xl font-bold shadow-lg', avatarGradient)}>
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-[2.5px] border-background" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-purple-500 border-[2.5px] border-background" />
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
@@ -363,12 +363,12 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                 <SectionWrapper icon={BarChart3} title="Your Stats" description="Activity at a glance" delay={0.05}>
                   {statsLoading ? (
                     <div className="flex items-center justify-center py-6">
-                      <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 gap-2.5">
-                      <MiniStatCard icon={MessageSquare} label="Chats" value={localStats.totalConversations.toString()} color="emerald" />
-                      <MiniStatCard icon={Hash} label="Messages" value={localStats.totalMessages.toString()} color="teal" />
+                      <MiniStatCard icon={MessageSquare} label="Chats" value={localStats.totalConversations.toString()} color="purple" />
+                      <MiniStatCard icon={Hash} label="Messages" value={localStats.totalMessages.toString()} color="purple" />
                       <MiniStatCard icon={Calendar} label="Joined" value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'} small color="amber" />
                     </div>
                   )}
@@ -390,7 +390,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                     />
                     <Button
                       size="icon"
-                      className="h-9 w-9 shrink-0 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-sm"
+                      className="h-9 w-9 shrink-0 bg-gradient-to-r from-purple-500 to-purple-500 hover:from-purple-600 hover:to-purple-600 text-white shadow-sm"
                       onClick={handleSaveName}
                       disabled={nameSaving || editName.trim() === user?.name}
                       title="Save name"
@@ -455,12 +455,12 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                         className={cn(
                           'flex flex-col items-center gap-1.5 p-3.5 rounded-xl border-2 transition-all duration-200',
                           theme === value
-                            ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10'
+                            ? 'border-purple-500 bg-purple-500/5 text-purple-600 dark:text-purple-400 shadow-sm shadow-purple-500/10'
                             : 'border-border hover:border-border/80 hover:bg-muted/50 text-muted-foreground'
                         )}
                         suppressHydrationWarning
                       >
-                        <Icon className={cn('w-5 h-5 transition-colors', theme === value ? 'text-emerald-500' : 'text-muted-foreground/70')} />
+                        <Icon className={cn('w-5 h-5 transition-colors', theme === value ? 'text-purple-500' : 'text-muted-foreground/70')} />
                         <span className="text-xs font-semibold">{label}</span>
                         <span className="text-[10px] text-muted-foreground/60">{desc}</span>
                       </button>
@@ -480,11 +480,11 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                         className={cn(
                           'flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200',
                           fontSize === size
-                            ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10'
+                            ? 'border-purple-500 bg-purple-500/5 text-purple-600 dark:text-purple-400 shadow-sm shadow-purple-500/10'
                             : 'border-border hover:border-border/80 hover:bg-muted/50 text-muted-foreground'
                         )}
                       >
-                        <Type className={cn('transition-colors', FONT_SIZE_MAP[size].iconSize, fontSize === size ? 'text-emerald-500' : 'text-muted-foreground/70')} />
+                        <Type className={cn('transition-colors', FONT_SIZE_MAP[size].iconSize, fontSize === size ? 'text-purple-500' : 'text-muted-foreground/70')} />
                         <span className="text-xs font-semibold">{FONT_SIZE_MAP[size].label}</span>
                       </button>
                     ))}
@@ -570,7 +570,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                   <div className="space-y-3">
                     <Button
                       variant="outline"
-                      className="w-full h-9 gap-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-200"
+                      className="w-full h-9 gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/30 transition-all duration-200"
                       onClick={handleExportBookmarks}
                     >
                       <FileDown className="w-3.5 h-3.5" />
@@ -590,7 +590,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                         {KEYBOARD_SHORTCUTS.map((shortcut, index) => (
                           <tr
                             key={index}
-                            className={cn('border-b border-border/40 last:border-b-0 transition-colors duration-150 hover:bg-emerald-500/5', index % 2 === 0 && 'bg-muted/30')}
+                            className={cn('border-b border-border/40 last:border-b-0 transition-colors duration-150 hover:bg-purple-500/5', index % 2 === 0 && 'bg-muted/30')}
                           >
                             <td className="px-3 py-2.5">
                               <div className="flex items-center gap-1">
@@ -641,7 +641,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
               <TabsContent value="about" className="m-0 p-5 space-y-5">
                 {/* About the App */}
                 <SectionWrapper icon={Sparkles} title="Zinter AI" description="Your AI-powered assistant" delay={0.05}>
-                  <div className="rounded-xl border border-border/60 p-5 bg-gradient-to-b from-emerald-500/5 to-transparent shadow-sm">
+                  <div className="rounded-xl border border-border/60 p-5 bg-gradient-to-b from-purple-500/5 to-transparent shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <ZinterLogo variant="full" size="lg" glowOnHover />
                       <div>
@@ -654,7 +654,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {['Next.js', 'AI', 'SQLite', 'TypeScript'].map((tag) => (
-                        <span key={tag} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <span key={tag} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
                           {tag}
                         </span>
                       ))}
@@ -670,11 +670,11 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                 {/* Detailed Statistics */}
                 <SectionWrapper icon={BarChart3} title="Detailed Statistics" description="Your complete usage breakdown" delay={0.1}>
                   <div className="grid grid-cols-2 gap-2.5">
-                    <StatCard icon={MessageSquare} label="Conversations" value={localStats.totalConversations.toString()} accent="emerald" />
-                    <StatCard icon={MessageSquare} label="Total Messages" value={localStats.totalMessages.toString()} accent="teal" />
+                    <StatCard icon={MessageSquare} label="Conversations" value={localStats.totalConversations.toString()} accent="purple" />
+                    <StatCard icon={MessageSquare} label="Total Messages" value={localStats.totalMessages.toString()} accent="purple" />
                     <StatCard icon={Calendar} label="Most Active Day" value={localStats.mostActiveDay} small accent="amber" />
-                    <StatCard icon={TrendingUp} label="Avg Msgs / Conv" value={localStats.avgMessagesPerConv} small accent="emerald" />
-                    <StatCard icon={BookOpen} label="Total Words Written" value={localStats.totalWords.toLocaleString()} accent="teal" className="col-span-2" />
+                    <StatCard icon={TrendingUp} label="Avg Msgs / Conv" value={localStats.avgMessagesPerConv} small accent="purple" />
+                    <StatCard icon={BookOpen} label="Total Words Written" value={localStats.totalWords.toLocaleString()} accent="purple" className="col-span-2" />
                   </div>
                 </SectionWrapper>
 
@@ -749,8 +749,8 @@ function SectionWrapper({
       transition={{ duration: 0.25, delay }}
     >
       <div className="flex items-center gap-2.5 mb-3">
-        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/10">
-          <Icon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/10 border border-purple-500/10">
+          <Icon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
         </div>
         <div>
           <h3 className="text-sm font-semibold">{title}</h3>
@@ -773,11 +773,11 @@ function MiniStatCard({
   label: string;
   value: string;
   small?: boolean;
-  color: 'emerald' | 'teal' | 'amber';
+  color: 'purple' | 'purple' | 'amber';
 }) {
   const colorClasses = {
-    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-    teal: 'text-teal-600 dark:text-teal-400 bg-teal-500/10',
+    purple: 'text-purple-600 dark:text-purple-400 bg-purple-500/10',
+    purple: 'text-purple-600 dark:text-purple-400 bg-purple-500/10',
     amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
   };
   return (
@@ -825,7 +825,7 @@ function InfoRow({
           title={`Copy ${label.toLowerCase()}`}
         >
           {copiedField === fieldName ? (
-            <Check className="w-3.5 h-3.5 text-emerald-500" />
+            <Check className="w-3.5 h-3.5 text-purple-500" />
           ) : (
             <Copy className="w-3.5 h-3.5" />
           )}
@@ -846,8 +846,8 @@ function QuickInfoItem({
 }) {
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors duration-150">
-      <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-        <Icon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+      <div className="w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
       </div>
       <div>
         <p className="text-xs font-semibold">{title}</p>
@@ -861,20 +861,20 @@ function StatCard({
   icon: Icon,
   label,
   value,
-  accent = 'emerald',
+  accent = 'purple',
   small,
   className,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  accent?: 'emerald' | 'teal' | 'amber';
+  accent?: 'purple' | 'purple' | 'amber';
   small?: boolean;
   className?: string;
 }) {
   const accentClasses = {
-    emerald: { icon: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10', value: 'text-emerald-600 dark:text-emerald-400' },
-    teal: { icon: 'text-teal-600 dark:text-teal-400 bg-teal-500/10', value: 'text-teal-600 dark:text-teal-400' },
+    purple: { icon: 'text-purple-600 dark:text-purple-400 bg-purple-500/10', value: 'text-purple-600 dark:text-purple-400' },
+    purple: { icon: 'text-purple-600 dark:text-purple-400 bg-purple-500/10', value: 'text-purple-600 dark:text-purple-400' },
     amber: { icon: 'text-amber-600 dark:text-amber-400 bg-amber-500/10', value: 'text-amber-600 dark:text-amber-400' },
   };
   return (
@@ -891,5 +891,5 @@ function StatCard({
 }
 
 function Divider() {
-  return <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />;
+  return <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />;
 }

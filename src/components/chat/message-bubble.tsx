@@ -144,7 +144,7 @@ function highlightText(text: string, query: string, isCurrentMatch: boolean): Re
           'rounded px-0.5',
           isCurrentMatch
             ? 'bg-yellow-300 dark:bg-yellow-400/40 text-inherit'
-            : 'bg-emerald-200/70 dark:bg-emerald-400/30 text-inherit'
+            : 'bg-purple-200/70 dark:bg-purple-400/30 text-inherit'
         )}
       >
         {text.slice(index, index + query.length)}
@@ -678,7 +678,7 @@ export default function MessageBubble({
         isFirstInGroup ? 'pt-4' : 'pt-1',
         isLastInGroup ? 'pb-4' : 'pb-1',
         isUser ? 'flex-row-reverse' : 'flex-row',
-        isCurrentSearchMatch && 'ring-1 ring-emerald-500/40 rounded-xl -mx-2 px-6'
+        isCurrentSearchMatch && 'ring-1 ring-purple-500/40 rounded-xl -mx-2 px-6'
       )}
     >
       {/* Avatar - only show on last message in group */}
@@ -698,7 +698,7 @@ export default function MessageBubble({
                 'text-xs font-medium',
                 isUser
                   ? userAvatarGradient
-                  : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
+                  : 'bg-gradient-to-br from-purple-500 to-purple-600 text-white'
               )}
             >
               {isUser ? (
@@ -753,7 +753,7 @@ export default function MessageBubble({
           className={cn(
             'rounded-2xl px-4 py-2.5 leading-relaxed',
             isUser
-              ? 'bg-gradient-to-br from-emerald-500/90 to-teal-500/85 text-white rounded-tr-md shadow-md shadow-emerald-500/20 dark:from-emerald-600/90 dark:to-teal-600/85 dark:shadow-emerald-500/15'
+              ? 'bg-gradient-to-br from-purple-500/90 to-purple-500/85 text-white rounded-tr-md shadow-md shadow-purple-500/20 dark:from-purple-600/90 dark:to-purple-600/85 dark:shadow-purple-500/15'
               : 'bg-card/60 backdrop-blur-sm border border-border/30 rounded-tl-md shadow-sm relative',
             isGenerating && 'animate-pulse',
             !isUser && isFavorited && 'ring-1 ring-amber-400/50 shadow-amber-400/20',
@@ -865,7 +865,7 @@ export default function MessageBubble({
                 </>
               ) : (
                 <div className="relative pl-3">{""}
-                  <div className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full bg-gradient-to-b from-emerald-500/60 via-teal-500/40 to-emerald-500/20 dark:from-emerald-400/50 dark:via-teal-400/30 dark:to-emerald-400/10" />
+                  <div className="absolute left-0 top-1 bottom-1 w-[2px] rounded-full bg-gradient-to-b from-purple-500/60 via-purple-500/40 to-purple-500/20 dark:from-purple-400/50 dark:via-purple-400/30 dark:to-purple-400/10" />
                   <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0 prose-pre:shadow-none chat-scroll">
                   <ReactMarkdown
                     components={{
@@ -902,21 +902,21 @@ export default function MessageBubble({
                       },
                       blockquote({ children }) {
                         return (
-                          <blockquote className="my-3 pl-4 border-l-3 border-emerald-500 bg-emerald-500/5 py-2 pr-3 rounded-r-lg italic text-muted-foreground">
+                          <blockquote className="my-3 pl-4 border-l-3 border-purple-500 bg-purple-500/5 py-2 pr-3 rounded-r-lg italic text-muted-foreground">
                             {children}
                           </blockquote>
                         );
                       },
                       ul({ children }) {
                         return (
-                          <ul className="my-2 space-y-1 list-disc list-outside ml-4 marker:text-emerald-500">
+                          <ul className="my-2 space-y-1 list-disc list-outside ml-4 marker:text-purple-500">
                             {children}
                           </ul>
                         );
                       },
                       ol({ children }) {
                         return (
-                          <ol className="my-2 space-y-1 list-decimal list-outside ml-4 marker:text-emerald-500">
+                          <ol className="my-2 space-y-1 list-decimal list-outside ml-4 marker:text-purple-500">
                             {children}
                           </ol>
                         );
@@ -934,7 +934,7 @@ export default function MessageBubble({
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-emerald-500 hover:text-emerald-400 hover:underline underline-offset-2 transition-colors"
+                            className="text-purple-500 hover:text-purple-400 hover:underline underline-offset-2 transition-colors"
                           >
                             {children}
                           </a>
@@ -1011,7 +1011,7 @@ export default function MessageBubble({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => onSuggestionClick?.(suggestion)}
-                className="px-3 py-1.5 rounded-full border border-border/50 bg-card/80 text-xs text-muted-foreground hover:text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all duration-200 cursor-pointer max-w-[200px] truncate shadow-sm"
+                className="px-3 py-1.5 rounded-full border border-border/50 bg-card/80 text-xs text-muted-foreground hover:text-foreground hover:border-purple-500/30 hover:bg-purple-500/5 transition-all duration-200 cursor-pointer max-w-[200px] truncate shadow-sm"
               >
                 {suggestion}
               </motion.button>
@@ -1040,7 +1040,7 @@ export default function MessageBubble({
                   'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all duration-150',
                   'hover:scale-105 active:scale-95 cursor-pointer',
                   reaction.reactedByUser
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-foreground'
+                    ? 'bg-purple-500/15 border-purple-500/30 text-foreground'
                     : 'bg-muted/50 border-border/40 text-muted-foreground hover:border-border/60'
                 )}
               >
@@ -1048,7 +1048,7 @@ export default function MessageBubble({
                 {reaction.count > 1 && (
                   <span className={cn(
                     'text-[10px] font-medium',
-                    reaction.reactedByUser ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
+                    reaction.reactedByUser ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'
                   )}>
                     {reaction.count}
                   </span>
@@ -1064,7 +1064,7 @@ export default function MessageBubble({
             initial={{ opacity: 1, y: 0, scale: 0.8 }}
             animate={{ opacity: 0, y: -40, scale: 1.2 }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="fixed z-[999] pointer-events-none text-sm font-bold text-emerald-500"
+            className="fixed z-[999] pointer-events-none text-sm font-bold text-purple-500"
             style={{ left: reactionAnimation.x - 8, top: reactionAnimation.y }}
           >
             +1
@@ -1125,7 +1125,7 @@ export default function MessageBubble({
                               exit={{ opacity: 0, y: 4, scale: 0.9 }}
                               transition={{ duration: 0.15 }}
                               className={cn(
-                                'absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5',
+                                'absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-purple-500/5',
                               )}
                             >
                               <div className="flex items-center gap-0.5">
@@ -1248,7 +1248,7 @@ export default function MessageBubble({
                         size="icon"
                         className={cn(
                           'h-9 w-9 sm:h-7 sm:w-7 hover:scale-110 active:scale-95 transition-all duration-150',
-                          showTranslation ? 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10' : 'hover:bg-accent'
+                          showTranslation ? 'text-purple-500 hover:text-purple-600 hover:bg-purple-500/10' : 'hover:bg-accent'
                         )}
                         onClick={() => setTranslationDropdownOpen(!translationDropdownOpen)}
                         title="Translate"
@@ -1262,7 +1262,7 @@ export default function MessageBubble({
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.9 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute z-50 bottom-full mb-1.5 w-48 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5"
+                            className="absolute z-50 bottom-full mb-1.5 w-48 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-purple-500/5"
                           >
                             <p className="text-[10px] font-semibold text-muted-foreground px-2 pb-1.5 pt-0.5 uppercase tracking-wider">Translate to</p>
                             <div className="max-h-64 overflow-y-auto space-y-0.5">
@@ -1273,13 +1273,13 @@ export default function MessageBubble({
                                   className={cn(
                                     'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer',
                                     'hover:bg-muted/80',
-                                    translationLang === lang.code && showTranslation && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                    translationLang === lang.code && showTranslation && 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
                                   )}
                                 >
                                   <span className="text-base shrink-0">{lang.flag}</span>
                                   <span className="flex-1">{lang.label}</span>
                                   {translationLang === lang.code && showTranslation && (
-                                    <Check className="w-3 h-3 text-emerald-500" />
+                                    <Check className="w-3 h-3 text-purple-500" />
                                   )}
                                 </button>
                               ))}
@@ -1317,7 +1317,7 @@ export default function MessageBubble({
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 4, scale: 0.9 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-emerald-500/5"
+                              className="absolute z-50 bottom-full mb-1.5 rounded-xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-purple-500/5"
                             >
                               <div className="flex items-center gap-0.5">
                                 {REACTION_EMOJIS.map((emoji) => (

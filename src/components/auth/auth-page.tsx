@@ -27,7 +27,7 @@ function getPasswordStrength(password: string): { label: string; score: number; 
   if (score <= 1) return { label: 'Weak', score: 1, color: 'bg-red-500', glowColor: 'shadow-red-500/50' };
   if (score <= 2) return { label: 'Fair', score: 2, color: 'bg-orange-500', glowColor: 'shadow-orange-500/50' };
   if (score <= 3) return { label: 'Good', score: 3, color: 'bg-yellow-500', glowColor: 'shadow-yellow-500/50' };
-  return { label: 'Strong', score: 4, color: 'bg-emerald-500', glowColor: 'shadow-emerald-500/50' };
+  return { label: 'Strong', score: 4, color: 'bg-purple-500', glowColor: 'shadow-purple-500/50' };
 }
 
 function FloatingDots() {
@@ -49,7 +49,7 @@ function FloatingDots() {
       items.push(
         <div
           key={i}
-          className="absolute rounded-full bg-emerald-500"
+          className="absolute rounded-full bg-purple-500"
           style={{
             width: `${size}px`,
             height: `${size}px`,
@@ -121,9 +121,9 @@ function ErrorMessage({ message, onClose }: { message: string; onClose: () => vo
 function SocialLoginDivider() {
   return (
     <div className="flex items-center gap-3 py-2">
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
       <span className="text-xs text-muted-foreground/70 whitespace-nowrap">or continue with</span>
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
     </div>
   );
 }
@@ -166,7 +166,7 @@ function SocialLoginButtons() {
       <Button
         type="button"
         variant="outline"
-        className="flex-1 h-10 gap-2 border-border/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        className="flex-1 h-10 gap-2 border-border/60 hover:border-purple-500/40 hover:bg-purple-500/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
         onClick={() => toast('Coming soon!', { description: 'GitHub sign-in will be available soon.' })}
       >
         <GitHubIcon />
@@ -319,9 +319,9 @@ export default function AuthPage() {
 
       {/* Background decorative elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/3 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/3 rounded-full blur-3xl" />
       </div>
 
       {/* Theme toggle with smooth icon rotation */}
@@ -376,7 +376,7 @@ export default function AuthPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
           className={cn(
-            'relative rounded-xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-teal-500/20 to-emerald-500/10 shadow-2xl shadow-emerald-500/5 hover:shadow-emerald-500/15 transition-all duration-500',
+            'relative rounded-xl p-[1px] bg-gradient-to-br from-purple-500/30 via-purple-500/20 to-purple-500/10 shadow-2xl shadow-purple-500/5 hover:shadow-purple-500/15 transition-all duration-500',
             isCheckingSession && 'animate-breathing-glow'
           )}
         >
@@ -385,7 +385,7 @@ export default function AuthPage() {
               <TabsList className="grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0 h-auto relative">
                 {/* Sliding indicator */}
                 <motion.div
-                  className="absolute bottom-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 rounded-full shadow-sm shadow-emerald-500/30"
+                  className="absolute bottom-0 h-[2px] bg-gradient-to-r from-purple-500 via-purple-500 to-purple-500 rounded-full shadow-sm shadow-purple-500/30"
                   animate={{
                     left: activeTab === 'login' ? '0%' : '50%',
                     width: '50%',
@@ -419,22 +419,22 @@ export default function AuthPage() {
                         )}
                       </AnimatePresence>
                       <div className="space-y-2">
-                        <Label htmlFor="login-email" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Email</Label>
+                        <Label htmlFor="login-email" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-purple-600 dark:[&:has(+_div_input:focus)]:text-purple-400">Email</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200 [&~input:focus_~&]:text-emerald-500" />
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200 [&~input:focus_~&]:text-purple-500" />
                           <Input
                             id="login-email"
                             type="email"
                             placeholder="you@example.com"
                             value={loginData.email}
                             onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 focus-ring-emerald"
+                            className="pl-10 focus-visible:ring-purple-500/30 focus-visible:border-purple-500/50 focus-ring-purple"
                             required
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="login-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Password</Label>
+                        <Label htmlFor="login-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-purple-600 dark:[&:has(+_div_input:focus)]:text-purple-400">Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
@@ -443,7 +443,7 @@ export default function AuthPage() {
                             placeholder="Enter your password"
                             value={loginData.password}
                             onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 focus-ring-emerald"
+                            className="pl-10 focus-visible:ring-purple-500/30 focus-visible:border-purple-500/50 focus-ring-purple"
                             required
                           />
                         </div>
@@ -451,7 +451,7 @@ export default function AuthPage() {
                         <div className="flex justify-end">
                           <button
                             type="button"
-                            className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2"
+                            className="text-xs text-purple-500 hover:text-purple-400 transition-colors duration-200 hover:underline underline-offset-2"
                             onClick={() => toast('Coming soon!', { description: 'Password reset will be available soon.' })}
                           >
                             Forgot password?
@@ -463,7 +463,7 @@ export default function AuthPage() {
                           id="remember-me"
                           checked={rememberMe}
                           onCheckedChange={(checked) => setRememberMe(checked === true)}
-                          className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                          className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
                         />
                         <Label
                           htmlFor="remember-me"
@@ -482,7 +482,7 @@ export default function AuthPage() {
                     <CardFooter>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300 hover-lift-sm"
+                        className="w-full bg-gradient-to-r from-purple-500 to-purple-500 hover:from-purple-600 hover:to-purple-600 shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300 hover-lift-sm"
                         disabled={isLoading || isCheckingSession}
                       >
                         {(isLoading || isCheckingSession) ? (
@@ -511,7 +511,7 @@ export default function AuthPage() {
                         )}
                       </AnimatePresence>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-name" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Name</Label>
+                        <Label htmlFor="signup-name" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-purple-600 dark:[&:has(+_div_input:focus)]:text-purple-400">Name</Label>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
@@ -520,13 +520,13 @@ export default function AuthPage() {
                             placeholder="Your name"
                             value={signupData.name}
                             onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
+                            className="pl-10 focus-visible:ring-purple-500/30 focus-visible:border-purple-500/50"
                             required
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-email" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Email</Label>
+                        <Label htmlFor="signup-email" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-purple-600 dark:[&:has(+_div_input:focus)]:text-purple-400">Email</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
@@ -535,13 +535,13 @@ export default function AuthPage() {
                             placeholder="you@example.com"
                             value={signupData.email}
                             onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
+                            className="pl-10 focus-visible:ring-purple-500/30 focus-visible:border-purple-500/50"
                             required
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Password</Label>
+                        <Label htmlFor="signup-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-purple-600 dark:[&:has(+_div_input:focus)]:text-purple-400">Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
@@ -550,7 +550,7 @@ export default function AuthPage() {
                             placeholder="Min. 6 characters"
                             value={signupData.password}
                             onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
+                            className="pl-10 focus-visible:ring-purple-500/30 focus-visible:border-purple-500/50"
                             required
                             minLength={6}
                           />
@@ -582,7 +582,7 @@ export default function AuthPage() {
                                 passwordStrength.score <= 1 && 'text-red-500',
                                 passwordStrength.score === 2 && 'text-orange-500',
                                 passwordStrength.score === 3 && 'text-yellow-500',
-                                passwordStrength.score >= 4 && 'text-emerald-500',
+                                passwordStrength.score >= 4 && 'text-purple-500',
                               )}>
                                 {passwordStrength.label}
                               </p>
@@ -591,7 +591,7 @@ export default function AuthPage() {
                         </AnimatePresence>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-confirm-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-emerald-600 dark:[&:has(+_div_input:focus)]:text-emerald-400">Confirm Password</Label>
+                        <Label htmlFor="signup-confirm-password" className="transition-colors duration-200 [&:has(+_div_input:focus)]:text-purple-600 dark:[&:has(+_div_input:focus)]:text-purple-400">Confirm Password</Label>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground transition-colors duration-200" />
                           <Input
@@ -600,7 +600,7 @@ export default function AuthPage() {
                             placeholder="Repeat your password"
                             value={signupData.confirmPassword}
                             onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-                            className="pl-10 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50"
+                            className="pl-10 focus-visible:ring-purple-500/30 focus-visible:border-purple-500/50"
                             required
                             minLength={6}
                           />
@@ -613,7 +613,7 @@ export default function AuthPage() {
                           id="terms"
                           checked={termsAccepted}
                           onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                          className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 mt-0.5"
+                          className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500 mt-0.5"
                         />
                         <Label
                           htmlFor="terms"
@@ -622,7 +622,7 @@ export default function AuthPage() {
                           I agree to the{' '}
                           <button
                             type="button"
-                            className="text-emerald-500 hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2"
+                            className="text-purple-500 hover:text-purple-400 transition-colors duration-200 hover:underline underline-offset-2"
                             onClick={(e) => {
                               e.preventDefault();
                               toast('Coming soon!', { description: 'Terms of Service will be available soon.' });
@@ -633,7 +633,7 @@ export default function AuthPage() {
                           {' '}and{' '}
                           <button
                             type="button"
-                            className="text-emerald-500 hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2"
+                            className="text-purple-500 hover:text-purple-400 transition-colors duration-200 hover:underline underline-offset-2"
                             onClick={(e) => {
                               e.preventDefault();
                               toast('Coming soon!', { description: 'Privacy Policy will be available soon.' });
@@ -653,7 +653,7 @@ export default function AuthPage() {
                     <CardFooter>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/25 hover:shadow-lg hover:shadow-emerald-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300 hover-lift-sm"
+                        className="w-full bg-gradient-to-r from-purple-500 to-purple-500 hover:from-purple-600 hover:to-purple-600 shadow-md shadow-purple-500/25 hover:shadow-lg hover:shadow-purple-500/35 active:scale-[0.98] hover:brightness-110 transition-all duration-300 hover-lift-sm"
                         disabled={isLoading || isCheckingSession}
                       >
                         {(isLoading || isCheckingSession) ? (
@@ -679,7 +679,7 @@ export default function AuthPage() {
           transition={{ delay: 0.7, duration: 0.4 }}
           className="flex justify-center mt-4 sm:mt-6"
         >
-          <div className="badge-emerald flex items-center gap-1.5">
+          <div className="badge-purple flex items-center gap-1.5">
             <Zap className="w-3 h-3" />
             <span>Powered by AI</span>
           </div>

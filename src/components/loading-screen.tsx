@@ -53,7 +53,7 @@ export default function LoadingScreen() {
             {Array.from({ length: 12 }).map((_, i) => (
               <div
                 key={i}
-                className="absolute rounded-full bg-emerald-500"
+                className="absolute rounded-full bg-purple-500"
                 style={{
                   width: `${Math.random() * 4 + 2}px`,
                   height: `${Math.random() * 4 + 2}px`,
@@ -94,7 +94,7 @@ export default function LoadingScreen() {
               className="h-1 rounded-full bg-muted/50 overflow-hidden"
             >
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500"
+                className="h-full rounded-full bg-gradient-to-r from-purple-500 via-purple-500 to-purple-500"
                 initial={{ width: '0%' }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}

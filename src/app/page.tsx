@@ -57,7 +57,7 @@ function LoadingScreen() {
       className="min-h-screen flex items-center justify-center relative overflow-hidden"
     >
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-background to-teal-50 dark:from-emerald-950/20 dark:via-background dark:to-teal-950/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-background to-purple-50 dark:from-purple-950/20 dark:via-background dark:to-purple-950/20" />
 
       {/* Vignette effect */}
       <div className="vignette absolute inset-0 pointer-events-none" />
@@ -65,7 +65,7 @@ function LoadingScreen() {
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute -top-32 -left-32 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl"
+          className="absolute -top-32 -left-32 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -73,7 +73,7 @@ function LoadingScreen() {
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute -bottom-32 -right-32 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl"
+          className="absolute -bottom-32 -right-32 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl"
           animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.5, 0.3, 0.5],
@@ -81,7 +81,7 @@ function LoadingScreen() {
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute top-1/3 right-1/4 w-32 h-32 rounded-full bg-emerald-400/5 blur-2xl"
+          className="absolute top-1/3 right-1/4 w-32 h-32 rounded-full bg-purple-400/5 blur-2xl"
           animate={{
             y: [0, -20, 0],
             x: [0, 10, 0],
@@ -95,7 +95,7 @@ function LoadingScreen() {
         {particles.map((p) => (
           <motion.div
             key={p.id}
-            className="absolute rounded-full bg-emerald-400 dark:bg-emerald-500"
+            className="absolute rounded-full bg-purple-400 dark:bg-purple-500"
             style={{
               left: p.left,
               top: p.top,
@@ -138,7 +138,7 @@ function LoadingScreen() {
           className="text-center"
         >
           <motion.h2
-            className="text-2xl font-bold mb-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent"
+            className="text-2xl font-bold mb-1.5 bg-gradient-to-r from-purple-600 to-purple-600 dark:from-purple-400 dark:to-purple-400 bg-clip-text text-transparent"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
@@ -163,7 +163,7 @@ function LoadingScreen() {
           className="w-48 h-1 rounded-full bg-muted/60 overflow-hidden"
         >
           <motion.div
-            className="w-1/3 h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400"
+            className="w-1/3 h-full rounded-full bg-gradient-to-r from-purple-400 via-purple-400 to-purple-400"
             animate={{ x: ['-100%', '400%'] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -179,7 +179,7 @@ function LoadingScreen() {
           {[0, 150, 300].map((delay) => (
             <motion.span
               key={delay}
-              className="w-2 h-2 rounded-full bg-emerald-500"
+              className="w-2 h-2 rounded-full bg-purple-500"
               animate={{ y: [0, -6, 0], opacity: [0.5, 1, 0.5] }}
               transition={{
                 duration: 0.8,

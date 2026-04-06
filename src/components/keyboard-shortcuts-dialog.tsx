@@ -47,7 +47,7 @@ export function KeyboardShortcutsDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5 text-lg">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm shadow-emerald-500/20">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-sm shadow-purple-500/20">
               <Keyboard className="w-4 h-4" />
             </div>
             Keyboard Shortcuts

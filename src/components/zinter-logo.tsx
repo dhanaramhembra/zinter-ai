@@ -43,7 +43,7 @@ export function ZinterLogo({
       <div
         className={cn(
           'relative inline-flex items-center justify-center shrink-0',
-          glowOnHover && 'transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]',
+          glowOnHover && 'transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(124,58,237,0.5)]',
           className
         )}
         style={{ width: s, height: s }}
@@ -57,7 +57,7 @@ export function ZinterLogo({
     <div
       className={cn(
         'relative inline-flex items-center justify-center shrink-0',
-        glowOnHover && 'transition-all duration-300 hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]',
+        glowOnHover && 'transition-all duration-300 hover:drop-shadow-[0_0_12px_rgba(124,58,237,0.5)]',
         className
       )}
       style={{ width: s, height: s }}
@@ -72,9 +72,9 @@ export function ZinterLogo({
         <defs>
           {/* Container gradient */}
           <linearGradient id="zContainerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="50%" stopColor="#0d9488" />
-            <stop offset="100%" stopColor="#0f766e" />
+            <stop offset="0%" stopColor="#7C3AED" />
+            <stop offset="50%" stopColor="#6D28D9" />
+            <stop offset="100%" stopColor="#5B21B6" />
           </linearGradient>
 
           {/* Inner highlight gradient (top-left sheen) */}
@@ -87,7 +87,7 @@ export function ZinterLogo({
           {/* Z mark gradient */}
           <linearGradient id="zMarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.97" />
-            <stop offset="100%" stopColor="#d1fae5" stopOpacity="0.92" />
+            <stop offset="100%" stopColor="#DDD6FE" stopOpacity="0.92" />
           </linearGradient>
 
           {/* Shadow filter */}
@@ -177,13 +177,13 @@ function ZinterMark({ size }: { size: number }) {
     >
       <defs>
         <linearGradient id="zIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="50%" stopColor="#14b8a6" />
-          <stop offset="100%" stopColor="#0d9488" />
+          <stop offset="0%" stopColor="#7C3AED" />
+          <stop offset="50%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#6D28D9" />
         </linearGradient>
         <linearGradient id="zIconGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#34d399" />
-          <stop offset="100%" stopColor="#2dd4bf" />
+          <stop offset="0%" stopColor="#A78BFA" />
+          <stop offset="100%" stopColor="#8B5CF6" />
         </linearGradient>
       </defs>
       <ZinterMarkPath fill="url(#zIconGrad)" />
@@ -232,7 +232,7 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
         className="absolute rounded-full opacity-50"
         style={{
           inset: -ringInset,
-          background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #0d9488, #10b981)',
+          background: 'conic-gradient(from 0deg, #7C3AED, #A855F7, #6D28D9, #7C3AED)',
           WebkitMask: 'radial-gradient(transparent 62%, black 64%)',
           mask: 'radial-gradient(transparent 62%, black 64%)',
           animation: 'zinterLogoSpin 4s linear infinite',
@@ -243,7 +243,7 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
         className="absolute rounded-full opacity-30"
         style={{
           inset: -ringInset * 0.5,
-          background: 'conic-gradient(from 180deg, #34d399, #2dd4bf, #34d399)',
+          background: 'conic-gradient(from 180deg, #A78BFA, #8B5CF6, #A78BFA)',
           WebkitMask: 'radial-gradient(transparent 66%, black 68%)',
           mask: 'radial-gradient(transparent 66%, black 68%)',
           animation: 'zinterLogoSpin 6s linear infinite reverse',
@@ -254,7 +254,7 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
         className="absolute rounded-full"
         style={{
           inset: -ringInset * 0.3,
-          background: 'radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%)',
           animation: 'zinterLogoPulse 3s ease-in-out infinite',
         }}
       />
