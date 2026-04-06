@@ -221,3 +221,31 @@ Stage Summary:
 - Project is 100% ready for Vercel deployment
 - User needs to run `vercel --prod` from their own machine (1 command)
 - Env vars to set in Vercel: DATABASE_URL, DATABASE_AUTH_TOKEN, JWT_SECRET, NEXT_PUBLIC_BASE_URL
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Vercel deployment - full end-to-end
+
+Work Log:
+- Installed GitHub CLI (gh v2.63.2) and authenticated with user's PAT
+- Created GitHub repo: dhanaramhembra/zinter-ai
+- Pushed project code to GitHub (multiple commits with fixes)
+- Installed Vercel CLI, authenticated with user's Vercel token
+- Linked Vercel project to GitHub repo
+- Set 4 env variables on Vercel (DATABASE_URL, DATABASE_AUTH_TOKEN, JWT_SECRET, NEXT_PUBLIC_BASE_URL)
+- Multiple deploy iterations to fix issues:
+  1. .env was committed to repo → removed from git tracking
+  2. Prisma SQLite provider didn't accept libsql:// URL → used PrismaLibSql adapter
+  3. In-memory sessions → JWT tokens (jose)
+  4. Image generation filesystem → base64 data URLs
+  5. PrismaLibSql adapter needed factory config (not client instance) 
+  6. Vercel env add CLI was truncating DATABASE_URL → used REST API to set correctly
+  7. DATABASE_AUTH_TOKEN had newline corruption → fixed via REST API PATCH
+
+Stage Summary:
+- Zinter AI is LIVE on Vercel: https://my-project-eta-amber.vercel.app
+- Signup tested and WORKING (user created successfully in Turso)
+- Login, chat, and all features should work
+- Turso cloud database connected and operational
+- JWT sessions working (stateless, Vercel-compatible)
