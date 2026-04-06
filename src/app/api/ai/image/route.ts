@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromCookie } from '@/lib/session';
 import ZAI from 'z-ai-web-dev-sdk';
 import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-import fs from 'fs';
-
-const OUTPUT_DIR = path.join(process.cwd(), 'public', 'generated-images');
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,11 +19,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Ensure output directory exists
-    if (!fs.existsSync(OUTPUT_DIR)) {
-      fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-    }
-
     const zai = await ZAI.create();
 
     const response = await zai.images.generations.create({
@@ -36,19 +27,15 @@ export async function POST(req: NextRequest) {
     });
 
     const imageBase64 = response.data[0].base64;
-    const buffer = Buffer.from(imageBase64, 'base64');
 
-    const filename = `img_${uuidv4()}.png`;
-    const filepath = path.join(OUTPUT_DIR, filename);
-    fs.writeFileSync(filepath, buffer);
-
-    const imageUrl = `/generated-images/${filename}`;
+    // Return base64 data URL instead of saving to filesystem
+    // (Vercel serverless has read-only filesystem)
+    const imageUrl = `data:image/png;base64,${imageBase64}`;
 
     return NextResponse.json({
       success: true,
       imageUrl,
       prompt,
-      size: buffer.length,
     });
   } catch (error) {
     console.error('Image generation error:', error);

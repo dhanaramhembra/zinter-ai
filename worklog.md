@@ -172,3 +172,30 @@ Stage Summary:
 - Current DB: local SQLite (will be in-memory on Vercel)
 - Recommended: Set up Turso (free) for persistent SQLite on Vercel
 - All files ready: vercel.json, deploy-vercel.sh, .env.example
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Prepare Zinter AI for Vercel deployment
+
+Work Log:
+- Analyzed project for Vercel compatibility issues
+- Installed `@prisma/adapter-libsql` and `@libsql/client` for Turso support
+- Rewrote `src/lib/db.ts` to use libSQL adapter (works with both local SQLite and Turso cloud)
+- Rewrote `src/lib/session.ts` from in-memory Map to JWT-based sessions using `jose`
+- Updated `src/app/api/auth/logout/route.ts` for JWT compatibility (stateless logout)
+- Updated `src/app/api/ai/image/route.ts` to return base64 data URLs (Vercel has read-only filesystem)
+- Removed `output: "standalone"` from `next.config.ts` (Vercel manages its own output)
+- Updated `prisma/schema.prisma` (removed unused `directUrl`)
+- Created `.env.example` with all required env vars documented
+- Updated `.env` with JWT_SECRET
+- Verified `npx prisma generate` succeeds
+- Verified `npx next build` succeeds (all 20 routes built correctly)
+- Verified dev server starts and returns HTTP 200 for GET /
+
+Stage Summary:
+- Project is now Vercel-compatible (build passes, code changes done)
+- Vercel CLI not authenticated in sandbox — user needs to deploy from their machine
+- Two options for deployment: Vercel CLI or Vercel Dashboard (GitHub integration)
+- User needs to set up Turso (cloud SQLite) for database on Vercel
+- User needs to set env vars in Vercel dashboard: DATABASE_URL, DATABASE_AUTH_TOKEN, JWT_SECRET, NEXT_PUBLIC_BASE_URL

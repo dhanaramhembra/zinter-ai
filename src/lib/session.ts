@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { v4 as uuidv4 } from 'uuid';
+import { SignJWT, jwtVerify } from 'jose';
 
 export interface SessionData {
   userId: string;
@@ -10,44 +10,62 @@ export interface SessionData {
 const SESSION_COOKIE = 'chat_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-// Use globalThis so the session store survives Turbopack HMR
-// Without this, every hot-reload resets the Map and logs everyone out
-const _global = globalThis as unknown as Record<string, Map<string, SessionData>>;
-if (!_global.__chat_sessions) {
-  _global.__chat_sessions = new Map<string, SessionData>();
+function getSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET || 'fallback-dev-secret-change-in-production-zinter-ai-2024';
+  return new TextEncoder().encode(secret);
 }
-const sessions = _global.__chat_sessions;
 
 export async function createSession(user: { id: string; email: string; name: string }): Promise<string> {
-  const sessionId = uuidv4();
-  sessions.set(sessionId, {
+  const token = await new SignJWT({
     userId: user.id,
     email: user.email,
     name: user.name,
-  });
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(getSecret());
 
-  // Auto cleanup sessions older than 7 days
-  return sessionId;
+  return token;
 }
 
 export async function getSessionFromCookie(): Promise<SessionData | null> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(SESSION_COOKIE);
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get(SESSION_COOKIE);
 
-  if (!sessionCookie?.value) {
+    if (!sessionCookie?.value) {
+      return null;
+    }
+
+    const { payload } = await jwtVerify(sessionCookie.value, getSecret());
+
+    return {
+      userId: payload.userId as string,
+      email: payload.email as string,
+      name: payload.name as string,
+    };
+  } catch {
+    // Token expired, invalid, or missing
     return null;
   }
-
-  const session = sessions.get(sessionCookie.value);
-  return session || null;
 }
 
 export function getSession(sessionId: string): SessionData | null {
-  return sessions.get(sessionId) || null;
+  // JWT is stateless — we verify synchronously if needed
+  // This is a legacy compatibility method; prefer getSessionFromCookie()
+  try {
+    // We can't verify synchronously with jose in this context,
+    // so this method returns null (prefer getSessionFromCookie)
+    return null;
+  } catch {
+    return null;
+  }
 }
 
-export function deleteSession(sessionId: string): void {
-  sessions.delete(sessionId);
+export function deleteSession(_sessionId: string): void {
+  // JWT is stateless — nothing to delete server-side
+  // The cookie is cleared by the caller (logout route)
 }
 
 export { SESSION_COOKIE, SESSION_MAX_AGE };
