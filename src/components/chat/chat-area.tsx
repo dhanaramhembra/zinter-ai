@@ -1882,17 +1882,23 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
       <div ref={scrollAreaRefCallback} className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         {!hasMessages ? (
-          <div className="flex items-center justify-center min-h-full p-4 sm:p-8">
+          <div className="flex items-center justify-center min-h-full p-4 sm:p-8 dot-grid">
             <div className="text-center max-w-2xl w-full py-6 sm:py-12">
+              {/* Logo with dramatic entrance */}
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
+                className="mb-4 sm:mb-6"
+              >
+                <ZinterLogoAnimated size="xl" />
+              </motion.div>
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.3, delay: 0.25 }}
                 className="mb-6 sm:mb-8"
               >
-                <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20 mb-4 sm:mb-5 animated-border">
-                  <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" />
-                </div>
                 <div className="relative inline-block">
                   <h3 className="text-base sm:text-lg font-semibold mb-1 relative z-10 gradient-text">
                     How can I help you today?

@@ -1,4 +1,27 @@
 ---
+## Task ID: logo-not-loading-after-new-chat
+Agent: main
+Task: Fix Zinter AI logo not loading after clicking New Chat button
+
+Work Log:
+- Diagnosed root cause: When user clicks "New Chat", a new conversation IS created (activeConversation is truthy) but has 0 messages. The welcome screen with ZinterLogoAnimated only renders when `!activeConversation` (no conversation at all). The conversation view's empty state (`!hasMessages`) only showed a simple Sparkles icon, not the Zinter AI logo.
+- Fixed `src/components/chat/chat-area.tsx`:
+  - Replaced the simple Sparkles icon in the empty-messages state with the full `ZinterLogoAnimated` component
+  - Added spring animation entrance (scale: 0 → 1, rotate: -90 → 0) matching the no-conversation welcome screen
+  - Added `dot-grid` background class to the empty state container for visual consistency
+  - Added staggered delays (0.1s for logo, 0.25s for text) for smooth entrance
+- Fixed `src/components/zinter-logo.tsx`:
+  - `ZinterLogoAnimated` was using CSS `@keyframes zinterLogoSpin` and `zinterLogoPulse` in inline styles, but those keyframes were only injected when `ZinterLogo` had `animated={true}`
+  - The inner `ZinterLogo` was rendered without `animated` prop, so the keyframes were never defined
+  - Fix: Passed `animated` prop to the inner `ZinterLogo` in `ZinterLogoAnimated` to ensure CSS keyframes are always injected
+
+Stage Summary:
+- Zinter AI logo now loads correctly after clicking "New Chat" button
+- Both welcome screens (no conversation + empty conversation) show the premium animated logo
+- CSS keyframes for spinning rings are properly injected
+- Lint: zero errors, dev server compiles cleanly
+
+---
 ## Task ID: tts-client-side-chunking
 Agent: main
 Task: Fix TTS 502 Bad Gateway for long Hindi text by moving chunking to client side

@@ -258,8 +258,8 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
           animation: 'zinterLogoPulse 3s ease-in-out infinite',
         }}
       />
-      {/* Logo */}
-      <ZinterLogo variant="full" size={size} />
+      {/* Logo — animated=true injects the @keyframes needed for the rings */}
+      <ZinterLogo variant="full" size={size} animated />
     </div>
   );
 }
