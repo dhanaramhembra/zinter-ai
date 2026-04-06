@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2, Mail, Lock, User, Sparkles, Moon, Sun, X, Zap } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ZinterLogo } from '@/components/zinter-logo';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -146,14 +147,14 @@ function GitHubIcon() {
   );
 }
 
-function SocialLoginButtons() {
+function SocialLoginButtons({ onGoogleClick }: { onGoogleClick: () => void }) {
   return (
     <div className="flex gap-3">
       <Button
         type="button"
         variant="outline"
         className="flex-1 h-10 gap-2 border-border/60 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-        onClick={() => toast('Coming soon!', { description: 'Google sign-in will be available soon.' })}
+        onClick={onGoogleClick}
       >
         <GoogleIcon />
         <span className="text-sm">Google</span>
@@ -180,6 +181,11 @@ export default function AuthPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleName, setGoogleName] = useState('');
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googleError, setGoogleError] = useState('');
   const { setUser } = useAuthStore();
   const { theme, setTheme } = useTheme();
 
@@ -275,6 +281,39 @@ export default function AuthPage() {
       setError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleError('');
+    if (!googleEmail.trim() || !googleName.trim()) {
+      setGoogleError('Please enter both name and email');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(googleEmail)) {
+      setGoogleError('Please enter a valid email address');
+      return;
+    }
+    setGoogleLoading(true);
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: googleEmail.trim(), name: googleName.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Google sign-in failed' }));
+        setGoogleError(data.error || 'Google sign-in failed');
+        return;
+      }
+      const data = await res.json();
+      setUser(data.user);
+      toast.success('Signed in with Google! 🎉');
+    } catch {
+      setGoogleError('Network error. Please try again.');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -451,7 +490,7 @@ export default function AuthPage() {
                       <SocialLoginDivider />
 
                       {/* Social Login Buttons */}
-                      <SocialLoginButtons />
+                      <SocialLoginButtons onGoogleClick={() => { setGoogleName(''); setGoogleEmail(''); setGoogleError(''); setShowGoogleModal(true); }} />
                     </CardContent>
                     <CardFooter>
                       <Button
@@ -622,7 +661,7 @@ export default function AuthPage() {
                       <SocialLoginDivider />
 
                       {/* Social Login Buttons */}
-                      <SocialLoginButtons />
+                      <SocialLoginButtons onGoogleClick={() => { setGoogleName(''); setGoogleEmail(''); setGoogleError(''); setShowGoogleModal(true); }} />
                     </CardContent>
                     <CardFooter>
                       <Button
@@ -668,6 +707,104 @@ export default function AuthPage() {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </motion.p>
       </motion.div>
+
+      {/* Google Sign-In Modal */}
+      <Dialog open={showGoogleModal} onOpenChange={(open) => { if (!open) { setShowGoogleModal(false); setGoogleError(''); } }}>
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+          {/* Google-style header */}
+          <div className="px-8 pt-8 pb-2 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-white dark:bg-card border border-border shadow-md flex items-center justify-center">
+                <GoogleIcon />
+              </div>
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-xl font-normal text-foreground">
+                Sign in with Google
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
+                Enter your Google account details to continue
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          {/* Form */}
+          <div className="px-8 pb-8 pt-4">
+            <div className="space-y-4">
+              <AnimatePresence>
+                {googleError && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg"
+                  >
+                    {googleError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="google-name" className="text-sm font-medium">
+                  Name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="google-name"
+                    type="text"
+                    placeholder="Your full name"
+                    value={googleName}
+                    onChange={(e) => { setGoogleName(e.target.value); setGoogleError(''); }}
+                    className="pl-10 h-11 focus-visible:ring-blue-500/30 focus-visible:border-blue-500/50"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="google-email" className="text-sm font-medium">
+                  Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="google-email"
+                    type="email"
+                    placeholder="you@gmail.com"
+                    value={googleEmail}
+                    onChange={(e) => { setGoogleEmail(e.target.value); setGoogleError(''); }}
+                    className="pl-10 h-11 focus-visible:ring-blue-500/30 focus-visible:border-blue-500/50"
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleGoogleSignIn(); }}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading || !googleName.trim() || !googleEmail.trim()}
+                className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 active:scale-[0.98] transition-all duration-200 mt-2"
+              >
+                {googleLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon />
+                    <span className="ml-2">Continue with Google</span>
+                  </>
+                )}
+              </Button>
+
+              <p className="text-[11px] text-muted-foreground/60 text-center pt-1">
+                By continuing, you agree to our Terms of Service and Privacy Policy
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Glow pulse keyframes for checking session */}
       <style jsx>{`

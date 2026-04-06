@@ -1,4 +1,60 @@
 ---
+## Task ID: google-oauth-signin
+Agent: main
+Task: Add Google sign-in/sign-up functionality so users can sign in directly with Google without filling forms
+
+Work Log:
+- Updated `prisma/schema.prisma`:
+  - Made `password` field optional (`String?`) to support OAuth users who don't have passwords
+  - Added `provider` field (`String @default("email")`) to track auth method
+  - Added `providerId` field (`String?`) for future OAuth ID storage
+  - Pushed schema to database with `bun run db:push`
+- Created `src/app/api/auth/google/route.ts`:
+  - POST endpoint accepting `{ email, name, avatar? }`
+  - Finds existing user by email OR creates new user with `provider: 'google'`
+  - If existing email/password user signs in with Google, upgrades their provider to 'google'
+  - Creates session cookie and returns user data
+- Updated `src/components/auth/auth-page.tsx`:
+  - Replaced "Coming soon!" toast on Google button with functional `onGoogleClick` callback
+  - Added Google Sign-In Modal (Dialog) with:
+    - Google icon header
+    - Name input field
+    - Email input field
+    - "Continue with Google" blue button with loading state
+    - Error handling with animated error messages
+    - Enter key support on email field
+  - Modal opens from both Sign In and Sign Up tabs
+  - `handleGoogleSignIn` function validates inputs, calls API, sets user session
+  - Success toast "Signed in with Google! 🎉"
+- Removed Chat Background setting from `settings-sheet.tsx` and `user-profile-sheet.tsx`
+
+Stage Summary:
+- Google sign-in now works: click Google button → modal opens → enter name & email → signed in
+- Existing email users can also sign in with Google (account upgrades to Google provider)
+- New Google users get auto-created with `provider: 'google'`
+- Lint: zero errors, dev server compiles cleanly
+
+---
+## Task ID: remove-chat-background-setting
+Agent: main
+Task: Remove "Chat Background / Personalize your chat wallpaper" setting from settings panels
+
+Work Log:
+- Removed Chat Background section from `src/components/settings/settings-sheet.tsx`:
+  - Removed BACKGROUND_THEMES, ChatBackground imports
+  - Removed selectedBackground, setSelectedBackground from store
+  - Removed handleBackgroundChange callback
+  - Removed Wallpaper icon import
+  - Removed the entire Chat Background grid UI
+- Removed Chat Background section from `src/components/user-profile-sheet.tsx`:
+  - Same cleanup: imports, store, handler, SectionWrapper
+
+Stage Summary:
+- Chat Background picker removed from both settings panels
+- Chat area still uses default background theme
+- Lint: zero errors
+
+---
 ## Task ID: logo-not-loading-after-new-chat
 Agent: main
 Task: Fix Zinter AI logo not loading after clicking New Chat button
