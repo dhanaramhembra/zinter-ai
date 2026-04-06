@@ -26,7 +26,7 @@ const SIZE_MAP: Record<LogoSize, number> = {
  * Premium Zinter AI Logo — custom SVG lettermark
  *
  * Variants:
- *  - "full"  → rounded-square gradient container + white Z + sparkle accent
+ *  - "full"  → circular gradient container + white Z + sparkle accent
  *  - "icon"  → just the Z symbol (no container), for tight spaces
  */
 export function ZinterLogo({
@@ -106,26 +106,26 @@ export function ZinterLogo({
 
           {/* Clip for inner sheen */}
           <clipPath id="containerClip">
-            <rect x="4" y="4" width="92" height="92" rx="22" />
+            <circle cx="50" cy="50" r="46" />
           </clipPath>
         </defs>
 
-        {/* Container background */}
-        <rect
-          x="4" y="4" width="92" height="92" rx="22"
+        {/* Container background - circle */}
+        <circle
+          cx="50" cy="50" r="46"
           fill="url(#zContainerGrad)"
         />
 
         {/* Inner sheen overlay */}
-        <rect
-          x="4" y="4" width="92" height="92" rx="22"
+        <circle
+          cx="50" cy="50" r="46"
           fill="url(#zSheenGrad)"
           clipPath="url(#containerClip)"
         />
 
         {/* Subtle inner border */}
-        <rect
-          x="4.5" y="4.5" width="91" height="91" rx="21.5"
+        <circle
+          cx="50" cy="50" r="45.5"
           fill="none"
           stroke="#ffffff"
           strokeWidth="0.5"
@@ -229,7 +229,7 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
     <div className={cn('relative inline-flex items-center justify-center shrink-0', className)}>
       {/* Outer spinning ring */}
       <div
-        className="absolute rounded-[22%] opacity-50"
+        className="absolute rounded-full opacity-50"
         style={{
           inset: -ringInset,
           background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #0d9488, #10b981)',
@@ -240,7 +240,7 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
       />
       {/* Inner counter-spinning ring */}
       <div
-        className="absolute rounded-[22%] opacity-30"
+        className="absolute rounded-full opacity-30"
         style={{
           inset: -ringInset * 0.5,
           background: 'conic-gradient(from 180deg, #34d399, #2dd4bf, #34d399)',
@@ -251,7 +251,7 @@ export function ZinterLogoAnimated({ size = 'xl', className }: { size?: LogoSize
       />
       {/* Pulsing glow */}
       <div
-        className="absolute rounded-[22%]"
+        className="absolute rounded-full"
         style={{
           inset: -ringInset * 0.3,
           background: 'radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)',
