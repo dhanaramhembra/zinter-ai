@@ -199,3 +199,25 @@ Stage Summary:
 - Two options for deployment: Vercel CLI or Vercel Dashboard (GitHub integration)
 - User needs to set up Turso (cloud SQLite) for database on Vercel
 - User needs to set env vars in Vercel dashboard: DATABASE_URL, DATABASE_AUTH_TOKEN, JWT_SECRET, NEXT_PUBLIC_BASE_URL
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Set up Turso cloud database and prepare for Vercel deployment
+
+Work Log:
+- Updated .env with Turso credentials (DATABASE_URL + DATABASE_AUTH_TOKEN)
+- Tried prisma db push to Turso — failed (Prisma 6.x doesn't support libsql provider natively)
+- Created tables directly on Turso using @libsql/client (User, Conversation, Message + indexes)
+- Tested Turso read/write — PASSED (write, read, cleanup all successful)
+- Ran full build with Turso env vars — PASSED (all 20 routes)
+- Vercel CLI not authenticated in sandbox (needs browser OAuth) — cannot deploy from here
+- Created .vercelignore to exclude skills/, examples/, download/, etc from deployment
+- Cleaned up temp setup files
+
+Stage Summary:
+- Turso database is LIVE with all tables created
+- Build passes with Turso credentials
+- Project is 100% ready for Vercel deployment
+- User needs to run `vercel --prod` from their own machine (1 command)
+- Env vars to set in Vercel: DATABASE_URL, DATABASE_AUTH_TOKEN, JWT_SECRET, NEXT_PUBLIC_BASE_URL

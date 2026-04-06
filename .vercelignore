@@ -1,0 +1,12 @@
+skills/
+examples/
+download/
+*.sh
+*.png
+*.jpg
+*.jpeg
+!public/
+worklog.md*
+agent-ctx.md
+db/
+.prettierrc*
