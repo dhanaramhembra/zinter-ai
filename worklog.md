@@ -148,3 +148,27 @@ Stage Summary:
 - Cron job ID 66334 runs every 5 minutes to restart server and do QA
 - The user should use the Preview Panel to see the website when server is up
 - Key file: /home/z/my-project/.zscripts/dev.sh handles proper startup flow
+
+---
+Task ID: 3
+Agent: Main
+Task: Prepare project for Vercel deployment
+
+Work Log:
+- Created vercel.json with proper build config
+- Updated prisma/schema.prisma to use env DATABASE_URL + directUrl for Turso support
+- Updated .env with clean structure (removed placeholder Google creds)
+- Created .env.example with documented variables
+- Created deploy-vercel.sh one-click deployment script
+- Added .env to .gitignore
+- Verified: bun run lint passes (zero errors)
+- Verified: prisma db push works
+- Cleaned up 17 duplicate cron jobs, set up 1 clean cron job (ID: 66358)
+- Fixed dev.sh with auto-restart loop for container startup
+
+Stage Summary:
+- Project is Vercel-ready
+- User needs to run deployment from their own machine (sandbox can't auth with Vercel)
+- Current DB: local SQLite (will be in-memory on Vercel)
+- Recommended: Set up Turso (free) for persistent SQLite on Vercel
+- All files ready: vercel.json, deploy-vercel.sh, .env.example
