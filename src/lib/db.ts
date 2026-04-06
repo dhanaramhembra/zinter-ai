@@ -7,17 +7,20 @@ const globalForPrisma = globalThis as unknown as {
   libsqlClient: Client | undefined
 }
 
+// Lazy initialization — client is only created on FIRST database query
+// This prevents build-time crashes when DATABASE_URL is not set
+let _db: PrismaClient | null = null
+
 function createPrismaClient(): PrismaClient {
   const dbUrl = process.env.DATABASE_URL
 
-  // If no DATABASE_URL, return a basic client (will fail on queries but won't crash on import)
   if (!dbUrl) {
-    console.error('⚠️ DATABASE_URL is not set!')
-    return new PrismaClient()
+    console.error('⚠️ DATABASE_URL is not set! Database operations will fail.')
+    // Return a dummy client that won't crash on import, only on actual queries
+    return new PrismaClient({ datasources: { db: { url: 'file:./placeholder.db' } } })
   }
 
   try {
-    // Use libSQL adapter for Turso (libsql://) and local file (file://) databases
     if (dbUrl.startsWith('file:') || dbUrl.startsWith('libsql:') || dbUrl.startsWith('https:')) {
       const libsql = globalForPrisma.libsqlClient ?? createClient({
         url: dbUrl,
@@ -35,13 +38,18 @@ function createPrismaClient(): PrismaClient {
     console.error('Failed to create libSQL client, falling back to default Prisma:', error)
   }
 
-  // Fallback to default Prisma client
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query'] : [],
   })
 }
 
-export const db =
-  globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+// Lazy getter — only creates client when first accessed
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (!_db) {
+      _db = globalForPrisma.prisma ?? createPrismaClient()
+      if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = _db
+    }
+    return (_db as any)[prop]
+  }
+})
