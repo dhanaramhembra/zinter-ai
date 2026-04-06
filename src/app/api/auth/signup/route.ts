@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Debug: log env vars (masked)
+    console.log('DEBUG DATABASE_URL:', (process.env.DATABASE_URL || 'NOT SET').substring(0, 30));
+    console.log('DEBUG AUTH_TOKEN:', process.env.DATABASE_AUTH_TOKEN ? 'SET (' + process.env.DATABASE_AUTH_TOKEN.length + ' chars)' : 'NOT SET');
+
     const existingUser = await db.user.findUnique({ where: { email } });
     if (existingUser) {
       return NextResponse.json(
