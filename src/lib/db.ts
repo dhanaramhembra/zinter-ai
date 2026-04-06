@@ -1,42 +1,30 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
-import { createClient, type Client } from '@libsql/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
-  libsqlClient: Client | undefined
 }
 
 let _db: PrismaClient | null = null
 
 function createPrismaClient(): PrismaClient {
   const dbUrl = process.env.DATABASE_URL
+  const authToken = process.env.DATABASE_AUTH_TOKEN || undefined
 
   if (!dbUrl) {
     console.error('⚠️ DATABASE_URL is not set!')
-    // Return a client that won't be used (lazy proxy prevents this from running in practice)
-    return new PrismaClient({ datasources: { db: { url: 'file:/dev/null' } } })
+    return new PrismaClient()
   }
 
   try {
-    // For Turso (libsql://) or any non-file URL, use the libSQL adapter
     if (!dbUrl.startsWith('file:')) {
-      const libsql = globalForPrisma.libsqlClient ?? createClient({
+      // Turso / cloud database — use libSQL adapter with factory config
+      const adapter = new PrismaLibSql({
         url: dbUrl,
-        authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+        authToken,
       })
-
-      if (!globalForPrisma.libsqlClient) {
-        globalForPrisma.libsqlClient = libsql
-      }
-
-      const adapter = new PrismaLibSql(libsql)
-      // When using adapter, Prisma doesn't connect via the datasource URL
-      // But it still validates the format. Use the actual URL since libsql://
-      // is accepted when adapter is provided
-      return new PrismaClient({
-        adapter,
-      })
+      // Do NOT pass datasources when using adapter!
+      return new PrismaClient({ adapter })
     }
 
     // Local file: database — use default Prisma
@@ -45,7 +33,7 @@ function createPrismaClient(): PrismaClient {
     })
   } catch (error) {
     console.error('Failed to create DB client:', error)
-    return new PrismaClient({ datasources: { db: { url: 'file:/dev/null' } } })
+    return new PrismaClient()
   }
 }
 
