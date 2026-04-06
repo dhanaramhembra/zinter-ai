@@ -43,7 +43,6 @@ import {
   Sparkles,
   Palette,
   Type,
-  Wallpaper,
   Clock,
   Trash2,
   Brain,
@@ -64,7 +63,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
-import { useChatStore, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
+import { useChatStore } from '@/store/chat-store';
 import { useTheme } from 'next-themes';
 import { ZinterLogo } from '@/components/zinter-logo';
 
@@ -99,7 +98,7 @@ interface UserStats {
 
 export default function UserProfileSheet({ open, onOpenChange }: UserProfileSheetProps) {
   const user = useAuthStore((state) => state.user);
-  const { conversations, setConversations, clearAll, selectedBackground, setSelectedBackground, showTimestamps, setShowTimestamps, useCustomSystemPrompt, customSystemPrompt, setUseCustomSystemPrompt, setCustomSystemPrompt } = useChatStore();
+  const { conversations, setConversations, clearAll, showTimestamps, setShowTimestamps, useCustomSystemPrompt, customSystemPrompt, setUseCustomSystemPrompt, setCustomSystemPrompt } = useChatStore();
   const { theme, setTheme } = useTheme();
 
   // Profile state
@@ -210,11 +209,6 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
     setFontSize(size);
     try { localStorage.setItem('nexusai-font-size', size); } catch { /* ignore */ }
   }, []);
-
-  const handleBackgroundChange = useCallback((bg: ChatBackground) => {
-    setSelectedBackground(bg);
-    try { localStorage.setItem('nexusai-chat-background', bg); } catch { /* ignore */ }
-  }, [setSelectedBackground]);
 
   const handleShowTimestampsChange = useCallback((checked: boolean) => {
     setShowTimestamps(checked);
@@ -506,43 +500,6 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                         <p>I&apos;m doing great! How can I help you today?</p>
                       </div>
                     </div>
-                  </div>
-                </SectionWrapper>
-
-                <Divider />
-
-                {/* Chat Background */}
-                <SectionWrapper icon={Wallpaper} title="Chat Background" description="Personalize your chat wallpaper" delay={0.15}>
-                  <div className="grid grid-cols-5 gap-2">
-                    {BACKGROUND_THEMES.map((bgTheme) => (
-                      <button
-                        key={bgTheme.id}
-                        onClick={() => handleBackgroundChange(bgTheme.id)}
-                        className={cn('flex flex-col items-center gap-1.5 transition-all duration-200 group', selectedBackground === bgTheme.id && 'scale-105')}
-                      >
-                        <div className={cn(
-                          'w-full aspect-square rounded-lg border-2 transition-all duration-200 hover:shadow-md',
-                          selectedBackground === bgTheme.id
-                            ? 'border-emerald-500 shadow-md shadow-emerald-500/20'
-                            : 'border-border hover:border-border/80',
-                          bgTheme.previewClass,
-                          bgTheme.id === 'default' && 'dot-grid',
-                          bgTheme.id === 'dots' && 'bg-dots-pattern',
-                          bgTheme.id === 'gradient' && 'bg-chat-gradient',
-                          bgTheme.id === 'minimal' && 'bg-minimal-chat',
-                          bgTheme.id === 'warm' && 'bg-warm-chat',
-                        )}>
-                          {selectedBackground === bgTheme.id && (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                            </div>
-                          )}
-                        </div>
-                        <span className={cn('text-[10px] font-medium leading-tight', selectedBackground === bgTheme.id ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>
-                          {bgTheme.name}
-                        </span>
-                      </button>
-                    ))}
                   </div>
                 </SectionWrapper>
 

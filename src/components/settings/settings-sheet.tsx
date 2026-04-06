@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/store/auth-store';
-import { useChatStore, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
+import { useChatStore } from '@/store/chat-store';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,6 @@ import {
   Check,
   Type,
   BarChart3,
-  Wallpaper,
   Clock,
   MessageCircle,
   Calendar,
@@ -79,7 +78,7 @@ interface SettingsSheetProps {
 
 export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
   const { user, setUser } = useAuthStore();
-  const { conversations, setConversations, clearAll, selectedBackground, setSelectedBackground, showTimestamps, setShowTimestamps, useCustomSystemPrompt, customSystemPrompt, setUseCustomSystemPrompt, setCustomSystemPrompt } = useChatStore();
+  const { conversations, setConversations, clearAll, showTimestamps, setShowTimestamps, useCustomSystemPrompt, customSystemPrompt, setUseCustomSystemPrompt, setCustomSystemPrompt } = useChatStore();
   const { theme, setTheme } = useTheme();
 
   // Profile
@@ -199,15 +198,6 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
       // ignore
     }
   }, []);
-
-  const handleBackgroundChange = useCallback((bg: ChatBackground) => {
-    setSelectedBackground(bg);
-    try {
-      localStorage.setItem('nexusai-chat-background', bg);
-    } catch {
-      // ignore
-    }
-  }, [setSelectedBackground]);
 
   const handleShowTimestampsChange = useCallback((checked: boolean) => {
     setShowTimestamps(checked);
@@ -504,55 +494,6 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                           <p>I&apos;m doing great! How can I help you today?</p>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Chat Background */}
-                  <div className="pt-2">
-                    <Label className="text-xs text-muted-foreground mb-2.5 block">
-                      Chat Background
-                    </Label>
-                    <div className="grid grid-cols-5 gap-2">
-                      {BACKGROUND_THEMES.map((theme) => (
-                        <button
-                          key={theme.id}
-                          onClick={() => handleBackgroundChange(theme.id)}
-                          className={cn(
-                            'flex flex-col items-center gap-1.5 transition-all duration-200 group',
-                          selectedBackground === theme.id && 'scale-105'
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              'w-full aspect-square rounded-lg border-2 transition-all duration-200',
-                              'hover:shadow-md',
-                              selectedBackground === theme.id
-                                ? 'border-emerald-500 shadow-md shadow-emerald-500/20'
-                                : 'border-border hover:border-border/80',
-                              theme.previewClass,
-                              theme.id === 'default' && 'dot-grid',
-                              theme.id === 'dots' && 'bg-dots-pattern',
-                              theme.id === 'gradient' && 'bg-chat-gradient',
-                              theme.id === 'minimal' && 'bg-minimal-chat',
-                              theme.id === 'warm' && 'bg-warm-chat',
-                            )}
-                          >
-                            {selectedBackground === theme.id && (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                              </div>
-                            )}
-                          </div>
-                          <span className={cn(
-                            'text-[10px] font-medium leading-tight',
-                            selectedBackground === theme.id
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-muted-foreground'
-                          )}>
-                            {theme.name}
-                          </span>
-                        </button>
-                      ))}
                     </div>
                   </div>
 
