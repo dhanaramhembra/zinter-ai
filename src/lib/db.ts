@@ -8,14 +8,16 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient(): PrismaClient {
-  const dbUrl = process.env.DATABASE_URL || ''
+  const dbUrl = process.env.DATABASE_URL
 
-  // In production, we MUST have a DATABASE_URL
+  // If no DATABASE_URL, return a basic client (will fail on queries but won't crash on import)
   if (!dbUrl) {
-    console.error('DATABASE_URL environment variable is not set!')
+    console.error('⚠️ DATABASE_URL is not set!')
+    return new PrismaClient()
   }
 
   try {
+    // Use libSQL adapter for Turso (libsql://) and local file (file://) databases
     if (dbUrl.startsWith('file:') || dbUrl.startsWith('libsql:') || dbUrl.startsWith('https:')) {
       const libsql = globalForPrisma.libsqlClient ?? createClient({
         url: dbUrl,
@@ -30,7 +32,7 @@ function createPrismaClient(): PrismaClient {
       return new PrismaClient({ adapter })
     }
   } catch (error) {
-    console.error('Failed to create libSQL client:', error)
+    console.error('Failed to create libSQL client, falling back to default Prisma:', error)
   }
 
   // Fallback to default Prisma client
