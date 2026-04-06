@@ -1691,3 +1691,31 @@ Stage Summary:
 - "Generating speech..." toast gives feedback during processing
 - 2-minute timeout covers even very long messages
 - Hindi language auto-detection still works (kazi voice for Devanagari)
+
+---
+## Task ID: sidebar-toggle-fix
+Agent: main
+Task: Make sidebar hidden by default on all screen sizes, only show on hamburger click
+
+Work Log:
+- Analyzed current sidebar behavior: sidebar was always visible on desktop (≥1024px) via `isDesktop ? 0` animation override, and hamburger button was hidden on desktop via `lg:hidden`
+- Updated `src/components/chat/conversation-sidebar.tsx`:
+  - Changed sidebar animation from `x: isDesktop ? 0 : (isOpen ? 0 : -320)` to `x: isOpen ? 0 : -320` — now respects isOpen on all screen sizes
+  - Changed sidebar positioning from `fixed lg:relative` to `fixed` — always overlays instead of pushing content
+  - Removed `lg:translate-x-0` class — no longer always visible
+  - Removed `lg:hidden` from overlay backdrop — now shows on all screen sizes when sidebar is open
+  - Removed `lg:hidden` from close (X) button — always visible
+  - Removed `hidden lg:block` from gradient separator — always visible when sidebar is open
+  - Removed unused `useIsDesktop` hook and related code (no longer needed)
+- Updated `src/components/chat/chat-area.tsx`:
+  - Removed `lg:hidden` from hamburger menu button in empty state header (line ~1480)
+  - Removed `lg:hidden` from hamburger menu button in conversation view header (line ~1615)
+  - Now hamburger menu is always visible on all screen sizes
+
+Stage Summary:
+- Sidebar is now hidden by default on ALL screen sizes (mobile + desktop)
+- Sidebar only appears when user clicks the hamburger menu button
+- Clicking overlay or X button closes the sidebar
+- Full-screen dark overlay backdrop on all sizes when sidebar is open
+- Hamburger menu button is always visible in both empty state and conversation view
+- Lint: zero errors, dev server compiles cleanly

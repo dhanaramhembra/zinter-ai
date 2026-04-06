@@ -1476,9 +1476,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
   if (!activeConversation) {
     return (
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Mobile header */}
-        <div className="flex items-center gap-3 p-4 border-b border-border lg:hidden">
-          <Button variant="ghost" size="icon" className="h-10 w-10" onClick={onToggleSidebar} aria-label="Open menu">
+        {/* Header */}
+        <div className="flex items-center gap-3 p-4 border-b border-border">
+          <Button variant="ghost" size="icon" className="h-10 w-10 hover:scale-110 active:scale-95 transition-transform duration-200" onClick={onToggleSidebar} aria-label="Open menu">
             <Menu className="w-5 h-5" />
           </Button>
           <h1 className="font-semibold flex-1">Zinter AI</h1>
@@ -1612,7 +1612,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
           <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden shrink-0 h-10 w-10 hover:scale-110 active:scale-95 transition-transform duration-200"
+          className="shrink-0 h-10 w-10 hover:scale-110 active:scale-95 transition-transform duration-200"
           onClick={onToggleSidebar}
           aria-label="Open menu"
         >

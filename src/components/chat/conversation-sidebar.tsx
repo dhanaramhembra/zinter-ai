@@ -51,20 +51,6 @@ interface ConversationSidebarProps {
   onClose: () => void;
 }
 
-/** Detect if viewport is desktop width (≥1024px) */
-function useIsDesktop() {
-  const getIsDesktop = () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
-  const [isDesktop, setIsDesktop] = useState(getIsDesktop);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  return isDesktop;
-}
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -138,7 +124,6 @@ function savePinned(pinned: string[]) {
 }
 
 export default function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProps) {
-  const isDesktop = useIsDesktop();
   const {
     conversations,
     activeConversationId,
@@ -363,29 +348,28 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* Overlay backdrop */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar - always visible on desktop, slide animation on mobile */}
+      {/* Sidebar - hidden by default, slides in on toggle */}
       <motion.aside
         initial={false}
         animate={{
-          x: isDesktop ? 0 : (isOpen ? 0 : -320),
+          x: isOpen ? 0 : -320,
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
-          'fixed lg:relative left-0 top-0 z-50 lg:z-0 h-full w-[85vw] max-w-[300px] sm:w-[300px] bg-card backdrop-blur-xl border-r border-border flex flex-col shadow-2xl shadow-black/20',
-          'lg:translate-x-0',
+          'fixed left-0 top-0 z-50 h-full w-[85vw] max-w-[300px] sm:w-[300px] bg-card backdrop-blur-xl border-r border-border flex flex-col shadow-2xl shadow-black/20',
           'pt-[env(safe-area-inset-top)]'
         )}
       >
@@ -408,7 +392,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </AnimatePresence>
 
         {/* Animated gradient separator (right edge) */}
-        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-px pointer-events-none z-10 overflow-hidden">
+        <div className="absolute top-0 right-0 bottom-0 w-px pointer-events-none z-10 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/20 to-transparent animate-pulse" />
         </div>
 
@@ -428,7 +412,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
               </motion.div>
               <span className="font-bold text-base sm:text-lg tracking-tight gradient-text">Zinter AI</span>
             </div>
-            <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
               <X className="w-5 h-5" />
             </Button>
           </div>
