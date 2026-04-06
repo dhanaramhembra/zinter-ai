@@ -7,11 +7,10 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   allowedDevOrigins: [
-    "*.space.z.ai",
     "space.z.ai",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "http://localhost:81",
+    "*.space.z.ai",
+    "127.0.0.1",
+    "localhost",
   ],
 };
 
