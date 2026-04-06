@@ -68,8 +68,9 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error('Signup error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Something went wrong' },
+      { error: 'Something went wrong', details: message },
       { status: 500 }
     );
   }

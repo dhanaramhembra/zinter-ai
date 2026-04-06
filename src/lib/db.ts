@@ -8,11 +8,14 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient(): PrismaClient {
-  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+  const dbUrl = process.env.DATABASE_URL || ''
+
+  // In production, we MUST have a DATABASE_URL
+  if (!dbUrl) {
+    console.error('DATABASE_URL environment variable is not set!')
+  }
 
   try {
-    // If the URL starts with "file:" or "libsql:", use the libSQL adapter
-    // This works for both local SQLite files and Turso cloud databases
     if (dbUrl.startsWith('file:') || dbUrl.startsWith('libsql:') || dbUrl.startsWith('https:')) {
       const libsql = globalForPrisma.libsqlClient ?? createClient({
         url: dbUrl,
@@ -27,10 +30,10 @@ function createPrismaClient(): PrismaClient {
       return new PrismaClient({ adapter })
     }
   } catch (error) {
-    console.error('Failed to create libSQL client, falling back to default Prisma:', error)
+    console.error('Failed to create libSQL client:', error)
   }
 
-  // Fallback to default Prisma client (for any other database URL)
+  // Fallback to default Prisma client
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query'] : [],
   })
