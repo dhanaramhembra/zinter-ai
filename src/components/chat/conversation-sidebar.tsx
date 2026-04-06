@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import UserProfileSheet from '@/components/user-profile-sheet';
 import { AVATAR_OPTIONS } from '@/lib/avatars';
+import { ZinterLogoWithText } from '@/components/zinter-logo';
 
 interface ConversationSidebarProps {
   isOpen: boolean;
@@ -402,16 +403,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)', backgroundSize: '16px 16px' }} />
           <div className="relative">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <div className="flex items-center gap-2.5">
-              <motion.div
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20"
-                whileHover={{ scale: 1.05, rotate: 3 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-              >
-                <Sparkles className="w-4.5 h-4.5" />
-              </motion.div>
-              <span className="font-bold text-base sm:text-lg tracking-tight gradient-text">Zinter AI</span>
-            </div>
+            <ZinterLogoWithText size="sm" textSize="base" className="flex-1" />
             <Button variant="ghost" size="icon" className="h-9 w-9 hover:scale-110 active:scale-95 transition-transform" onClick={onClose}>
               <X className="w-5 h-5" />
             </Button>

@@ -6,8 +6,8 @@ import { useChatStore } from '@/store/chat-store';
 import AuthPage from '@/components/auth/auth-page';
 import ConversationSidebar from '@/components/chat/conversation-sidebar';
 import ChatArea from '@/components/chat/chat-area';
-import { Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ZinterLogoAnimated } from '@/components/zinter-logo';
 
 // Deterministic seeded random — avoids hydration mismatch from Math.random()
 function seededRandom(seed: number) {
@@ -125,38 +125,7 @@ function LoadingScreen() {
           transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
           className="relative"
         >
-          {/* Rotating gradient ring */}
-          <motion.div
-            className="absolute -inset-3 rounded-3xl opacity-60"
-            style={{
-              background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #10b981)',
-              WebkitMask: 'radial-gradient(transparent 62%, black 64%)',
-              mask: 'radial-gradient(transparent 62%, black 64%)',
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-          />
-
-          {/* Pulsing glow */}
-          <motion.div
-            className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 blur-xl"
-            animate={{ opacity: [0.4, 0.8, 0.4] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          />
-
-          {/* Logo icon */}
-          <motion.div
-            className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25"
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-            >
-              <Sparkles className="w-10 h-10" />
-            </motion.div>
-          </motion.div>
+          <ZinterLogoAnimated size="xxl" />
         </motion.div>
 
         {/* Welcome text with staggered delays */}

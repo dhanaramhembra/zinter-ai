@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { ZinterLogoAnimated } from '@/components/zinter-logo';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LoadingScreen() {
@@ -69,41 +69,7 @@ export default function LoadingScreen() {
           {/* Main content */}
           <div className="relative flex flex-col items-center gap-6">
             {/* Logo with rotating gradient ring */}
-            <motion.div
-              initial={{ scale: 0, rotate: -90 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
-              className="relative"
-            >
-              {/* Spinning gradient ring */}
-              <motion.div
-                className="absolute -inset-2 rounded-2xl opacity-50"
-                style={{
-                  background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #10b981)',
-                  WebkitMask: 'radial-gradient(transparent 58%, black 60%)',
-                  mask: 'radial-gradient(transparent 58%, black 60%)',
-                }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              />
-
-              {/* Inner glow ring */}
-              <motion.div
-                className="absolute -inset-1 rounded-2xl"
-                style={{
-                  background: 'conic-gradient(from 180deg, #10b981, #14b8a6, #10b981)',
-                  WebkitMask: 'radial-gradient(transparent 62%, black 64%)',
-                  mask: 'radial-gradient(transparent 62%, black 64%)',
-                }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-              />
-
-              {/* Logo box */}
-              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <Sparkles className="w-8 h-8" />
-              </div>
-            </motion.div>
+            <ZinterLogoAnimated size="lg" />
 
             {/* App name */}
             <motion.div

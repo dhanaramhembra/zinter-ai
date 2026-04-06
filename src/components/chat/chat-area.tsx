@@ -36,6 +36,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth-store';
 import UserProfileSheet from '@/components/user-profile-sheet';
+import { ZinterLogoAnimated } from '@/components/zinter-logo';
+import { ZinterLogo } from '@/components/zinter-logo';
 
 type FontSize = 'small' | 'medium' | 'large';
 
@@ -1501,21 +1503,9 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 initial={{ scale: 0, rotate: -90 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.1 }}
-                className="relative inline-flex items-center justify-center mb-6"
+                className="mb-6"
               >
-                <motion.div
-                  className="absolute -inset-3 rounded-3xl opacity-40"
-                  style={{
-                    background: 'conic-gradient(from 0deg, #10b981, #14b8a6, #10b981)',
-                    WebkitMask: 'radial-gradient(transparent 62%, black 64%)',
-                    mask: 'radial-gradient(transparent 62%, black 64%)',
-                  }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
-                />
-                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                  <Sparkles className="w-10 h-10" />
-                </div>
+                <ZinterLogoAnimated size="xxl" />
               </motion.div>
 
               {/* Welcome text */}
@@ -1575,7 +1565,7 @@ export default function ChatArea({ onToggleSidebar, sidebarOpen }: ChatAreaProps
                 className="mt-6"
               >
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 border border-border/40 text-xs text-muted-foreground/60">
-                  <Sparkles className="w-3 h-3 text-emerald-500" />
+                  <ZinterLogo variant="icon" size="xs" />
                   <span>Powered by Zinter AI</span>
                 </div>
               </motion.div>

@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { AVATAR_OPTIONS } from '@/lib/avatars';
+import { ZinterLogo } from '@/components/zinter-logo';
 import {
   Sun,
   Moon,
@@ -354,9 +355,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
           <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-emerald-500/8 via-teal-500/5 to-transparent pointer-events-none" />
           <SheetHeader className="p-6 pb-0 relative">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
-                <Sparkles className="w-4.5 h-4.5" />
-              </div>
+              <ZinterLogo variant="full" size="sm" />
               <div>
                 <SheetTitle className="text-lg">Settings</SheetTitle>
                 <SheetDescription className="text-xs">
@@ -779,9 +778,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               <SettingsSection icon={Info} title="About" description="Application information">
                 <div className="rounded-lg border border-border/60 p-4 bg-muted/20 shadow-sm">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
+                    <ZinterLogo variant="full" size="md" glowOnHover />
                     <div>
                       <p className="font-semibold text-sm">Zinter AI</p>
                       <p className="text-xs text-muted-foreground">v2.0</p>

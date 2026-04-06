@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2, Mail, Lock, User, Sparkles, Moon, Sun, X, Zap } from 'lucide-react';
+import { ZinterLogo } from '@/components/zinter-logo';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -321,20 +322,9 @@ export default function AuthPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-            className={cn(
-              'inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary text-primary-foreground mb-4',
-              !isCheckingSession && 'animate-breathing-glow',
-              isCheckingSession && 'animate-pulse'
-            )}
-            style={isCheckingSession ? { boxShadow: '0 0 30px rgba(16, 185, 129, 0.4)' } : undefined}
+            className="mb-4"
           >
-            <Sparkles
-              className="w-8 h-8"
-              style={isCheckingSession ? {
-                filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))',
-                animation: 'glow-pulse 2s ease-in-out infinite',
-              } : undefined}
-            />
+            <ZinterLogo variant="full" size={isCheckingSession ? 'lg' : 'xl'} className={cn(isCheckingSession && 'animate-pulse')} />
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 8 }}

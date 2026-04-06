@@ -67,6 +67,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useChatStore, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
 import { useTheme } from 'next-themes';
 import { AVATAR_OPTIONS } from '@/lib/avatars';
+import { ZinterLogo } from '@/components/zinter-logo';
 
 type FontSize = 'small' | 'medium' | 'large';
 
@@ -756,9 +757,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                 <SectionWrapper icon={Sparkles} title="Zinter AI" description="Your AI-powered assistant" delay={0.05}>
                   <div className="rounded-xl border border-border/60 p-5 bg-gradient-to-b from-emerald-500/5 to-transparent shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <Sparkles className="w-6 h-6" />
-                      </div>
+                      <ZinterLogo variant="full" size="lg" glowOnHover />
                       <div>
                         <p className="font-bold text-base">Zinter AI</p>
                         <p className="text-xs text-muted-foreground">v2.0 — AI Chat Platform</p>
