@@ -27,7 +27,7 @@ interface GoogleUserInfo {
 
 /**
  * GET /api/auth/google/callback
- * Step 2: Google redirects user here after they pick their account
+ * Real Google OAuth callback — receives authorization code from Google
  * - Verify CSRF state
  * - Exchange authorization code for tokens
  * - Fetch user profile from Google
@@ -63,13 +63,6 @@ export async function GET(req: NextRequest) {
       console.error('CSRF state mismatch');
       return NextResponse.redirect('/?google_error=invalid_state');
     }
-
-    // Clear state cookie
-    const clearStateResponse = NextResponse.next();
-    clearStateResponse.cookies.set('google_oauth_state', '', {
-      path: '/',
-      maxAge: 0,
-    });
 
     // Exchange authorization code for tokens
     const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -131,7 +124,6 @@ export async function GET(req: NextRequest) {
     let user = await db.user.findUnique({ where: { email: useremail } });
 
     if (!user) {
-      // New user — create account from Google data
       user = await db.user.create({
         data: {
           email: useremail,
@@ -142,7 +134,6 @@ export async function GET(req: NextRequest) {
         },
       });
     } else {
-      // Existing user — update Google-specific fields
       user = await db.user.update({
         where: { id: user.id },
         data: {

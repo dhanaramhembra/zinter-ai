@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore } from '@/store/chat-store';
 import AuthPage from '@/components/auth/auth-page';
+import GoogleSignInPage from '@/components/auth/google-signin-page';
 import ConversationSidebar from '@/components/chat/conversation-sidebar';
 import ChatArea from '@/components/chat/chat-area';
 import { motion } from 'framer-motion';
@@ -193,10 +195,12 @@ function LoadingScreen() {
   );
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const { isAuthenticated, isLoading, setUser, setLoading } = useAuthStore();
   const { setConversations } = useChatStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const isGoogleSignIn = searchParams.get('google_signin') === '1';
 
   // Check auth on mount
   useEffect(() => {
@@ -254,6 +258,11 @@ export default function HomePage() {
     return <LoadingScreen />;
   }
 
+  // Show Google-style sign-in page when redirected from Google button
+  if (isGoogleSignIn) {
+    return <GoogleSignInPage />;
+  }
+
   if (!isAuthenticated) {
     return <AuthPage />;
   }
@@ -269,5 +278,15 @@ export default function HomePage() {
         sidebarOpen={sidebarOpen}
       />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background" />
+    }>
+      <HomePageContent />
+    </Suspense>
   );
 }

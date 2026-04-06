@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
+import { db } from '@/lib/db';
+import { createSession, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/session';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const SCOPES = [
@@ -11,46 +13,53 @@ const SCOPES = [
 
 /**
  * GET /api/auth/google
- * Step 1: Redirect user to Google's OAuth consent screen
- * Shows all Google accounts on device, user picks one, Google redirects back
+ * Step 1: Redirect user to Google's OAuth consent screen (if real credentials are configured)
+ * OR redirect to the mock Google sign-in page (for development/sandbox)
  */
 export async function GET() {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      // No Google credentials configured — redirect to auth page with error
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    // Check if REAL Google OAuth credentials are configured (not placeholders)
+    const isConfigured = clientId && clientSecret &&
+      !clientId.includes('your-google-client-id') &&
+      !clientSecret.includes('your-google-client-secret');
+
+    if (isConfigured) {
+      // Real Google OAuth flow
+      const state = uuidv4();
+      const stateCookie = `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`;
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-      return NextResponse.redirect(
-        `${baseUrl}/?google_error=no_credentials`
+      const redirectUri = `${baseUrl}/api/auth/google/callback`;
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: SCOPES.join(' '),
+        state: state,
+        access_type: 'offline',
+        prompt: 'select_account', // Always show account picker
+      });
+
+      const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
+      const response = NextResponse.redirect(authUrl);
+      response.headers.append('Set-Cookie', stateCookie);
+      return response;
+    } else {
+      // Mock Google sign-in flow — redirect to the styled account picker page
+      const state = uuidv4();
+      const stateCookie = `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
+      const response = NextResponse.redirect(
+        `${baseUrl}/?google_signin=1&state=${state}`
       );
+      response.headers.append('Set-Cookie', stateCookie);
+      return response;
     }
-
-    // Generate CSRF state token
-    const state = uuidv4();
-    const stateCookie = `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`;
-
-    // Determine redirect URI (where Google sends user back after login)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-    const redirectUri = `${baseUrl}/api/auth/google/callback`;
-
-    // Build Google OAuth URL
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: SCOPES.join(' '),
-      state: state,
-      access_type: 'offline',
-      prompt: 'select_account', // Always show account picker
-    });
-
-    const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
-
-    // Redirect to Google + set state cookie for CSRF protection
-    const response = NextResponse.redirect(authUrl);
-    response.headers.append('Set-Cookie', stateCookie);
-
-    return response;
   } catch (error) {
     console.error('Google OAuth redirect error:', error);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
@@ -61,13 +70,12 @@ export async function GET() {
 }
 
 /**
- * POST /api/auth/google (fallback)
- * Manual Google sign-in — creates account from email + name
- * Used as fallback when real OAuth is not configured
+ * POST /api/auth/google/callback (also handles the mock OAuth callback)
+ * Creates or finds user, sets session, returns user data
  */
 export async function POST(req: NextRequest) {
   try {
-    const { email, name, avatar } = await req.json();
+    const { email, name, avatar, provider } = await req.json();
 
     if (!email || !name) {
       return NextResponse.json(
@@ -84,10 +92,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Dynamic import to avoid issues if db changes
-    const { db } = await import('@/lib/db');
-    const { createSession, SESSION_COOKIE, SESSION_MAX_AGE } = await import('@/lib/session');
-
     const trimmedEmail = email.toLowerCase().trim();
     const trimmedName = name.trim().slice(0, 50);
 
@@ -99,22 +103,19 @@ export async function POST(req: NextRequest) {
         data: {
           email: trimmedEmail,
           name: trimmedName || 'Google User',
-          provider: 'google',
+          password: null,
+          provider: provider || 'google',
           avatar: avatar || null,
         },
       });
-    } else if (user.provider !== 'google') {
+    } else {
+      // Update existing user with Google-specific fields
       user = await db.user.update({
         where: { id: user.id },
         data: {
-          provider: 'google',
+          provider: provider || 'google',
           avatar: avatar || user.avatar,
         },
-      });
-    } else if (avatar) {
-      user = await db.user.update({
-        where: { id: user.id },
-        data: { avatar },
       });
     }
 

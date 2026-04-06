@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "*.space.z.ai",
     "space.z.ai",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "http://localhost:81",
   ],
 };
 
