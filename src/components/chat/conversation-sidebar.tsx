@@ -51,6 +51,21 @@ interface ConversationSidebarProps {
   onClose: () => void;
 }
 
+/** Detect if viewport is desktop width (≥1024px) */
+function useIsDesktop() {
+  const getIsDesktop = () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
+  const [isDesktop, setIsDesktop] = useState(getIsDesktop);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  return isDesktop;
+}
+
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -123,6 +138,7 @@ function savePinned(pinned: string[]) {
 }
 
 export default function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProps) {
+  const isDesktop = useIsDesktop();
   const {
     conversations,
     activeConversationId,
@@ -360,11 +376,11 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - always visible on desktop, slide animation on mobile */}
       <motion.aside
         initial={false}
         animate={{
-          x: isOpen ? 0 : -320,
+          x: isDesktop ? 0 : (isOpen ? 0 : -320),
         }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
@@ -476,7 +492,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
         </div>
 
         {/* Conversations list */}
-        <ScrollArea className="flex-1 sidebar-scroll" ref={scrollRef}>
+        <ScrollArea className="flex-1 min-h-0 sidebar-scroll" ref={scrollRef}>
           <div className="p-2">
             <AnimatePresence mode="wait">
               {!hasAnyConversations ? (
