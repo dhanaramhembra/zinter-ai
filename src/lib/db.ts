@@ -7,21 +7,20 @@ const globalForPrisma = globalThis as unknown as {
   libsqlClient: Client | undefined
 }
 
-// Lazy initialization — client is only created on FIRST database query
-// This prevents build-time crashes when DATABASE_URL is not set
 let _db: PrismaClient | null = null
 
 function createPrismaClient(): PrismaClient {
   const dbUrl = process.env.DATABASE_URL
 
   if (!dbUrl) {
-    console.error('⚠️ DATABASE_URL is not set! Database operations will fail.')
-    // Return a dummy client that won't crash on import, only on actual queries
+    console.error('⚠️ DATABASE_URL is not set!')
     return new PrismaClient({ datasources: { db: { url: 'file:./placeholder.db' } } })
   }
 
   try {
-    if (dbUrl.startsWith('file:') || dbUrl.startsWith('libsql:') || dbUrl.startsWith('https:')) {
+    // For Turso (libsql://) or any non-file URL, use the libSQL adapter
+    // The adapter bypasses Prisma's URL validation since it manages its own connection
+    if (!dbUrl.startsWith('file:')) {
       const libsql = globalForPrisma.libsqlClient ?? createClient({
         url: dbUrl,
         authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
@@ -32,18 +31,24 @@ function createPrismaClient(): PrismaClient {
       }
 
       const adapter = new PrismaLibSql(libsql)
-      return new PrismaClient({ adapter })
+      // Pass a dummy file: URL to bypass Prisma's validation — 
+      // the adapter handles the real connection
+      return new PrismaClient({
+        adapter,
+        datasources: { db: { url: 'file:./placeholder.db' } }
+      })
     }
-  } catch (error) {
-    console.error('Failed to create libSQL client, falling back to default Prisma:', error)
-  }
 
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
-  })
+    // Local file: database — use default Prisma
+    return new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+    })
+  } catch (error) {
+    console.error('Failed to create DB client:', error)
+    return new PrismaClient({ datasources: { db: { url: 'file:./placeholder.db' } } })
+  }
 }
 
-// Lazy getter — only creates client when first accessed
 export const db = new Proxy({} as PrismaClient, {
   get(_target, prop) {
     if (!_db) {
