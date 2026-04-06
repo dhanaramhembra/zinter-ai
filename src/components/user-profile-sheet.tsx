@@ -66,7 +66,6 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { useChatStore, BACKGROUND_THEMES, ChatBackground } from '@/store/chat-store';
 import { useTheme } from 'next-themes';
-import { AVATAR_OPTIONS } from '@/lib/avatars';
 import { ZinterLogo } from '@/components/zinter-logo';
 
 type FontSize = 'small' | 'medium' | 'large';
@@ -106,7 +105,6 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
   // Profile state
   const [editName, setEditName] = useState(user?.name || '');
   const [nameSaving, setNameSaving] = useState(false);
-  const [avatarSaving, setAvatarSaving] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showEmail, setShowEmail] = useState(true);
 
@@ -208,26 +206,6 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
     finally { setNameSaving(false); }
   }, [editName, user?.name]);
 
-  const handleSaveAvatar = useCallback(async (avatarId: string) => {
-    if (avatarId === user?.avatar) return;
-    setAvatarSaving(true);
-    try {
-      const res = await fetch('/api/auth/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar: avatarId }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user) {
-          useAuthStore.getState().updateUser({ avatar: data.user.avatar, createdAt: data.user.createdAt, updatedAt: data.user.updatedAt });
-          toast.success('Avatar updated');
-        }
-      } else { toast.error('Failed to update avatar'); }
-    } catch { toast.error('Failed to update avatar'); }
-    finally { setAvatarSaving(false); }
-  }, [user?.avatar]);
-
   const handleFontSizeChange = useCallback((size: FontSize) => {
     setFontSize(size);
     try { localStorage.setItem('nexusai-font-size', size); } catch { /* ignore */ }
@@ -297,9 +275,7 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
 
   const shortenId = (id: string) => `${id.slice(0, 4)}...${id.slice(-4)}`;
 
-  const avatarGradient = user?.avatar
-    ? AVATAR_OPTIONS.find((a) => a.id === user.avatar)?.gradient || 'bg-gradient-to-br from-emerald-500 to-teal-600'
-    : 'bg-gradient-to-br from-emerald-500 to-teal-600';
+  const avatarGradient = 'bg-gradient-to-br from-emerald-500 to-teal-600';
 
   const hasConversations = conversations.length > 0;
 
@@ -429,53 +405,6 @@ export default function UserProfileSheet({ open, onOpenChange }: UserProfileShee
                     </Button>
                   </div>
                   <p className="text-[11px] text-muted-foreground/60 mt-1.5">{editName.length}/50 characters</p>
-                </SectionWrapper>
-
-                <Divider />
-
-                {/* Avatar Picker */}
-                <SectionWrapper icon={UserCircle} title="Choose Avatar" description="Pick your preferred avatar style" delay={0.15}>
-                  <div className="grid grid-cols-5 gap-2">
-                    {AVATAR_OPTIONS.map((avatar) => (
-                      <motion.button
-                        key={avatar.id}
-                        type="button"
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.92 }}
-                        disabled={avatarSaving}
-                        onClick={() => handleSaveAvatar(avatar.id)}
-                        className={cn(
-                          'relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 cursor-pointer',
-                          'hover:border-foreground/20',
-                          user?.avatar === avatar.id
-                            ? 'border-emerald-500 bg-emerald-500/10 shadow-sm shadow-emerald-500/10'
-                            : 'border-transparent bg-muted/50 hover:bg-muted/80'
-                        )}
-                      >
-                        {user?.avatar === avatar.id && (
-                          <motion.div
-                            layoutId="profile-avatar-check"
-                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                          >
-                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                          </motion.div>
-                        )}
-                        <div className={cn('w-9 h-9 rounded-full text-white flex items-center justify-center text-sm font-bold shadow-md', avatar.gradient)}>
-                          {user?.name.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground font-medium leading-tight">{avatar.label}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                  {avatarSaving && (
-                    <div className="flex items-center gap-2 justify-center mt-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
-                      <span className="text-xs text-muted-foreground">Saving...</span>
-                    </div>
-                  )}
                 </SectionWrapper>
 
                 <Divider />

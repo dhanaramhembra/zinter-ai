@@ -44,7 +44,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import UserProfileSheet from '@/components/user-profile-sheet';
-import { AVATAR_OPTIONS } from '@/lib/avatars';
 import { ZinterLogoWithText } from '@/components/zinter-logo';
 
 interface ConversationSidebarProps {
@@ -640,10 +639,7 @@ export default function ConversationSidebar({ isOpen, onClose }: ConversationSid
             >
               <div className={cn('relative', online ? 'status-online' : 'status-offline')}>
                 <div className={cn(
-                  'w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-sm',
-                  user.avatar
-                    ? AVATAR_OPTIONS.find(a => a.id === user.avatar)?.gradient || 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                    : 'bg-gradient-to-br from-emerald-500 to-teal-600'
+                  'w-8 h-8 rounded-full text-white flex items-center justify-center text-xs font-bold shadow-sm bg-gradient-to-br from-emerald-500 to-teal-600'
                 )}>
                   {user.name.charAt(0).toUpperCase()}
                 </div>

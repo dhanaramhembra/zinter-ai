@@ -34,7 +34,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import ImageLightbox from './image-lightbox';
-import { AVATAR_OPTIONS, TRANSLATION_LANGUAGES } from '@/lib/avatars';
+import { TRANSLATION_LANGUAGES } from '@/lib/avatars';
 
 /** Strip markdown formatting so TTS reads clean text (client-side mirror of server logic) */
 function stripMarkdownForTTS(text: string): string {
@@ -641,11 +641,7 @@ export default function MessageBubble({
   }, [message.content]);
 
   // Get user avatar class
-  const userAvatarGradient = useMemo(() => {
-    if (!user?.avatar) return 'bg-primary text-primary-foreground';
-    const option = AVATAR_OPTIONS.find(a => a.id === user.avatar);
-    return option ? `${option.gradient} text-white` : 'bg-primary text-primary-foreground';
-  }, [user?.avatar]);
+  const userAvatarGradient = 'bg-primary text-primary-foreground';
 
   // Handle image download
   const handleImageDownload = useCallback(async (url: string, prompt?: string) => {

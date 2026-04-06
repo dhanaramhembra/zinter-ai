@@ -27,7 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AVATAR_OPTIONS } from '@/lib/avatars';
 import { ZinterLogo } from '@/components/zinter-logo';
 import {
   Sun,
@@ -85,7 +84,6 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
 
   // Profile
   const [name, setName] = useState(user?.name || '');
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || 'emerald');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [profileUpdated, setProfileUpdated] = useState(false);
   const [profileError, setProfileError] = useState('');
@@ -135,15 +133,12 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
     };
   }, [conversations]);
 
-  // Sync name and avatar when user changes
+  // Sync name when user changes
   useEffect(() => {
     if (user?.name) {
       setName(user.name);
     }
-    if (user?.avatar) {
-      setSelectedAvatar(user.avatar);
-    }
-  }, [user?.name, user?.avatar]);
+  }, [user?.name]);
 
   // Load font size from localStorage
   useEffect(() => {
@@ -156,22 +151,6 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
       // ignore
     }
   }, []);
-
-  const handleAvatarSelect = useCallback((avatarId: string) => {
-    setSelectedAvatar(avatarId);
-    fetch('/api/auth/me', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ avatar: avatarId }),
-    }).then((res) => {
-      if (res.ok) return res.json();
-    }).then((data) => {
-      if (data?.user) setUser(data.user);
-      toast.success('Avatar updated');
-    }).catch(() => {
-    toast.error('Failed to update avatar');
-  });
-  }, [setUser]);
 
   const handleUpdateProfile = useCallback(async () => {
     const trimmedName = name.trim();
@@ -371,11 +350,8 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
               <SettingsSection icon={User} title="Profile" description="Update your personal information">
                 <div className="flex items-center gap-4 mb-4 p-3 rounded-xl bg-muted/30">
                   <div className="relative">
-                    <div className={cn(
-                      'w-14 h-14 rounded-full text-white flex items-center justify-center text-xl font-bold shadow-md transition-all duration-300',
-                      (AVATAR_OPTIONS.find(a => a.id === selectedAvatar)?.gradient) || 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                    )}>
-                      {selectedAvatar ? (AVATAR_OPTIONS.find(a => a.id === selectedAvatar)?.icon || user?.name?.charAt(0).toUpperCase() || 'U') : (user?.name?.charAt(0).toUpperCase() || 'U')}
+                    <div className="w-14 h-14 rounded-full text-white flex items-center justify-center text-xl font-bold shadow-md transition-all duration-300 bg-gradient-to-br from-emerald-500 to-teal-600">
+                      {user?.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center">
                       <Check className="w-2.5 h-2.5 text-white" />
@@ -384,30 +360,6 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                   <div>
                     <p className="font-medium text-sm">{user?.name || 'User'}</p>
                     <p className="text-xs text-muted-foreground">{user?.email || ''}</p>
-                  </div>
-                </div>
-
-                {/* Avatar Picker */}
-                <div className="space-y-2 mb-2">
-                  <p className="text-xs font-medium text-muted-foreground">Avatar</p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {AVATAR_OPTIONS.map((option) => (
-                      <motion.button
-                        key={option.id}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleAvatarSelect(option.id)}
-                        className={cn(
-                          'w-full aspect-square rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm transition-all duration-200',
-                          option.gradient,
-                          selectedAvatar === option.id
-                            ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-background scale-105'
-                            : 'opacity-70 hover:opacity-100'
-                        )}
-                      >
-                        {option.icon}
-                      </motion.button>
-                    ))}
                   </div>
                 </div>
 
