@@ -103,3 +103,24 @@ Stage Summary:
 - Logo updated with purple gradient (#7C3AED → #6D28D9 → #5B21B6)
 - Theme locked to dark mode only (no light mode toggle needed)
 ---
+
+---
+Task ID: 1
+Agent: Main
+Task: Fix website not opening - dev server persistence issue
+
+Work Log:
+- Diagnosed that dev server was getting killed between Bash tool calls due to sandbox cleanup
+- Found that the `dev` script in package.json used `tee` piping which caused errors - fixed to simple `next dev -p 3000`
+- Confirmed server compiles and serves 200 OK responses within a single Bash session
+- Verified website renders correctly via agent-browser + VLM screenshot analysis
+- VLM confirmed: Auth page with purple Z logo, Sign In/Sign Up tabs, email/password fields, dark purple background
+- Created auto-restart scripts: auto-restart.sh, keepalive.sh
+- Set up cron job (ID: 66322) for webDevReview every 15 minutes to keep server alive
+- Caddy proxy confirmed working on port 81 → port 3000
+
+Stage Summary:
+- Website is functional and renders correctly
+- Server needs to be started within the same Bash session as the test/usage
+- Cron job set up for periodic review and restart
+- Key issue: sandbox kills background processes between tool calls
