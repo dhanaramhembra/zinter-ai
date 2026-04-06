@@ -124,3 +124,27 @@ Stage Summary:
 - Server needs to be started within the same Bash session as the test/usage
 - Cron job set up for periodic review and restart
 - Key issue: sandbox kills background processes between tool calls
+
+---
+Task ID: 2
+Agent: Main
+Task: Diagnose and fix website not opening
+
+Work Log:
+- Investigated why server keeps dying between tool calls
+- Discovered the Kubernetes sandbox kills ALL user-spawned background Node.js processes between tool invocations
+- Root processes (Caddy PID 2, Python main.py PID 453, agent-browser PID 20864) survive because they're part of the container's infrastructure
+- Fixed package.json dev script: removed broken `| tee dev.log` pipe
+- Successfully built production bundle: `next build` completed successfully (all 20 routes)
+- Verified website works: HTTP 200 on both port 3000 (direct) and port 81 (Caddy proxy)
+- Browser test confirmed: "Zinter AI - AI Chat & Image Generation" renders correctly
+- Auth page shows: purple Z logo, Sign In/Sign Up tabs, email/password fields, dark theme
+- Set up aggressive cron job (every 5 min) to keep server alive via webDevReview
+
+Stage Summary:
+- Website code is fully functional with zero errors
+- The ONLY issue is sandbox process cleanup between tool calls
+- Server works perfectly when running (200 OK, all routes compile)
+- Cron job ID 66334 runs every 5 minutes to restart server and do QA
+- The user should use the Preview Panel to see the website when server is up
+- Key file: /home/z/my-project/.zscripts/dev.sh handles proper startup flow
