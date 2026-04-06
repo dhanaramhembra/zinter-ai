@@ -1,38 +1,45 @@
 ---
-## Task ID: google-oauth-signin
+## Task ID: google-oauth-real-flow
 Agent: main
-Task: Add Google sign-in/sign-up functionality so users can sign in directly with Google without filling forms
+Task: Implement real Google OAuth 2.0 flow - redirect to Google sign-in page, show all accounts, pick one, sign in
 
 Work Log:
-- Updated `prisma/schema.prisma`:
-  - Made `password` field optional (`String?`) to support OAuth users who don't have passwords
-  - Added `provider` field (`String @default("email")`) to track auth method
-  - Added `providerId` field (`String?`) for future OAuth ID storage
-  - Pushed schema to database with `bun run db:push`
-- Created `src/app/api/auth/google/route.ts`:
-  - POST endpoint accepting `{ email, name, avatar? }`
-  - Finds existing user by email OR creates new user with `provider: 'google'`
-  - If existing email/password user signs in with Google, upgrades their provider to 'google'
-  - Creates session cookie and returns user data
+- Updated `.env` with `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXT_PUBLIC_BASE_URL`
+- Rewrote `src/app/api/auth/google/route.ts`:
+  - GET: Redirects to Google OAuth consent screen (`accounts.google.com/o/oauth2/v2/auth`)
+    - Uses `prompt=select_account` to always show account picker
+    - CSRF state stored in `google_oauth_state` cookie
+    - Scopes: openid, email, profile
+  - POST: Kept as manual fallback for environments without Google credentials
+- Created `src/app/api/auth/google/callback/route.ts`:
+  - Verifies CSRF state cookie matches returned state
+  - Exchanges authorization code for access_token + id_token via Google's token endpoint
+  - Fetches user profile (email, name, picture) from Google's userinfo endpoint
+  - Finds or creates user in database (with `provider: 'google'`, `providerId`, avatar from Google picture)
+  - Creates session cookie and redirects to `/`
+  - Comprehensive error handling with user-friendly error messages
 - Updated `src/components/auth/auth-page.tsx`:
-  - Replaced "Coming soon!" toast on Google button with functional `onGoogleClick` callback
-  - Added Google Sign-In Modal (Dialog) with:
-    - Google icon header
-    - Name input field
-    - Email input field
-    - "Continue with Google" blue button with loading state
-    - Error handling with animated error messages
-    - Enter key support on email field
-  - Modal opens from both Sign In and Sign Up tabs
-  - `handleGoogleSignIn` function validates inputs, calls API, sets user session
-  - Success toast "Signed in with Google! 🎉"
-- Removed Chat Background setting from `settings-sheet.tsx` and `user-profile-sheet.tsx`
+  - Removed old modal dialog approach entirely
+  - Google button now does `window.location.href = '/api/auth/google'` (direct redirect)
+  - Added OAuth error handler in useEffect — reads `google_error` from URL params, shows toast, cleans URL
+  - Blue hover effect on Google button (blue-500/40)
+- Installed `jose` package for future JWT token validation if needed
 
 Stage Summary:
-- Google sign-in now works: click Google button → modal opens → enter name & email → signed in
-- Existing email users can also sign in with Google (account upgrades to Google provider)
-- New Google users get auto-created with `provider: 'google'`
+- Real Google OAuth 2.0 flow: Click Google → Browser goes to Google → Shows ALL accounts → Pick one → Signed in!
+- CSRF protection with state parameter
+- User profile (name, email, avatar) auto-fetched from Google
+- Existing users can link their Google account (provider upgrades to 'google')
+- Error messages shown as toasts (access_denied, invalid_state, token_exchange_failed, etc.)
+- POST fallback kept for environments without Google credentials
 - Lint: zero errors, dev server compiles cleanly
+
+### Setup Required
+To activate Google OAuth:
+1. Go to https://console.cloud.google.com/apis/credentials
+2. Create OAuth 2.0 Client ID (Web application type)
+3. Add redirect URI: `{NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`
+4. Copy Client ID and Secret to `.env` file
 
 ---
 ## Task ID: remove-chat-background-setting
